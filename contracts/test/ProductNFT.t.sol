@@ -12,6 +12,8 @@ contract ProductNFTTest is Test {
 
     function setUp() public {
         nft = new ProductNFT(admin);
+        // W1: amarra o escrow (one-shot). Sem isso, mintToEscrow reverte.
+        nft.setEscrowVault(escrow);
     }
 
     function test_MintToEscrow_OwnerIsEscrow() public {
@@ -41,9 +43,23 @@ contract ProductNFTTest is Test {
         nft.mintToEscrow(escrow, 1, "uri2");
     }
 
-    function testRevert_Mint_ZeroEscrow() public {
-        vm.expectRevert(ProductNFT.ProductNFT__ZeroAddress.selector);
-        nft.mintToEscrow(address(0), 1, "uri");
+    function testRevert_Mint_BadEscrow() public {
+        // W1: escrow != escrowVault configurado → rejeita (mesmo se não-zero).
+        vm.expectRevert(ProductNFT.ProductNFT__BadEscrow.selector);
+        nft.mintToEscrow(address(0xBAD), 1, "uri");
+    }
+
+    function testRevert_SetEscrow_Twice() public {
+        // W1: setter é one-shot.
+        vm.expectRevert(ProductNFT.ProductNFT__EscrowAlreadySet.selector);
+        nft.setEscrowVault(escrow);
+    }
+
+    function testRevert_Mint_ZeroEscrow_NotSet() public {
+        // Num contrato sem escrow configurado, mint reverte com EscrowNotSet.
+        ProductNFT fresh = new ProductNFT(admin);
+        vm.expectRevert(ProductNFT.ProductNFT__EscrowNotSet.selector);
+        fresh.mintToEscrow(escrow, 1, "uri");
     }
 
     function test_EscrowCanTransferItsNFT() public {

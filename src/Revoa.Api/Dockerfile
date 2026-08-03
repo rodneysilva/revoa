@@ -20,5 +20,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 EXPOSE 8000
 COPY --from=build /app/publish .
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_URLS=http://0.0.0.0:8000
 ENTRYPOINT ["dotnet", "Revoa.Api.dll"]

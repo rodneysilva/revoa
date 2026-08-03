@@ -4,7 +4,7 @@ using Revoa.Identity.Domain.Repositories;
 
 namespace Revoa.Identity.Application.Commands;
 
-public sealed record VerifyEmailCommand(Guid UserId) : IRequest<Result>;
+public sealed record VerifyEmailCommand(Guid UserId, string Token) : IRequest<Result>;
 
 public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Result>
 {
@@ -20,10 +20,15 @@ public class VerifyEmailCommandHandler : IRequestHandler<VerifyEmailCommand, Res
         var user = await _users.GetByIdAsync(request.UserId, ct);
         if (user is null)
         {
-            return Result.Fail("Usuário não encontrado.");
+            // Mensagem neutra para não revelar existência do UserId.
+            return Result.Fail("Verificação inválida ou expirada.");
         }
 
-        user.MarkEmailVerified();
+        if (!user.VerifyEmail(request.Token ?? string.Empty))
+        {
+            return Result.Fail("Verificação inválida ou expirada.");
+        }
+
         await _users.UpdateAsync(user, ct);
         return Result.Ok();
     }

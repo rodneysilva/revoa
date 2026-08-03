@@ -34,7 +34,9 @@ public class MailKitEmailSender : IEmailSender
         using var client = new SmtpClient();
         try
         {
-            await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.None, ct);
+            // TLS oportunístico: usa STARTTLS se o servidor oferecer (produção); em rede interna
+            // (Postfix local) cai para plaintext. Evita token de verificação capturável por MITM em prod.
+            await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, ct);
             await client.SendAsync(message, ct);
             await client.DisconnectAsync(true, ct);
         }

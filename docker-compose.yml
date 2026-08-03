@@ -49,6 +49,8 @@ services:
       - Smtp__Port=25
       - Smtp__From=no-reply@revoa.me
       - Zenvia__Token=${ZENVIA_TOKEN:-} # WhatsApp/SMS OTP (anti-farming via secrets)
+      - Jwt__Key=${JWT_KEY:-}           # chave de assinatura JWT (fail-fast em Production se vazio)
+      - Jwt__Audience=revoa
     depends_on:
       mongo: { condition: service_healthy }
       minio: { condition: service_healthy }
@@ -96,7 +98,7 @@ services:
     networks: [internal]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok === 1 ? quit(0) : quit(1)\""]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.hello().isWritablePrimary === true ? quit(0) : quit(1)\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -112,7 +114,7 @@ services:
     command: server /data --console-address ":9001"
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER:-revoa}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-revoa12345}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD obrigatório (defina em .env)}
     volumes:
       - revoa-minio-data:/data
     networks: [internal, traefik_net]

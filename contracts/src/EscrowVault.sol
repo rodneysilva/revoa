@@ -70,6 +70,7 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
     event TradeCancelled(uint256 indexed tradeId);
     event TradeDisputed(uint256 indexed tradeId, address indexed by);
     event ArbitratorResolved(uint256 indexed tradeId, bool releaseToSeller);
+    event TradeExpiredRefund(uint256 indexed tradeId);
 
     constructor(
         address admin,
@@ -109,12 +110,9 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
                 revert EscrowVault__AssetNotInVault();
             }
         } else {
-            // Serviço: voucher já mintado ao comprador (mint-on-purchase). Valida existência.
+            // Serviço: voucher já mintado ao comprador (mint-on-purchase). Valida existência (sem revert).
             if (assetContract != address(serviceVoucher)) revert EscrowVault__BadAsset();
-            // Checagem leve: o voucher existe (não reverte se inexistente).
-            try ServiceVoucher(assetContract).getVoucher(tokenId) {} catch {
-                revert EscrowVault__AssetNotInVault();
-            }
+            if (!ServiceVoucher(assetContract).exists(tokenId)) revert EscrowVault__AssetNotInVault();
         }
 
         tradeId = _nextTradeId++;
@@ -147,6 +145,9 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
     }
 
     /// @notice Liberação cooperativa (vendedor OU comprador) ou automática pós-janela de 72h.
+    /// W11: para SERVIÇO, a auto-liberação (não-parte após 72h) só ocorre se o voucher já foi
+    /// redeemado (serviço confirmado). Serviço não-redeemado e dentro da validade NÃO é liberável
+    /// por terceiros — use `claimExpired` após expirar (30d) p/ reembolso.
     function release(uint256 tradeId) external nonReentrant {
         Trade storage t = trades[tradeId];
         if (t.state != State.Funded) revert EscrowVault__BadState();
@@ -154,6 +155,11 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
         bool isParty = (msg.sender == t.seller || msg.sender == t.buyer);
         bool windowPassed = block.timestamp >= t.fundedAt + DISPUTE_WINDOW;
         if (!isParty && !windowPassed) revert EscrowVault__NotAuthorized();
+
+        // Auto-liberação de serviço exige redeem prévio (serviço prestado/confirmado).
+        if (t.kind == AssetKind.Service && !isParty) {
+            _requireServiceRedeemed(t);
+        }
 
         _settle(t, true);
         t.state = State.Released;
@@ -173,6 +179,7 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
 
     /// @notice Árbitro resolve disputa pós-janela. releaseToSeller=true → libera (pagamento+ativo);
     /// false → reembolsa comprador e devolve/queima o ativo.
+    /// W11: para SERVIÇO com releaseToSeller=true, exige voucher redeemado (serviço confirmado).
     function claimArbitrator(uint256 tradeId, bool releaseToSeller)
         external
         onlyRole(ARBITRATOR_ROLE)
@@ -181,9 +188,26 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
         Trade storage t = trades[tradeId];
         if (t.state != State.Disputed) revert EscrowVault__BadState();
 
+        if (releaseToSeller && t.kind == AssetKind.Service) {
+            _requireServiceRedeemed(t);
+        }
         _settle(t, releaseToSeller);
         t.state = releaseToSeller ? State.Released : State.Refunded;
         emit ArbitratorResolved(tradeId, releaseToSeller);
+    }
+
+    /// @notice Reembolso por expiração (W11): voucher de serviço expirou (30d sem redeem).
+    /// Aceita a partir de `state == Funded`. Reembolsa o comprador (devolve RVM) e queima o voucher
+    /// (invalidado). Callable por qualquer um ("auto-reembolso") — o árbitro também pode acionar.
+    function claimExpired(uint256 tradeId) external nonReentrant {
+        Trade storage t = trades[tradeId];
+        if (t.state != State.Funded) revert EscrowVault__BadState();
+        if (t.kind != AssetKind.Service) revert EscrowVault__NotService();
+        if (!ServiceVoucher(t.assetContract).isExpired(t.tokenId)) revert EscrowVault__NotExpired();
+
+        _refund(t);
+        t.state = State.Refunded;
+        emit TradeExpiredRefund(tradeId);
     }
 
     /// @notice Cancelamento cooperativo (antes da entrega). Estado Created ou Funded.
@@ -193,12 +217,7 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
         if (t.state != State.Created && t.state != State.Funded) revert EscrowVault__BadState();
         if (msg.sender != t.seller && msg.sender != t.buyer) revert EscrowVault__NotAuthorized();
 
-        // Reembolso: se financiado com RVM, devolve ao comprador.
-        if (t.state == State.Funded && t.total > 0) {
-            _safeTransfer(t.buyer, t.total);
-        }
-        // Ativo de volta ao vendedor: produto → devolve NFT; serviço → queima voucher (invalidado).
-        _returnAssetToSeller(t);
+        _refund(t);
         t.state = State.Cancelled;
         emit TradeCancelled(tradeId);
     }
@@ -221,7 +240,7 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
     // ─────────── Internals ───────────
 
     /// @dev Liquidação atômica. doRelease=true → paga vendedor (−2%) + Treasury + ativo ao comprador.
-    /// doRelease=false → reembolsa comprador + devolve/queima ativo ao vendedor.
+    /// doRelease=false → reembolsa comprador + devolve/queima ativo ao vendedor (via _refund).
     function _settle(Trade storage t, bool doRelease) internal {
         if (doRelease) {
             if (t.total > 0) {
@@ -230,23 +249,32 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
                 _safeTransfer(t.seller, sellerGets);
                 _safeTransfer(address(treasury), fee);
             }
-            // Ativo ao comprador: produto → transfere NFT; serviço → queima voucher.
+            // Ativo ao comprador: produto → transfere NFT; serviço → redeem (registra consumo).
             _transferAssetToBuyer(t);
         } else {
-            // Reembolso
-            if (t.total > 0) {
-                _safeTransfer(t.buyer, t.total);
-            }
-            _returnAssetToSeller(t);
+            _refund(t);
         }
+    }
+
+    /// @dev Reembolso comum (W12): devolve o RVM ao comprador (se foi bloqueado) + ativo ao vendedor.
+    /// `fundedAt != 0` indica que houve funding (Created nunca reteve RVM).
+    function _refund(Trade storage t) internal {
+        if (t.fundedAt != 0 && t.total > 0) {
+            _safeTransfer(t.buyer, t.total);
+        }
+        _returnAssetToSeller(t);
     }
 
     function _transferAssetToBuyer(Trade storage t) internal {
         if (t.kind == AssetKind.Product) {
             ProductNFT(t.assetContract).safeTransferFrom(address(this), t.buyer, t.tokenId);
         } else {
-            // Serviço: voucher já está com o comprador → queima (serviço consumido na liberação).
-            ServiceVoucher(t.assetContract).burn(t.tokenId);
+            // W13: Serviço liberação (sucesso) → registra consumo via redeem (idempotente).
+            // Voucher PERMANECE com o comprador como comprovante (não queima).
+            ServiceVoucher svc = ServiceVoucher(t.assetContract);
+            if (!svc.getVoucher(t.tokenId).redeemed) {
+                svc.redeem(t.tokenId);
+            }
         }
     }
 
@@ -255,8 +283,15 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
             // Devolve o NFT ao vendedor (ainda sob custódia do Vault).
             ProductNFT(t.assetContract).safeTransferFrom(address(this), t.seller, t.tokenId);
         } else {
-            // Serviço cancelado: voucher invalidado (queimado).
+            // W13: Serviço cancelado/expirado → voucher invalidado (queimado).
             ServiceVoucher(t.assetContract).burn(t.tokenId);
+        }
+    }
+
+    /// @dev W11: serviço só é liberável (auto/árbitro) se redeemado (serviço confirmado).
+    function _requireServiceRedeemed(Trade storage t) internal view {
+        if (!ServiceVoucher(t.assetContract).getVoucher(t.tokenId).redeemed) {
+            revert EscrowVault__NotRedeemed();
         }
     }
 
@@ -287,4 +322,7 @@ contract EscrowVault is AccessControl, ReentrancyGuard, IERC721Receiver {
     error EscrowVault__AssetNotInVault();
     error EscrowVault__WindowExpired();
     error EscrowVault__TransferFailed();
+    error EscrowVault__NotRedeemed();
+    error EscrowVault__NotService();
+    error EscrowVault__NotExpired();
 }

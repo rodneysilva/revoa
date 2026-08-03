@@ -50,14 +50,16 @@ contract ServiceVoucher is ERC1155, AccessControl {
     }
 
     /// @notice Marca o voucher como usado (confirmação do comprador). Só o dono, não expirado, não usado.
+    /// O BURNER_ROLE (EscrowVault) também pode acionar para registrar consumo na liberação cooperativa.
     function redeem(uint256 tokenId) external {
         Voucher storage v = _vouchers[tokenId];
         if (v.owner == address(0)) revert ServiceVoucher__NotFound(tokenId);
-        if (v.owner != msg.sender) revert ServiceVoucher__NotOwner();
+        bool isBurner = hasRole(BURNER_ROLE, msg.sender);
+        if (!isBurner && v.owner != msg.sender) revert ServiceVoucher__NotOwner();
         if (v.redeemed) revert ServiceVoucher__AlreadyRedeemed();
         if (v.expiry != 0 && block.timestamp > v.expiry) revert ServiceVoucher__Expired();
         v.redeemed = true;
-        emit VoucherRedeemed(tokenId, msg.sender);
+        emit VoucherRedeemed(tokenId, v.owner);
     }
 
     /// @notice Queima o voucher (liberação do escrow / voluntariado prestado).
@@ -76,6 +78,16 @@ contract ServiceVoucher is ERC1155, AccessControl {
         Voucher storage v = _vouchers[tokenId];
         if (v.owner == address(0)) revert ServiceVoucher__NotFound(tokenId);
         return v.expiry != 0 && block.timestamp > v.expiry;
+    }
+
+    /// @dev Existe o voucher (owner != 0)? NÃO reverte (W10). Permite checagem segura no escrow.
+    function exists(uint256 tokenId) external view returns (bool) {
+        return _vouchers[tokenId].owner != address(0);
+    }
+
+    /// @dev Expiração do voucher (0 se inexistente ou sem expiração). NÃO reverte (W11).
+    function expiryOf(uint256 tokenId) external view returns (uint64) {
+        return _vouchers[tokenId].expiry;
     }
 
     function getVoucher(uint256 tokenId) external view returns (Voucher memory) {

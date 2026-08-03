@@ -36,10 +36,12 @@ contract DeployScript is Script {
         // RVM MINTER: CouponRedeemer (resgate de cupom) + EscrowVault (flexibilidade p/ bônus futuro).
         RVM(d.rvm).grantRole(RVM(d.rvm).MINTER_ROLE(), address(d.couponRedeemer));
         RVM(d.rvm).grantRole(RVM(d.rvm).MINTER_ROLE(), address(d.escrowVault));
-        // ServiceVoucher BURNER: EscrowVault queima vouchers na liberação/cancelamento.
+        // ServiceVoucher BURNER: EscrowVault queima/redeem vouchers na liberação/cancelamento.
         ServiceVoucher(d.serviceVoucher).grantRole(
             ServiceVoucher(d.serviceVoucher).BURNER_ROLE(), address(d.escrowVault)
         );
+        // ProductNFT: amarra o EscrowVault (one-shot) para mintToEscrow.
+        ProductNFT(d.productNft).setEscrowVault(address(d.escrowVault));
         // ARBITRATOR (já concedido ao admin no construtor) — conceder a multisig/conta de moderação aqui.
 
         vm.stopBroadcast();

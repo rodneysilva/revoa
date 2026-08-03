@@ -20,10 +20,14 @@ public class VerifyPhoneCommandHandler : IRequestHandler<VerifyPhoneCommand, Res
         var user = await _users.GetByIdAsync(request.UserId, ct);
         if (user is null)
         {
-            return Result.Fail("Usuário não encontrado.");
+            return Result.Fail("Verificação inválida ou expirada.");
         }
 
-        user.MarkPhoneVerified();
+        if (!user.VerifyPhone(request.Code ?? string.Empty))
+        {
+            return Result.Fail("Verificação inválida ou expirada.");
+        }
+
         await _users.UpdateAsync(user, ct);
         return Result.Ok();
     }

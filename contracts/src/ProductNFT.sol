@@ -18,9 +18,14 @@ contract ProductNFT is ERC721URIStorage, AccessControl {
     mapping(uint256 => uint256) public tokenToListing; // tokenId => listingId (rastreabilidade/Indexer)
     mapping(uint256 => uint256) public listingToToken; // listingId => tokenId (1 listing = 1 NFT)
 
+    /// @dev Endereço do EscrowVault (one-shot, imutável após config). Evita mint para outro destino.
+    address public escrowVault;
+    bool private _escrowVaultSet;
+
     event MintedToEscrow(
         address indexed escrow, uint256 indexed listingId, uint256 indexed tokenId, string tokenURI
     );
+    event EscrowVaultSet(address indexed escrow);
 
     constructor(address admin) ERC721("Revoa Product", "RVMP") {
         if (admin == address(0)) revert ProductNFT__ZeroAddress();
@@ -28,8 +33,18 @@ contract ProductNFT is ERC721URIStorage, AccessControl {
         _grantRole(MINTER_ROLE, admin);
     }
 
+    /// @notice Setter one-shot (DEFAULT_ADMIN_ROLE) do endereço do EscrowVault.
+    /// Necessário por chicken-and-egg (EscrowVault precisa do ProductNFT no constructor).
+    function setEscrowVault(address vault) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (vault == address(0)) revert ProductNFT__ZeroAddress();
+        if (_escrowVaultSet) revert ProductNFT__EscrowAlreadySet();
+        escrowVault = vault;
+        _escrowVaultSet = true;
+        emit EscrowVaultSet(vault);
+    }
+
     /// @notice Mint on-chain de um produto DIRETO para o endereço do EscrowVault.
-    /// @param escrow Endereço do EscrowVault (destino; o NFT nasce lá).
+    /// @param escrow DEVE ser o endereço do EscrowVault configurado (one-shot). O NFT nasce lá.
     /// @param listingId Id off-chain do anúncio (anti-dupla-mint via listingToToken).
     /// @param tokenURI_ URI dos metadados (MinIO).
     function mintToEscrow(address escrow, uint256 listingId, string calldata tokenURI_)
@@ -37,7 +52,8 @@ contract ProductNFT is ERC721URIStorage, AccessControl {
         onlyRole(MINTER_ROLE)
         returns (uint256 tokenId)
     {
-        if (escrow == address(0)) revert ProductNFT__ZeroAddress();
+        if (!_escrowVaultSet) revert ProductNFT__EscrowNotSet();
+        if (escrow != escrowVault) revert ProductNFT__BadEscrow();
         if (listingToToken[listingId] != 0) revert ProductNFT__AlreadyMinted(listingId);
 
         tokenId = _nextId++;
@@ -64,4 +80,7 @@ contract ProductNFT is ERC721URIStorage, AccessControl {
 
     error ProductNFT__ZeroAddress();
     error ProductNFT__AlreadyMinted(uint256 listingId);
+    error ProductNFT__EscrowAlreadySet();
+    error ProductNFT__EscrowNotSet();
+    error ProductNFT__BadEscrow();
 }

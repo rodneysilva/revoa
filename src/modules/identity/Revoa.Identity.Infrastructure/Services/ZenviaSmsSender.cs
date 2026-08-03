@@ -19,15 +19,32 @@ public class ZenviaSmsSender : ISmsSender
 
     public async Task SendOtpAsync(string phone, string code, CancellationToken ct)
     {
+        // NUNCA logar o OTP em produção (vazaria o código de verificação). Telefone sempre mascarado.
         if (string.IsNullOrWhiteSpace(_options.ApiToken))
         {
-            // Sem token configurado: registra (stub/mock). Não bloqueia o cadastro.
-            _logger.LogInformation("[Zenvia STUB] OTP {Code} -> {Phone}", code, phone);
+            if (_options.LogOtpInDev)
+            {
+                _logger.LogWarning("[Zenvia STUB/DEV] OTP {Code} -> {Phone} (LogOtpInDev=true; NUNCA usar em produção)", code, MaskPhone(phone));
+            }
+            else
+            {
+                _logger.LogInformation("[Zenvia STUB] OTP enviado para {Phone} (código não logado)", MaskPhone(phone));
+            }
             return;
         }
 
         // Envio real via Zenvia API (placeholder — corpo do request a confirmar na integração).
-        _logger.LogInformation("[Zenvia] enviando OTP para {Phone}", phone);
+        _logger.LogInformation("[Zenvia] enviando OTP para {Phone}", MaskPhone(phone));
         await Task.CompletedTask;
+    }
+
+    private static string MaskPhone(string phone)
+    {
+        if (string.IsNullOrEmpty(phone) || phone.Length < 4)
+        {
+            return "***";
+        }
+
+        return new string('*', phone.Length - 4) + phone[^4..];
     }
 }

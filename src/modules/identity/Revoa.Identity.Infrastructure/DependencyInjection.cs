@@ -43,9 +43,12 @@ public static class DependencyInjection
         services.AddHttpClient<ZenviaSmsSender>();
         services.AddScoped<ISmsSender>(sp => sp.GetRequiredService<ZenviaSmsSender>());
 
-        // CQRS — MediatR (assembly da Application)
+        // CQRS — MediatR (assembly da Application) + pipeline de validação (roda os validators)
         services.AddMediatR(cfg =>
-            cfg.RegisterServicesFromAssembly(typeof(RegisterUserCommandHandler).Assembly));
+        {
+            cfg.RegisterServicesFromAssembly(typeof(RegisterUserCommandHandler).Assembly);
+            cfg.AddOpenBehavior(typeof(Revoa.Identity.Application.Behaviors.ValidationBehavior<,>));
+        });
 
         // Validators (FluentValidation)
         services.AddValidatorsFromAssembly(typeof(RegisterUserCommandValidator).Assembly);

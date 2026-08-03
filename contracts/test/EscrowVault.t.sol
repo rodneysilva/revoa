@@ -32,8 +32,10 @@ contract EscrowVaultTest is Test {
             admin, address(rvm), payable(address(treasury)), address(productNft), address(serviceVoucher)
         );
 
-        // Roles: vault precisa queimar vouchers de serviço na liberação/cancelamento.
+        // Roles: vault precisa queimar/redeem vouchers de serviço na liberação/cancelamento.
         serviceVoucher.grantRole(serviceVoucher.BURNER_ROLE(), address(vault));
+        // W1: amarra o ProductNFT ao vault (one-shot) para mintToEscrow.
+        productNft.setEscrowVault(address(vault));
 
         // Capitaliza o comprador (quem paga RVM).
         rvm.transfer(buyer, 10_000e18);
@@ -171,7 +173,7 @@ contract EscrowVaultTest is Test {
         assertEq(rvm.balanceOf(address(vault)), 0);
     }
 
-    function test_Donation_Service_Voluntariado_ZeroValue_BurnsVoucher() public {
+    function test_Donation_Service_Voluntariado_ZeroValue_RedeemsVoucher() public {
         uint256 vId = serviceVoucher.mintOnPurchase(buyer, 7, uint64(block.timestamp + 30 days));
         vm.prank(seller);
         uint256 tradeId =
@@ -184,13 +186,15 @@ contract EscrowVaultTest is Test {
         vm.prank(buyer); // voluntário (receptor) confirma
         vault.release(tradeId);
 
-        assertEq(serviceVoucher.balanceOf(buyer, vId), 0, "voucher queimado na liberacao");
+        // W13: liberação de serviço registra consumo (redeem); voucher permanece como comprovante.
+        assertTrue(serviceVoucher.getVoucher(vId).redeemed, "voucher marcado como redeemado");
+        assertEq(serviceVoucher.balanceOf(buyer, vId), 1, "voucher permanece (comprovante)");
         assertEq(rvm.balanceOf(address(treasury)) - treasuryBefore, 0, "voluntariado NAO paga taxa");
     }
 
-    // ───────── Serviço: troca completa com voucher burn ─────────
+    // ───────── Serviço: troca completa com voucher redeem (W13) ─────────
 
-    function test_ServiceTrade_FullRelease_BurnsVoucher() public {
+    function test_ServiceTrade_FullRelease_RedeemsVoucher() public {
         uint256 vId = serviceVoucher.mintOnPurchase(buyer, 7, uint64(block.timestamp + 30 days));
         vm.prank(seller);
         uint256 tradeId =
@@ -207,7 +211,9 @@ contract EscrowVaultTest is Test {
 
         assertEq(rvm.balanceOf(seller) - sellerBefore, SELLER_GETS);
         assertEq(rvm.balanceOf(address(treasury)), FEE);
-        assertEq(serviceVoucher.balanceOf(buyer, vId), 0, "voucher queimado");
+        // W13: liberação registra consumo (redeem); voucher permanece como comprovante.
+        assertTrue(serviceVoucher.getVoucher(vId).redeemed, "voucher redeemado");
+        assertEq(serviceVoucher.balanceOf(buyer, vId), 1, "voucher permanece (comprovante)");
     }
 
     function test_ServiceTrade_Cancel_BurnsInvalidVoucher() public {
@@ -228,6 +234,62 @@ contract EscrowVaultTest is Test {
         assertEq(serviceVoucher.balanceOf(buyer, vId), 0, "voucher invalidado/queimado no cancel");
     }
 
+    // ───────── Serviço: W11 (auto-release requer redeem; reembolso por expiração) ─────────
+
+    function test_ServiceTrade_AutoRelease_BlockedWithoutRedeem() public {
+        uint256 vId = serviceVoucher.mintOnPurchase(buyer, 7, uint64(block.timestamp + 30 days));
+        vm.prank(seller);
+        uint256 tradeId =
+            vault.createTrade(buyer, TOTAL, EscrowVault.AssetKind.Service, address(serviceVoucher), vId);
+
+        vm.startPrank(buyer);
+        rvm.approve(address(vault), TOTAL);
+        vault.fundTrade(tradeId);
+        vm.stopPrank();
+
+        // Após 72h, terceiro NÃO pode auto-liberar serviço não-redeemado.
+        vm.warp(block.timestamp + 73 hours);
+        vm.prank(random);
+        vm.expectRevert(EscrowVault.EscrowVault__NotRedeemed.selector);
+        vault.release(tradeId);
+
+        // Mas após redeem (serviço confirmado), terceiro pode liberar.
+        vm.prank(buyer);
+        serviceVoucher.redeem(vId);
+        vm.prank(random);
+        vault.release(tradeId);
+        assertEq(rvm.balanceOf(seller), SELLER_GETS, "auto-release apos redeem paga vendedor");
+    }
+
+    function test_ServiceTrade_ClaimExpired_RefundsBuyer() public {
+        uint256 vId = serviceVoucher.mintOnPurchase(buyer, 7, uint64(block.timestamp + 30 days));
+        vm.prank(seller);
+        uint256 tradeId =
+            vault.createTrade(buyer, TOTAL, EscrowVault.AssetKind.Service, address(serviceVoucher), vId);
+
+        vm.startPrank(buyer);
+        rvm.approve(address(vault), TOTAL);
+        vault.fundTrade(tradeId);
+        vm.stopPrank();
+
+        uint256 buyerBefore = rvm.balanceOf(buyer);
+
+        // Antes de expirar: claimExpired falha.
+        vm.prank(buyer);
+        vm.expectRevert(EscrowVault.EscrowVault__NotExpired.selector);
+        vault.claimExpired(tradeId);
+
+        // Após 30d sem redeem: qualquer um (auto) reembolsa o comprador + queima voucher.
+        vm.warp(block.timestamp + 31 days);
+        vm.prank(random);
+        vault.claimExpired(tradeId);
+
+        assertEq(rvm.balanceOf(buyer) - buyerBefore, TOTAL, "comprador reembolsado na expiracao");
+        assertEq(serviceVoucher.balanceOf(buyer, vId), 0, "voucher queimado (invalidado)");
+        EscrowVault.Trade memory t = vault.getTrade(tradeId);
+        assertEq(uint8(t.state), uint8(EscrowVault.State.Refunded));
+    }
+
     // ───────── Validações / reverts ─────────
 
     function testRevert_FundTrade_NotBuyer() public {
@@ -242,8 +304,10 @@ contract EscrowVaultTest is Test {
     }
 
     function testRevert_CreateTrade_AssetNotInVault() public {
-        // NFT mintado para o vendedor (não para o vault) → criação falha.
-        uint256 tokenId = productNft.mintToEscrow(seller, 1, "uri");
+        // NFT mintado ao vault (W1), depois transferido para fora → criação falha.
+        uint256 tokenId = productNft.mintToEscrow(address(vault), 1, "uri");
+        vm.prank(address(vault));
+        productNft.safeTransferFrom(address(vault), seller, tokenId);
         vm.prank(seller);
         vm.expectRevert(EscrowVault.EscrowVault__AssetNotInVault.selector);
         vault.createTrade(buyer, TOTAL, EscrowVault.AssetKind.Product, address(productNft), tokenId);

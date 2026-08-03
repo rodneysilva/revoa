@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MediatR;
 using Revoa.Abstractions;
 using Revoa.Identity.Application.DTOs;
@@ -8,8 +9,10 @@ using Revoa.IntegrationContracts.Events;
 
 namespace Revoa.Identity.Application.Commands;
 
-public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, RegisterUserResult>
+public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, Result<RegisterUserResult>>
 {
+    private const string NeutralError = "Não foi possível concluir o cadastro. Verifique seus dados.";
+
     private readonly IUserRepository _users;
     private readonly IIntegrationEventBus _eventBus;
     private readonly IEmailSender _emailSender;
@@ -27,27 +30,54 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         _smsSender = smsSender;
     }
 
-    public async Task<RegisterUserResult> Handle(RegisterUserCommand request, CancellationToken ct)
+    public async Task<Result<RegisterUserResult>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
-        var existing = await _users.GetByEmailAsync(request.Email, ct);
-        if (existing is not null)
+        // Anti-sybil + resposta neutra (sem enumeração de contas): e-mail E telefone únicos.
+        if (await _users.GetByEmailAsync(request.Email, ct) is not null
+            || await _users.GetByPhoneAsync(request.Telefone, ct) is not null)
         {
-            throw new InvalidOperationException("E-mail já cadastrado.");
+            return Result<RegisterUserResult>.Fail(NeutralError);
         }
 
         var idadeOk = ComputeAge(request.BirthDate) >= 18;
-        var user = User.Create(request.Nome, request.Email, request.Telefone, idadeOk);
-        await _users.AddAsync(user, ct);
 
-        var emailToken = Guid.NewGuid().ToString("N");
-        await _emailSender.SendVerificationEmailAsync(user.Email, emailToken, ct);
-        await _smsSender.SendOtpAsync(user.Telefone, GenerateOtp(), ct);
+        User user;
+        try
+        {
+            user = User.Create(request.Nome, request.Email, request.Telefone, idadeOk);
+        }
+        catch (DomainException)
+        {
+            return Result<RegisterUserResult>.Fail(NeutralError);
+        }
+
+        var now = DateTime.UtcNow;
+        var emailToken = GenerateToken();
+        var otp = GenerateOtp();
+        user.SetEmailVerification(emailToken, now.AddHours(24));
+        user.SetPhoneVerification(otp, now.AddMinutes(10));
+
+        try
+        {
+            await _users.AddAsync(user, ct);
+        }
+        catch (DuplicateKeyException)
+        {
+            // Race (TOCTOU) entre o check e o insert: o índice único (Email/Telefone) rejeitou.
+            return Result<RegisterUserResult>.Fail(NeutralError);
+        }
+
+        // I/O independente (SMTP + Zenvia): paralelo para reduzir latência do cadastro.
+        await Task.WhenAll(
+            _emailSender.SendVerificationEmailAsync(user.Email, emailToken, ct),
+            _smsSender.SendOtpAsync(user.Telefone, otp, ct));
 
         await _eventBus.PublishAsync(
             new UserRegisteredEvent(user.Id, user.Email, request.CouponCode),
             ct);
 
-        return new RegisterUserResult(user.Id, NeedsEmailVerification: true, NeedsPhoneVerification: true);
+        return Result<RegisterUserResult>.Ok(
+            new RegisterUserResult(user.Id, NeedsEmailVerification: true, NeedsPhoneVerification: true));
     }
 
     private static int ComputeAge(DateOnly birth)
@@ -62,5 +92,17 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         return age;
     }
 
-    private static string GenerateOtp() => Random.Shared.Next(100000, 999999).ToString();
+    // Token de e-mail: 32 bytes aleatórios (RNG criptográfico), hex.
+    private static string GenerateToken()
+    {
+        Span<byte> bytes = stackalloc byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToHexString(bytes);
+    }
+
+    // OTP de 6 dígitos (RNG criptográfico).
+    private static string GenerateOtp()
+    {
+        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+    }
 }
