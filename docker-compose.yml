@@ -96,7 +96,7 @@ services:
     networks: [internal]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'try{rs.status().ok}catch(e){exit 1}'"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok === 1 ? quit(0) : quit(1)\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -149,7 +149,7 @@ services:
     networks: [internal]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 25 || exit 1"]
+      test: ["CMD-SHELL", "postfix status >/dev/null 2>&1 || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
