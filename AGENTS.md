@@ -141,8 +141,9 @@ docker compose --profile chain up -d
 | [TOKENOMICS.md](docs/TOKENOMICS.md) | RVM, emissão, demurrage, IPCA, taxa, comparativo |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Monólito modular, MongoDB, AA, Indexer, contratos |
 | [BUSINESS_RULES.md](docs/BUSINESS_RULES.md) | 3 fluxos, escrow, **doação/voluntariado (multi-eixo)**, comunidades, geolocalização, reputação |
-| [USER_FLOWS.md](docs/USER_FLOWS.md) | Jornadas + estados + Gherkin (registro, anúncios, carteira, doação, troca, comunidade) |
-| [OOUX.md](docs/OOUX.md) | Mapa de objetos ORCA (objects-first) |
+| [USER_FLOWS.md](docs/USER_FLOWS.md) | **32 fluxos (UF-01..UF-32)**: jornadas + estados + Gherkin (cadastro sem/com cupom, 5 tipos de anúncio, troca, doação, voluntariado, comunidade, admin) |
+| [OOUX.md](docs/OOUX.md) | Mapa ORCA **completo: 26 objetos + 32 fluxos mapeados** → aggregates DDD |
+| [ROADMAP.md](docs/ROADMAP.md) | **5 fases detalhadas (0–4)**: entregáveis, fluxos, DoD, dependências, riscos |
 | [MARKET_RESEARCH.md](docs/MARKET_RESEARCH.md) | TAM/SAM/SOM + competidores + cap DeFi/Web3 + Lei 14.478 |
 | [VISUAL_IDENTITY.md](docs/VISUAL_IDENTITY.md) | Marca, wordmark "revoa.me", monograma "RV", "RM$" |
 | [PRICING.md](docs/PRICING.md) | *(Fase 3)* Intelligence de preços, transparência |

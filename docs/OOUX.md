@@ -1,254 +1,323 @@
-# OOUX.md — Mapa de Objetos ORCA do revoa.me
+# OOUX.md — Mapa Completo de Objetos ORCA (revoa.me)
 
-> **Design objects-first.** Os usuários pensam em **objetos** (pessoas, coisas, lugares, conceitos),
-> não em telas/fluxos. Este mapa modela os objetos da mente do usuário ANTES de qualquer UI.
-> Cada objeto → um **aggregate DDD** (alinhamento arquitetural). Metodologia: skill `ooux` (`.kilo/skills/ooux/SKILL.md`).
+> **Design objects-first (ORCA).** Os usuários pensam em **objetos**, não em telas/fluxos. Este mapa
+> modela os objetos da mente do usuário ANTES da UI. Cada objeto → um **aggregate DDD**. Metodologia:
+> skill `ooux` (`.kilo/skills/ooux/SKILL.md`) — processo **ORCA** (Objects→Relationships→CTAs→Attributes/Views/States).
+> **Anti-padrões:** actions-first, page-first, objeto fantasma (sem CTA), atributo-objeto confusão.
 >
-> Referências: Plano §9a · `BUSINESS.md` · `BUSINESS_RULES.md` · `ARCHITECTURE.md`.
+> **Mapeamento completo** (v3.2): 32 fluxos → 26 objetos. Referências: `BUSINESS.md` · `BUSINESS_RULES.md` · `USER_FLOWS.md`.
 
 ---
 
-## Visão Geral — 19 Objetos
+## Parte 1 — Mapeamento Fluxo → Objetos (ORCA passo 1)
 
-> **Ajuda mútua (doação/voluntariado) é primeira classe.** Objetos novos nesta rodada:
-> **Doação/Ajuda** (interação de ajuda, modo doar/voluntariar), **Pedido de Ajuda (Ask)** (manifestação
-> de interesse do receptor) e **Pontos de Ajuda** (contador não-RVM de boas ações).
+> Cada fluxo (UF-NN) é decomposto nos objetos que o usuário manipula. Isso garante que **nenhum objeto
+> fique de fora** e que cada fluxo tenha dono(s) de aggregate claro(s).
 
-```
-                              ┌──────────┐
-                              │ Usuário  │──────────┐
-                              └────┬─────┘          │
-                  ┌────────────────┼───────────┐    │ owns
-            owns  │                │ member of │    ▼
-                  ▼                ▼           │ ┌──────────┐
-              ┌────────┐      ┌────────┐       │ │ Carteira │── RVM
-              │Carteira│      │Comunid.│──────┘ └────┬─────┘
-              └───┬────┘      └───┬────┘              │ P2P
-                  │               │ posts             ▼
-           offers│          ┌─────▼─────┐       ┌──────────┐
-                  ▼          │   Post    │       │Transfere.│
-              ┌────────┐     │(recursivo)│       └──────────┘
-              │Anúncio │─────┴───────────┘
-              │(kind)  │ tokeniza
-              └───┬────┘
-        ┌─────────┼──────────┐
-        ▼         ▼          ▼
-   ┌─────────┐┌────────┐┌────────┐
-   │ProductNF││Service ││ Troca  │── disputa ──► Disputa
-   │T        ││Voucher ││(escrow)│
-   └─────────┘└────────┘└───┬────┘
-                            │ finaliza
-                            ▼
-                       ┌─────────┐  resgata   ┌────────────┐
-                       │Avaliação│            │Cupom/Convite│── mint RVM
-                       └─────────┘            └────────────┘
-  Categoria ─(organiza)─► Anúncio     Notificação ─(avisa)─► Usuário
-  Ref. Preço ─(orienta)─► Anúncio     Chat(Membership) ─(dentro de)─► Comunidade
-```
+### A. Acesso & Cadastro
+| Fluxo | Objetos envolvidos |
+|-------|--------------------|
+| **UF-01** Navegação anônima | Anúncio, Comunidade, Post, Usuário(perfil), ReferênciaPreço (só leitura) |
+| **UF-02** Cadastro sem cupom | Usuário, Verificação(e-mail), Verificação(WhatsApp), Credencial/Passkey, Carteira, Comunidade(default) |
+| **UF-03** Cadastro com cupom | + Cupom, CouponRedeemer(on-chain) |
+| **UF-04** Login | Credencial/Passkey (ou login social Google/Apple), Usuário |
+| **UF-05** Recuperação de conta | RecuperaçãoConta (admin+timelock), Usuário |
+| **UF-06** Onboarding | Usuário, Comunidade(default), Anúncio(CTA criar) |
 
-### Matriz de Relacionamentos (cardinalidade)
-| De | Para | Cardinalidade | Via |
-|----|------|---------------|-----|
-| Usuário | Carteira | 1:1 | (criação onboarding) |
-| Usuário | Anúncio | 1:N | seller (embed name) |
-| Usuário | Comunidade | N:M | Membership |
-| Usuário | Troca | 1:N | buyer/seller |
-| Usuário | Avaliação | 1:N | reviewer/reviewed |
-| Anúncio | ProductNFT | 1:1 (product) | tokeniza ao listar |
-| Anúncio | ServiceVoucher | 1:N (service) | tokeniza ao comprar |
-| Anúncio | Categoria | N:1 | category |
-| Anúncio | Comunidade | N:1 (opt) | visibility |
-| Anúncio | Ref. Preço | N:1 | comparativo |
-| Anúncio | Troca | 1:N | origem |
-| Troca | Disputa | 1:1 (opt) | só se disputada |
-| Troca | Avaliação | 1:N (≤2) | ao finalizar |
-| Comunidade | Post | 1:N | feed |
-| Comunidade | Chat(Membership) | 1:1 | chat geral |
-| Post | Post (Reply) | 1:N | materialized path depth 6 |
-| Cupom/Convite | Usuário | 1:N | usado no cadastro (maxUses) |
-| Transferência | Carteira | 2:1 | from→to (P2P) |
-| Doação/Ajuda | Anúncio | 1:N | anúncio modo doar/voluntariar (valor 0) |
-| Pedido de Ajuda | Doação/Ajuda | N:1 | receptor manifesta interesse (fila) |
-| Usuário | Pedido de Ajuda | 1:N | solicita doação/voluntariado (ação — exige login+verificação) |
-| Usuário | Doação/Ajuda | 2:1 | doador + receptor |
-| Anônimo | Anúncio/Comunidade | N:M | **só visualiza** (sem ofertar/pedir — gate de ação) |
-| Pontos de Ajuda | Usuário | 1:1 | acumula por doação/voluntariado |
+### B. Anúncios (criar — 5 combinações kind×modo)
+| Fluxo | kind | modo | Objetos |
+|-------|------|------|---------|
+| **UF-07** | product | trocar | Anúncio, ProductDetails, ProductNFT(mint-to-escrow), Categoria, Localização, ReferênciaPreço |
+| **UF-08** | product | repassar | Anúncio, ProductDetails, ProductNFT, Categoria, Localização, ReferênciaPreço |
+| **UF-09** | product | doar | Anúncio, ProductDetails, ProductNFT, Doação/Ajuda, Categoria, Localização |
+| **UF-10** | service | trocar | Anúncio, ServiceDetails, Categoria, Localização, ReferênciaPreço (sem NFT até venda) |
+| **UF-11** | service | voluntariar | Anúncio, ServiceDetails, Doação/Ajuda, Categoria, Localização |
+
+### C. Transações & Ajuda
+| Fluxo | Objetos |
+|-------|---------|
+| **UF-12** Comprar produto | Troca, EscrowVault, Carteira(buyer), ProductNFT, Avaliação |
+| **UF-13** Contratar serviço | Troca, ServiceVoucher(mint-on-purchase), Carteira, Avaliação |
+| **UC-14** Doar produto | Doação/Ajuda, PedidoDeAjuda, ProductNFT, Recompensa, PontosDeAjuda, Avaliação |
+| **UF-15** Voluntariar serviço | Doação/Ajuda, PedidoDeAjuda, ServiceVoucher(voluntariado), Recompensa, PontosDeAjuda |
+| **UF-16** Transferir RVM P2P | Transferência, Carteira(from/to) |
+| **UF-17** Resgatar cupom on-chain | Cupom, CouponRedeemer, Carteira |
+
+### D. Comunidade
+| Fluxo | Objetos |
+|-------|---------|
+| **UF-18** Criar comunidade | Comunidade, Membership(criador) |
+| **UF-19** Entrar/sair comunidade | Membership, Comunidade |
+| **UF-20** Postar/responder (recursivo depth 6) | Post, Reply(=Post aninhado), Comunidade |
+| **UF-21** Chat da comunidade (tempo real) | Chat(Membership), Comunidade |
+| **UF-22** Denunciar conteúdo | Denúncia, (Anúncio/Post/Usuário) |
+
+### E. Confiança & Governança
+| Fluxo | Objetos |
+|-------|---------|
+| **UF-23** Avaliar | Avaliação, Usuário(reputação), PontosDeAjuda |
+| **UF-24** Disputar escrow | Disputa, Troca, Árbitro(ARBITRATOR) |
+| **UF-25** Moderar | Denúncia, Anúncio/Post/Usuário, Usuário(ban) |
+
+### F. Carteira, Economia & Pricing
+| Fluxo | Objetos |
+|-------|---------|
+| **UF-26** Ver carteira | Carteira, Transferência, DemurrageEntry, Recompensa |
+| **UF-27** Demurrage (preview/run admin) | DemurrageEntry, ParâmetroSistema, Carteira |
+| **UF-28** Ver comparativo de preço | ReferênciaPreço, Anúncio |
+
+### G. Admin & Plataforma
+| Fluxo | Objetos |
+|-------|---------|
+| **UF-29** Gerenciar cupons | Cupom, CouponRedeemer(on-chain) |
+| **UF-30** Gerenciar parâmetros | ParâmetroSistema (bônus doação, demurrage, taxa, faucet) |
+| **UF-31** Dashboard / transparência | Estatísticas (read model), revoa.org |
+| **UF-32** Receber notificação | Notificação (in-app SignalR / Web Push) |
+
+> **Ver USER_FLOWS.md** para as jornadas + máquina de estados + Gherkin de cada fluxo.
 
 ---
 
-## Objetos (detalhe ORCA)
+## Parte 2 — Catálogo de Objetos (ORCA completo)
 
 ### 1. Usuário
-- **Core:** id, nome/apelido, email (verificado), telefone (verificado OTP WhatsApp+SMS), localização (lat/lng, bairro, cidade, CEP→ViaCEP), role (`user`/`mod`/`admin`), idade≥18 (declaração/DOB).
-- **Metadata:** avatar (auto-gerado: inicial+cor/DiceBear se vazio), bio, CPF (OPCIONAL), login social (Google/Apple id, se usado), reputação (média/badges + selos de ajuda), pontos de ajuda, data cadastro, status (`active`/`banned`).
-- **CTAs:** cadastrar (cupom opcional + confirmação e-mail/telefone), login social (Google/Apple), editar perfil, criar passkey, listar, comprar, transferir, avaliar, denunciar, doar/voluntariar, entrar/sair comunidade.
-- **States:** `active` | `banned(temp/perm)` | `inactive`.
-- **Views:** perfil público, perfil próprio, card no feed/chat, admin.
-- **Aggregate DDD:** `Identity.User`.
+- **Core:** id, nome/apelido, e-mail (verificado), telefone (verificado OTP WhatsApp+SMS), localização (CEP→ViaCEP, lat/lng, bairro, cidade), role (`user`/`mod`/`admin`), idade≥18.
+- **Metadata:** avatar (auto: inicial+cor/DiceBear), bio, CPF (opcional), login social (Google/Apple), reputação (média+badges), data cadastro, status.
+- **CTAs:** cadastrar (cupom opcional), login (passkey/social), editar perfil, listar, comprar, transferir, doar/voluntariar, avaliar, denunciar, entrar/sair comunidade.
+- **Relacionamentos:** → Carteira(1:1), Anúncio(1:N), Comunidade(N:M via Membership), Troca(1:N), Avaliação(1:N), PedidoDeAjuda(1:N).
+- **Views:** perfil público/próprio, card, admin.
+- **States:** `active | banned(temp/perm) | inactive`.
+- **Aggregate:** `Identity.User`. **Ranking:** 1.
 
-### 2. Carteira
-- **Core:** endereço (Safe), saldoRvm (on-chain, via Indexer), saldoBloqueado (escrow).
-- **Metadata:** createdAt, tipo (user/treasury).
+### 2. Verificação (OTP e-mail / WhatsApp)
+- **Core:** alvo (e-mail ou telefone), código OTP, canal (link/WhatsApp/SMS), expiry, tentativas.
+- **CTAs:** enviar código, reenviar, validar (digitar código).
+- **States:** `pendente → validado | expirado`.
+- **Views:** modal/passo de cadastro, reenvio.
+- **Aggregate:** `Identity.Verification` (efêmero; ttl curto). **Ranking:** 2.
+
+### 3. Credencial / Passkey (WebAuthn)
+- **Core:** id, usuário, publicKey (P-256), dispositivo/label, createdAt.
+- **CTAs:** criar (cadastro), ver dispositivos, revogar, adicionar nova.
+- **States:** `ativa | revogada`.
+- **Views:** segurança do perfil, gerenciar dispositivos.
+- **Aggregate:** `Identity.Credential`. **Ranking:** 2.
+
+### 4. Carteira
+- **Core:** endereço (Safe), saldoRvm disponível, saldoBloqueado (escrow).
 - **CTAs:** ver saldo, receber (faucet/cupom/venda/P2P), transferir (P2P), bloquear (escrow).
-- **States:** implícitos pelo saldo (disponível/bloqueado).
-- **Views:** header (saldo RM$), página carteira, detalhe transação.
-- **Aggregate DDD:** `Account.Wallet` (read model do Indexer).
-- **OOUX→UX:** "carteira invisível" — o usuário vê saldo, não chaves/seed.
+- **Relacionamentos:** → Usuário(1:1), Transferência(1:N), Troca(1:N).
+- **Views:** header (RM$), página carteira, detalhe transação.
+- **States:** implícitos (disponível/bloqueado).
+- **Aggregate:** `Account.Wallet` (read model do Indexer). **Ranking:** 1.
 
-### 3. Anúncio (kind)
-- **Core:** id, kind (`product`/`service`), modo (`trocar`/`repassar`/`doar`/`voluntariar`), título, descrição, imagens, preçoRvm, vendedor (embed nome/avatar), localização, categoria, visibilidade.
+### 5. Recuperação de Conta
+- **Core:** usuário, motivo, árbitro, timelock (início/expira), decisão.
+- **CTAs:** solicitar, aprovar (admin, após timelock), executar (transferir custódia).
+- **States:** `solicitada → em_timelock → aprovada → executada | negada`.
+- **Views:** admin (árbitro), solicitação do usuário.
+- **Aggregate:** `Identity.AccountRecovery`. **Ranking:** 3 (privado: admin+timelock; público: guardians).
+
+### 6. Cupom / Convite (on-chain)
+- **Core:** code(hash), amount, maxUses, expiry, usedBy[].
+- **CTAs:** criar (admin), resgatar (mint RVM extra), revogar.
+- **Relacionamentos:** → Carteira(mint), Usuário(usado no cadastro).
+- **States:** `active → exhausted | expired | revoked`.
+- **Views:** admin (CRUD), onboarding (campo opcional).
+- **Aggregate:** `Token.Coupon` (contrato `CouponRedeemer`). **Ranking:** 2.
+
+### 7. Anúncio (kind)
+- **Core:** id, kind(`product`/`service`), modo(`trocar`/`repassar`/`doar`/`voluntariar`), título, descrição, imagens(MinIO), preçoRvm, vendedor(embed), localização, categoria, visibilidade.
 - **Details (VO por kind):** `ProductDetails`(condition, stock, nftTokenId) · `ServiceDetails`(unitType, duration, voucherExpiry).
 - **Comparativo:** refBRL, medianaRvm, sugestão.
-- **CTAs:** publicar, editar, excluir, comprar/contratar, denunciar, favoritar, compartilhar.
-- **States:** `draft → active → in_progress → sold|cancelled` (produtos); serviços similares.
-- **Views:** card no feed (por raio/kind/categoria/comunidade), detalhe, gerenciar.
-- **Aggregate DDD:** `Catalog.Listing`.
-- **OOUX→UX:** "uma coisa que você oferece" — formulário dinâmico por kind.
+- **CTAs:** publicar, editar, excluir, comprar/contratar, doar/pedir, denunciar, favoritar, compartilhar.
+- **Relacionamentos:** → Usuário(vendedor), Categoria, Comunidade(opt), ProductNFT/ServiceVoucher, Troca/Doação, ReferênciaPreço.
+- **Views:** card no feed (raio/kind/categoria/comunidade), detalhe, gerenciar.
+- **States:** `rascunho → ativo → em_andamento → concluído | cancelado`.
+- **Aggregate:** `Catalog.Listing`. **Ranking:** 1.
 
-### 4. ProductNFT (token)
-- **Core:** tokenId, contrato, anúncioId, owner (Vault durante anúncio; comprador após release), metadataURI (MinIO).
-- **Metadata:** atributos (condition, imagens).
-- **CTAs:** mint-to-escrow (ao listar), transfer (na liberação do swap).
-- **States:** `inVault → owned` (após atomic swap).
-- **Views:** badge no anúncio, histórico on-chain.
-- **Aggregate DDD:** `Exchange` (custódia on-chain; Indexer projeta).
+### 8. Categoria
+- **Core:** id, nome, slug, descrição.
+- **CTAs:** criar/editar/excluir (admin), filtrar feed.
+- **States:** `active | inactive` (soft-delete).
+- **Views:** filtros do feed, admin.
+- **Aggregate:** `Catalog.Category`. **Ranking:** 2.
 
-### 5. ServiceVoucher (token)
-- **Core:** tokenId(1155), anúncioId, owner (comprador), expiry (30d).
-- **Metadata:** unitType, duração.
-- **CTAs:** mint-on-purchase, redeem (usar), confirm, burn (na liberação), claim (árbitro se expirar).
-- **States:** `issued → redeemed → burned` | `expired`.
-- **Views:** carteira do comprador (meus vouchers), detalhe.
-- **Aggregate DDD:** `Exchange` (custódia on-chain).
+### 9. ProductNFT (token ERC-721)
+- **Core:** tokenId, contrato, anúncioId, owner (Vault→buyer), metadataURI (MinIO).
+- **CTAs:** mint-to-escrow (ao listar), transfer (na liberação/cancelamento).
+- **States:** `inVault → owned | devolvido`.
+- **Aggregate:** `Exchange` (custódia on-chain; Indexer projeta). **Ranking:** 2.
 
-### 6. Troca (escrow)
-- **Core:** id, anúncio, buyer, seller, valorRvm, taxa(2%), voucher/nft, createdAt.
-- **States:** `offered → funded → delivered → [72h] → released|disputed` (produto); serviço análogo + `redeemed`; `cancelled → refunded`.
+### 10. ServiceVoucher (token ERC-1155)
+- **Core:** tokenId, anúncioId, owner, expiry(30d), tipo(`compra`/`voluntariado`).
+- **CTAs:** mint-on-purchase/voluntariar, redeem, confirm, burn, claim(árbitro se expirar).
+- **States:** `emitido → resgatado → queimado | expirado`.
+- **Aggregate:** `Exchange`. **Ranking:** 2.
+
+### 11. Troca (escrow)
+- **Core:** id, anúncio, buyer, seller, valorRvm, taxa(2%→Fundo), nft/voucher, createdAt.
 - **CTAs:** ofertar, pagar(fund), marcar entregue, confirmar, disputar, liberar, cancelar.
+- **States:** `ofertada → financiada → entregue → [72h] → liberada|disputada`; `cancelada → reembolsada`.
 - **Views:** tracker de troca, histórico, admin (árbitro).
-- **Aggregate DDD:** `Exchange.Trade` (transação ACID no finish).
+- **Aggregate:** `Exchange.Trade` (ACID no finish). **Ranking:** 1.
 
-### 7. Transferência (P2P)
+### 12. Doação / Ajuda
+- **Core:** anúncio(modo doar/voluntariar), doador, receptor(escolhido), voucher/NFT, recompensas aplicadas, createdAt.
+- **CTAs:** anunciar(0 RVM), pedir(fila), escolher receptor(curadoria), aceitar, entregar, confirmar, cancelar.
+- **Relacionamentos:** → Anúncio, Usuário(doador+receptor), PedidoDeAjuda, Recompensa, PontosDeAjuda.
+- **States:** `anunciada → pedida → combinada → entregue → confirmada → recompensada | cancelada`.
+- **Views:** feed (badge Doar/Voluntariar), detalhe, "minhas doações", perfil (selos).
+- **Aggregate:** `Exchange.Donation` (discriminado por modo; reusa escrow/voucher valor 0). **Ranking:** 1.
+
+### 13. Pedido de Ajuda (Ask)
+- **Core:** autor (verificado), anúncio-alvo (ou pedido livre), mensagem, createdAt.
+- **CTAs:** pedir, editar, retirar, ser escolhido, agradecer.
+- **States:** `open → selected | withdrawn | closed`.
+- **Views:** fila de pedidos, "pedidos abertos" da comunidade.
+- **Aggregate:** `Catalog.HelpRequest`. **Ranking:** 2.
+
+### 14. Transferência (P2P)
 - **Core:** id, from(Safe), to(Safe), valorRvm, txHash, createdAt.
 - **CTAs:** enviar, receber.
-- **States:** `pending → confirmed`.
+- **States:** `pendente → confirmada`.
 - **Views:** carteira (histórico), notificação.
-- **Aggregate DDD:** `Account.Transfer` (UserOp on-chain).
+- **Aggregate:** `Account.Transfer` (UserOp on-chain). **Ranking:** 2.
 
-### 8. Avaliação
-- **Core:** id, trade, reviewer, reviewed, nota(1–5), comentário.
+### 15. Avaliação
+- **Core:** id, trade/doação, reviewer, reviewed, nota(1–5), comentário.
 - **CTAs:** criar (ao finalizar), remover (mod).
-- **States:** `created → (removida?)`.
-- **Views:** perfil (reputação), detalhe da troca.
-- **Aggregate DDD:** `Reputation.Review`.
+- **States:** `criada → (removida?)`.
+- **Views:** perfil (reputação), detalhe da troca/doação.
+- **Aggregate:** `Reputation.Review`. **Ranking:** 3.
 
-### 9. Cupom / Convite (on-chain)
-- **Core:** code(hash), amount, maxUses, expiry, usedBy[].
-- **CTAs:** criar (admin), resgatar (mint RVM), revogar.
-- **States:** `active → exhausted | expired | revoked`.
-- **Views:** admin (CRUD cupons), onboarding (campo cupom).
-- **Aggregate DDD:** `Token.Coupon` (contrato `CouponRedeemer`).
+### 16. Pontos de Ajuda
+- **Core:** usuário, saldo, histórico (por doação/voluntariado), selos desbloqueados.
+- **CTAs:** acumular, ver ranking, ver selos.
+- **States:** implícitos (saldo + marcos).
+- **Views:** perfil (selos + pontos), ranking comunitário.
+- **Aggregate:** `Reputation.HelpPoints` (não-RVM). **Ranking:** 3.
 
-### 10. Categoria
-- **Core:** id, nome, slug, descrição.
-- **States:** `active | inactive` (soft-delete).
-- **CTAs:** criar/editar/excluir (admin), filtrar feed.
-- **Views:** filtros do feed, admin.
-- **Aggregate DDD:** `Catalog.Category`.
-
-### 11. Referência de Preço
-- **Core:** categoria, refBRL (ML+seed+comunidade), medianaRvm, sugestão, origem, dataRefresh.
-- **Metadata:** fonte detalhada (ML/seed/comunidade/IPCA).
-- **CTAs:** recalcular (job semanal/trimestral), ver histórico (transparência).
-- **States:** implícitos (snapshot por data).
-- **Views:** comparativo no anúncio, página de transparência.
-- **Aggregate DDD:** `PricingIntelligence.PriceReference`.
-
-### 12. Notificação
-- **Core:** id, usuário, tipo (escrow/oferta/transferência/post/chat/preço), payload, lida.
-- **CTAs:** marcar lida, dismiss, abrir (deep link).
-- **States:** `unread → read`.
-- **Views:** badge header, lista, push (PWA), in-app (SignalR).
-- **Aggregate DDD:** `Notifications.Notification`.
-
-### 13. Comunidade
-- **Core:** id, nome, tipo (default/user), eixo (geo/interesse/causa), localização, visibilidade (open/private), criador.
-- **Metadata:** descrição, regras, contagem membros.
-- **CTAs:** criar, editar/excluir (criador/admin), entrar/sair, nomear moderador, postar, anunciar.
+### 17. Comunidade
+- **Core:** id, nome, tipo(default/user), eixo(geo/interesse/causa), localização, visibilidade(open/private), criador.
+- **CTAs:** criar, editar/excluir (criador/admin), nomear moderador, entrar/sair.
+- **Relacionamentos:** → Usuário(N:M via Membership), Post(1:N), Chat(1:1), Anúncio(N visibilidade).
 - **States:** `active | archived`.
 - **Views:** feed da comunidade, lista, card, admin.
-- **Aggregate DDD:** `Community.Community`.
+- **Aggregate:** `Community.Community`. **Ranking:** 2.
 
-### 14. Post (recursivo)
-- **Core:** id, comunidade, autor (embed), conteúdo, path (materialized), depth (≤6), parent.
-- **Metadata:** anexos, reações, createdAt, hidden.
-- **CTAs:** postar, responder (até depth 6), editar, excluir, denunciar, ocultar (mod).
-- **States:** `visible → hidden` (cascata a descendentes).
+### 18. Membership
+- **Core:** usuário, comunidade, papel(`membro`/`moderador`/`criador`), joinedAt.
+- **CTAs:** entrar, sair, promover (criador), ser moderador.
+- **States:** `ativa | bloqueada`.
+- **Views:** membros da comunidade, perfil.
+- **Aggregate:** `Community.Membership`. **Ranking:** 2.
+
+### 19. Post (recursivo) / Reply
+- **Core:** id, comunidade, autor(embed), conteúdo, path(materialized), depth(≤6), parent.
+- **CTAs:** postar, responder (até depth 6), editar, excluir, denunciar, ocultar (mod, cascata).
+- **States:** `visível → oculto` (cascata a descendentes).
 - **Views:** feed da comunidade, thread, moderação.
-- **Aggregate DDD:** `Community.Post`.
+- **Aggregate:** `Community.Post`. **Ranking:** 2.
 
-### 15. Reply (= Post aninhado)
-> Mesmo aggregate que Post. Diferenciação OOUX apenas para UX (indentação, profundidade).
-> **Limite depth 6** — além disso, "criar nova conversa" é sugerido.
-
-### 16. Chat (Membership)
+### 20. Chat (Membership)
 - **Core:** comunidade, mensagens[], autor, conteúdo, createdAt.
 - **CTAs:** enviar, reagir, denunciar, ocultar (mod).
 - **States:** mensagem viva → **expira em 90 dias**.
-- **Views:** painel de chat da comunidade (SignalR, tempo real).
-- **Aggregate DDD:** `Community.Chat` (retenção 90d, moderado como posts).
+- **Views:** painel de chat (SignalR, tempo real).
+- **Aggregate:** `Community.Chat`. **Ranking:** 2.
 
-### 17. Disputa
+### 21. Notificação
+- **Core:** id, usuário, tipo (escrow/oferta/transferência/post/chat/preço/doação), payload, lida.
+- **CTAs:** marcar lida, dismiss, abrir (deep link).
+- **States:** `unread → read`.
+- **Views:** badge header, lista, push (PWA), in-app (SignalR).
+- **Aggregate:** `Notifications.Notification`. **Ranking:** 3.
+
+### 22. Denúncia
+- **Core:** denunciante, alvo (anúncio/post/usuário/chat), motivo, descrição, status.
+- **CTAs:** denunciar, resolver (mod/admin), auto-ocultar (3+ denúncias).
+- **States:** `open → resolved`.
+- **Views:** fila de moderação, detalhe.
+- **Aggregate:** `Moderation.Report`. **Ranking:** 3.
+
+### 23. Disputa
 - **Core:** troca, motivo, evidências, árbitro, decisão, timestamps.
-- **CTAs:** abrir (janela 72h), analisar (árbitro), decidir (libera/reembolsa).
+- **CTAs:** abrir (janela 72h), analisar, decidir (libera/reembolsa).
 - **States:** `open → resolved`.
 - **Views:** painel do árbitro, histórico da troca.
-- **Aggregate DDD:** `Moderation.Dispute`.
+- **Aggregate:** `Moderation.Dispute`. **Ranking:** 3.
 
-### 18. Doação / Ajuda (produto de primeira classe)
-> Especialização da interação quando `modo ∈ {doar, voluntariar}`. **Reusa o EscrowVault/voucher com
-> valor 0** (sem RVM do receptor). O doador/voluntário recebe **recompensa multi-eixo** (reputação +
-> bônus RVM admin-configurável + pontos de ajuda). NÃO confundir com Troca (que movimenta RVM).
+### 24. Referência de Preço
+- **Core:** categoria, refBRL (ML+seed+comunidade), medianaRvm, sugestão, origem, dataRefresh.
+- **CTAs:** recalcular (job semanal/trimestral), ver histórico (transparência).
+- **States:** implícitos (snapshot por data).
+- **Views:** comparativo no anúncio, página de transparência.
+- **Aggregate:** `PricingIntelligence.PriceReference`. **Ranking:** 3.
 
-- **Core:** anúncio (modo doar/voluntariar), doador, receptor (escolhido), voucher/NFT, recompensas aplicadas, createdAt.
-- **CTAs:** anunciar (doar/voluntariar, 0 RVM), pedir (receptor manifesta), **escolher receptor** (doador curador), aceitar, entregar, confirmar, cancelar.
-- **States:** `announced → requested → matched(escolhido) → delivered → confirmed → rewarded` | `cancelled`.
-- **Views:** feed (badge Doar/Voluntariar), detalhe, "minhas doações", perfil (selos).
-- **Aggregate DDD:** `Exchange.Donation` (compartilha agregado com Trade, discriminado por modo).
+### 25. Parâmetro de Sistema (admin-configurável)
+- **Core:** chave, valor (faucet R$20, taxa 2%, demurrage 0,5%/piso R$100, `DonationReward:BonusRvm` por kind/modo, validez voucher 30d, janela disputa 72h, retenção chat 90d).
+- **CTAs:** editar (admin), versionar (auditoria), ver histórico.
+- **States:** implícitos (snapshot versionado; IPCA reajusta trimestralmente).
+- **Views:** painel admin (parâmetros).
+- **Aggregate:** `Token.SystemParameter` (ou `Abstractions.Settings`). **Ranking:** 2.
 
-### 19. Pedido de Ajuda (Ask)
-> O "pedir" (Buy Nothing) é tão importante quanto "oferecer". Todo receptor manifesta interesse numa
-> Doação/Ajuda ou cria um **Pedido** aberto ("preciso de X" / "preciso de ajuda com Y").
-> **Exige login + verificação (e-mail + WhatsApp)** — anônimo só vê, não pede.
-
-- **Core:** autor (usuário verificado), anúncio-alvo (ou pedido livre), mensagem, createdAt.
-- **CTAs:** pedir, editar, retirar pedido, ser escolhido, agradecer (gratidão).
-- **States:** `open → selected | withdrawn | closed`.
-- **Views:** fila de pedidos (no anúncio de doação), "pedidos abertos" da comunidade.
-- **Aggregate DDD:** `Catalog.HelpRequest` (ou `Community.Request`).
-
-### 20. Pontos de Ajuda
-- **Core:** usuário, saldo de pontos, histórico (por doação/voluntariado), ranking comunitário.
-- **Metadata:** selos desbloqueados (🎁 doador, 🤝 voluntário, por marcos).
-- **CTAs:** acumular (ao recompensar doação), ver ranking, ver selos.
-- **States:** implícitos (saldo crescente + marcos).
-- **Views:** perfil (selos + pontos), ranking da comunidade.
-- **Aggregate DDD:** `Reputation.HelpPoints` (não-RVM, não conversível).
+### 26. Demurrage (Aplicação / Ledger)
+- **Core:** período, taxa aplicada, base (IPCA-reajustada), entradas por usuário, total queimado.
+- **CTAs:** preview (admin), run (keeper/scheduler), ver ledger.
+- **States:** `agendado → aplicado`.
+- **Views:** admin (preview/run), histórico da carteira (queima).
+- **Aggregate:** `Token.Demurrage` (`DemurrageEntry` ledger; keeper restart-safe/idempotente). **Ranking:** 3.
 
 ---
 
-## Ranking Forçado (prioridade de implementação por fase)
+## Parte 3 — Matriz de Relacionamentos (cross-check)
 
-| Prioridade | Objeto | Fase |
-|-----------|--------|------|
-| 1 | Usuário, Carteira, Anúncio, Cupom/Convite | Fase 1 (foundation) |
-| 2 | ProductNFT, ServiceVoucher, Troca, Categoria | Fase 2 (MVP trocas) |
-| 3 | Comunidade, Post, Reply, Chat, Notificação, **Doação/Ajuda, Pedido de Ajuda, Pontos de Ajuda** | Fase 2 (comunidades + ajuda mútua) |
-| 4 | Avaliação, Transferência, Ref. Preço, Disputa | Fase 3 (confiança/inteligência) |
-
-> **Regra YAGNI:** não modele objetos de fases futuras além do necessário para o contexto atual.
-> Cada novo objeto começa aqui, com CTA/state reais, antes de virar aggregate/código.
+| De | Para | Cardinalidade | Via |
+|----|------|---------------|-----|
+| Usuário | Carteira | 1:1 | onboarding |
+| Usuário | Credencial/Passkey | 1:N | segurança |
+| Usuário | Verificação | 1:N | cadastro (e-mail + WhatsApp) |
+| Usuário | Anúncio | 1:N | vendedor (embed nome) |
+| Usuário | Comunidade | N:M | Membership |
+| Usuário | Troca | 1:N | buyer/seller |
+| Usuário | Doação/Ajuda | 2:1 | doador + receptor |
+| Usuário | Pedido de Ajuda | 1:N | solicita doação/voluntariado |
+| Usuário | Avaliação | 1:N | reviewer/reviewed |
+| Usuário | Pontos de Ajuda | 1:1 | acumula |
+| Anúncio | ProductNFT | 1:1 (product) | tokeniza ao listar |
+| Anúncio | ServiceVoucher | 1:N (service) | tokeniza ao comprar/voluntariar |
+| Anúncio | Categoria | N:1 | category |
+| Anúncio | Comunidade | N:1 (opt) | visibility |
+| Anúncio | ReferênciaPreço | N:1 | comparativo |
+| Anúncio | Troca/Doação | 1:N | origem |
+| Troca | Disputa | 1:1 (opt) | só se disputada |
+| Troca/Doação | Avaliação | 1:N (≤2) | ao finalizar |
+| Doação/Ajuda | Pedido de Ajuda | N:1 | receptor manifesta |
+| Cupom/Convite | Carteira | 1:N | mint RVM (resgate) |
+| Cupom/Convite | Usuário | 1:N | usado no cadastro (opcional) |
+| Transferência | Carteira | 2:1 | from→to (P2P) |
+| Comunidade | Membership | 1:N | membros |
+| Comunidade | Post | 1:N | feed |
+| Comunidade | Chat | 1:1 | chat geral |
+| Post | Post (Reply) | 1:N | materialized path depth 6 |
+| Denúncia | (Anúncio/Post/Usuário/Chat) | N:1 | alvo |
+| ParâmetroSistema | Demurrage/Cupom/Doação | 1:N | configura |
+| **Anônimo** | Anúncio/Comunidade/Post | N:M | **só visualiza** (gate de ação) |
 
 ---
 
-*Mapa-fonte-de-verdade de objetos. Atualizar a cada feature (skill `ooux`, passo ORCA). Cada objeto é a semente de um aggregate DDD respeitando isolamento de módulo.*
+## Parte 4 — Ranking Forçado (prioridade/fase)
+
+| Rank | Objetos | Fase |
+|------|---------|------|
+| 1 | Usuário, Carteira, Anúncio, Cupom, Troca, Doação/Ajuda | Fase 1–2 (core) |
+| 2 | Verificação, Credencial, ProductNFT, ServiceVoucher, Categoria, Pedido de Ajuda, Comunidade, Membership, Post, Chat, Transferência, ParâmetroSistema | Fase 1–2 |
+| 3 | RecuperaçãoConta, Avaliação, Pontos de Ajuda, Notificação, Denúncia, Disputa, ReferênciaPreço, Demurrage | Fase 3 (confiança/inteligência) |
+
+> **Regra YAGNI:** não modelar objetos de fases futuras além do necessário. Cada novo fluxo começa
+> aqui (Parte 1), extrai objetos, e só vira aggregate/código o que tem CTA/estado reais.
+
+---
+
+*Mapa-fonte-de-verdade de objetos (ORCA). Cada objeto é a semente de um aggregate DDD, respeitando isolamento de módulo. Atualizar a cada fluxo novo.*

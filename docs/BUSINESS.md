@@ -207,7 +207,7 @@ Plano completo: Plano-fonte-de-verdade §12.
 
 ---
 
-## 10. Roadmap (resumo)
+## 10. Roadmap (resumo — detalhe completo em `docs/ROADMAP.md`)
 
 | Fase | Foco | Marco |
 |------|------|-------|

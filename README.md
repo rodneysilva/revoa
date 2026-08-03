@@ -24,6 +24,7 @@
 | Objetos do produto (OOUX/ORCA) | [`docs/OOUX.md`](docs/OOUX.md) |
 | Mercado + Lei 14.478 + benchmark cadastro | [`docs/MARKET_RESEARCH.md`](docs/MARKET_RESEARCH.md) |
 | Marca, logos, slogans, aplicações | [`docs/VISUAL_IDENTITY.md`](docs/VISUAL_IDENTITY.md) |
+| **Roadmap / Fases (0–4 detalhadas)** | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Decisões (ADRs) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Memória do projeto (padrões, armadilhas, stack) | [`AGENTS.md`](AGENTS.md) |
 | Deploy/containers | [`docker-compose.yml`](docker-compose.yml) + `projetosia/infra/README.md` |
@@ -73,7 +74,8 @@ revoa/
 | `docs/TOKENOMICS.md` | RVM (moeda social), emissão, demurrage IPCA, taxa→Fundo, cupom opcional, comparativo |
 | `docs/ARCHITECTURE.md` | Monólito modular, MongoDB, AA, Indexer, contratos, autorização, containers |
 | `docs/USER_FLOWS.md` | F0–F12: jornadas + estados + Gherkin (navegação, registro, anúncios, carteira, doação, troca, comunidade) |
-| `docs/OOUX.md` | Mapa ORCA de 19 objetos → aggregates DDD (+ matriz de relacionamentos) |
+| `docs/OOUX.md` | Mapa ORCA de **26 objetos + 32 fluxos (UF-01..UF-32)** → aggregates DDD (+ matriz de relacionamentos) |
+| `docs/ROADMAP.md` | **5 fases detalhadas** (0–4): entregáveis, fluxos cobertos, DoD, dependências, riscos |
 | `docs/MARKET_RESEARCH.md` | C2C + economia solidária + moedas sociais + plataformas sem FLP + Lei 14.478 + benchmark cadastro |
 | `docs/VISUAL_IDENTITY.md` | Marca, 5 elementos (logo/slogan/ícone/favicon/RM$), slogans, aplicações web/mobile |
 | `docs/VISUAL_EXPLORATIONS.md` | 6 logos comunidade + 6 Web3/híbridas (arquivo) |
