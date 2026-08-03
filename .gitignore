@@ -43,10 +43,16 @@ test-results/
 e2e/.auth/
 
 # ── Foundry / Solidity ──────────────────────────────────────────
+# forge dependencies e artefatos (reinstalaveis via 'forge install')
+contracts/lib/
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+contracts/.chainId
+lib/
 cache/
 out/
 broadcast/
-lib/            # forge dependencies (instaladas via forge install)
 *.tsbuildinfo
 
 # ── Binários grandes (regra global) ─────────────────────────────
