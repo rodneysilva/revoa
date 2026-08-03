@@ -44,27 +44,31 @@
 
 ---
 
-## Estrutura do projeto
+## Estrutura do projeto (limpa — sem pastas vazias)
 
 ```
-revoa/
-├─ README.md                      ← este arquivo (índice central)
-├─ AGENTS.md                      ← memória do projeto (stack, padrões, armadilhas)
-├─ docker-compose.yml             ← contrato de deploy (traefik_net + interna; profiles)
+revoa/                           ← estado atual (limpo; pastas de código entram com conteúdo nas fases)
+├─ README.md                     ← este arquivo (índice central)
+├─ AGENTS.md                     ← memória do projeto (stack, padrões, armadilhas)
+├─ docker-compose.yml            ← contrato de deploy (traefik_net + interna; profiles app/chain)
 ├─ .gitignore
-├─ .kilo/skills/ooux/SKILL.md     ← skill OOUX (objects-first / ORCA)
-├─ docs/
+├─ .kilo/skills/ooux/SKILL.md    ← skill OOUX (objects-first / ORCA)
+├─ docs/                         ← TODA a documentação viva (ver mapa abaixo)
 │  ├─ BUSINESS.md  TOKENOMICS.md  ARCHITECTURE.md  BUSINESS_RULES.md
-│  ├─ OOUX.md  USER_FLOWS.md  MARKET_RESEARCH.md
+│  ├─ OOUX.md  USER_FLOWS.md  MARKET_RESEARCH.md  ROADMAP.md
 │  ├─ VISUAL_IDENTITY.md  VISUAL_EXPLORATIONS.md
 │  ├─ decisions/                 ← ADR-0001 … ADR-0014 (+ README índice)
 │  └─ visual-explorations/       ← 12 PNGs + 2 scripts de render (render_*.py)
-├─ contracts/                     ← (Fase 1) Solidity + Foundry
-├─ chain/                         ← (Fase 1) config Subnet-EVM
-├─ src/                           ← (Fase 1) Revoa.sln + módulos + Revoa.Api
-├─ frontend/                      ← (Fase 2) React + TS + Vite + PWA
-└─ tests/  .github/workflows/     ← (Fase 1+)
+├─ src/                          ← (Fase 1) Clean Architecture + Modular Monolith + DDD (Revoa.sln, Revoa.Api, modules/, shared/)
+├─ contracts/                    ← (Fase 1, com código) Solidity + Foundry
+├─ chain/                        ← (Fase 1, com código) config Avalanche Subnet-EVM
+├─ frontend/                     ← (Fase 2) React + TypeScript (Vite SPA) + PWA
+└─ tests/  .github/workflows/    ← (Fase 1+) xUnit + Testcontainers + CI
 ```
+
+> **Princípio de limpeza:** pastas de código só existem no repo **quando têm conteúdo** (sem placeholders
+> vazios). A estrutura .NET definitiva (Clean Architecture por módulo + DDD) está detalhada em
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (seção "Estrutura da solution").
 
 ### Mapa de arquivos (documentação)
 | Arquivo | Conteúdo |

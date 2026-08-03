@@ -86,18 +86,52 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 > **Host:** API ASP.NET única (endpoints + auth + SignalR hub). Sem YARP. Reverse proxy: Traefik + Cloudflared.
 
-### Estrutura da solution (`src/`)
+### Estrutura da solution — Clean Architecture + Modular Monolith + DDD
+> Padrão: **Clean Architecture/Onion** (ApplicationCore no centro, sem deps de infra) + **modular monolith**
+> (cada bounded context = módulo) + **DDD** (aggregates por pasta + SeedWork). Refs: Microsoft
+> *Architect Modern Web Apps* (eShopOnWeb / [ardalis/cleanarchitecture](https://github.com/ardalis/cleanarchitecture));
+> eShopOnContainers (DDD/CQRS). As pastas são criadas **com conteúdo** na Fase 1 (não há pastas vazias no repo).
+
 ```
-src/
-├─ Revoa.sln
-├─ Revoa.Api/                  # host único (endpoints+auth+SignalR hub), /health
-├─ modules/
-│  ├─ identity/   account/   catalog/   exchange/
-│  ├─ token/      community/ pricing/   moderation/
-│  └─ notifications/  reputation/  indexer/
-│     (cada um: Domain/ Application/ Infrastructure/ — coleção própria)
-└─ shared/{Abstractions, Infrastructure, IntegrationContracts}/
+revoa/                                 ← raiz (limpa: docs/ .kilo/ config + src/ quando houver código)
+├─ src/
+│  ├─ Revoa.sln
+│  ├─ Revoa.Api/                        ← UI/composition root (host único)
+│  │   ├─ Controllers/  Filters/  Middleware/  Hubs/(SignalR)  ViewModels?  Program.cs
+│  │   └─ /health, JWT, DI wiring (referencia módulos + Infrastructure; SEM lógica de negócio)
+│  ├─ modules/                          ← 12 bounded contexts (monólito modular)
+│  │   └─ <context>/                    ← ex.: identity, account, catalog, exchange, token,
+│  │       ├─ Domain/                      community, pricing, moderation, notifications,
+│  │       │   ├─ Aggregates/<Aggregate>/   reputation, indexer
+│  │       │   │   ├─ <Entity>.cs  <ValueObject>.cs  (aggregate root + VOs)
+│  │       │   │   └─ Events/  Exceptions/  Specifications/
+│  │       │   ├─ Repositories/ (interfaces — contratos de persistência)  IUnitOfWork
+│  │       │   └─ SeedWork/ (Entity, ValueObject, AggregateRoot base — sem redundância)
+│  │       ├─ Application/              ← CQRS (MediatR): Commands/Queries/Handlers/DTOs/Validators(FluentValidation)/Mapster
+│  │       └─ Infrastructure/           ← MongoDB (coleção PRÓPRIA do módulo), serviços (MailKit/Zenvia/Nethereum), integrações
+│  └─ shared/
+│     ├─ Abstractions/                  ← IAggregateRoot, IEntity, IIntegrationEventBus, Result, guards
+│     ├─ IntegrationContracts/          ← eventos + DTOs de integração (versionados) entre módulos
+│     └─ Infrastructure/                ← cross-cutting: MongoDB base, OpenTelemetry, auth/JWT, exception middleware
+├─ contracts/                           ← (Fase 1, com código) Solidity + Foundry: RVM, ProductNFT, ServiceVoucher,
+│                                          EscrowVault, Treasury, CouponRedeemer, Safe+4337, Paymaster, webauthn-solidity
+├─ chain/                               ← (Fase 1, com código) config Avalanche Subnet-EVM (genesis, chainID fixo, parâmetros)
+├─ frontend/                            ← (Fase 2) React + TypeScript (Vite SPA) + PWA
+├─ tests/                               ← (Fase 1+) unit (xUnit) por handler/aggregate + Testcontainers (Mongo+anvil)
+└─ .github/workflows/                   ← (Fase 1+) CI: dotnet build/test + forge build/test + npm build/typecheck
 ```
+
+**Regras de dependência (Clean Architecture):**
+- `Domain` → **zero** dependências (nem Infrastructure, nem Application). É o centro.
+- `Application` → depende só de `Domain` + `shared/Abstractions`.
+- `Infrastructure` → implementa interfaces de `Domain`/`Application`; referencia pacotes (MongoDB driver, Nethereum, MailKit, Zenvia).
+- `Revoa.Api` → composition root: referencia módulos + `Infrastructure` (somente p/ wiring DI); **SEM lógica de negócio**.
+- **Isolamento de módulos:** um módulo **não referencia** o Infrastructure/Domain de outro. Comunicação só por **ID** (referência) + **eventos** (`shared/IntegrationContracts` via `IIntegrationEventBus`, in-process MediatR). Teste deve **falhar** ao detectar query cross-coleção.
+
+**Tipos por camada (padrão Microsoft/DDD):**
+- *Domain:* Entities, Aggregates, Value Objects, Domain Services, Specifications, Domain Events, Exceptions, SeedWork.
+- *Application:* Commands/Queries (CQRS), Handlers, DTOs, Validators, Mappers, Integration Event handlers.
+- *Infrastructure:* Repositories (MongoDB), UnitOfWork, serviços externos (chain via Nethereum, e-mail MailKit, WhatsApp Zenvia, ViaCEP, MinIO, Ollama).
 
 ---
 
