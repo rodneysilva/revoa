@@ -18,12 +18,12 @@ renderiza campos dinâmicos conforme o kind:
 | **service** | `ServiceDetails` | `unitType` (`per-service` \| `hours`), `duration`, `voucherExpiry` (30d default) |
 
 ### 1.2 modo (trocar / repassar / doar / voluntariar)
-| modo | kind | preço RVM | efeito |
-|------|------|-----------|--------|
-| **trocar** | product · service | valor justo (RVM) | mercado RVM |
-| **repassar** | product | RVM baixo | acessibilidade |
-| **doar** | product | **0 RVM** | ajuda mútua + **bônus reputacional** |
-| **voluntariar** | service | **0 RVM** | ajuda mútua + **bônus reputacional** |
+| modo | kind | preço RVM | efeito | recompensa ao ofertante |
+|------|------|-----------|--------|--------------------------|
+| **trocar** | product · service | valor justo (RVM) | mercado RVM | RVM + reputação |
+| **repassar** | product | RVM baixo | acessibilidade | RVM + reputação |
+| **doar** | product | **0 RVM** | ajuda mútua | **reputação + selo de doador + bônus RVM (admin) + pontos de ajuda** |
+| **voluntariar** | service | **0 RVM** | ajuda mútua | **reputação + selo de voluntário + bônus RVM (admin) + pontos de ajuda** |
 
 ### 1.3 visibilidade
 - `comunidade` (só membros de uma comunidade veem) · `global` (toda a plataforma) · `ambos`.
@@ -76,19 +76,57 @@ Offer
 
 ### 2.3 Regras do escrow
 - **Fundos bloqueados** (`Block`) ao pagar; **liberados/creditados** só na finalização (`FinishTransactionAsync`, dentro de transação ACID).
-- **Taxa 2%** do vendedor, creditada à Tesouraria na liberação.
+- **Taxa 2%** do vendedor → **Fundo Comunitário** (sem fins lucrativos; reinvestido na operação).
 - **Janela 72h** medida em `block.timestamp` (on-chain, imutável).
 - **ARBITRATOR** (admin/Safe plataforma) é a única role que resolve disputa.
 - **Validade voucher 30d** → auto-reembolso + claim do provider via árbitro.
+
+### 2.4 Fluxo de Doação (produto de primeira classe)
+
+> **Doação é central**, não periférica. Coexiste com a troca em RVM — o usuário **escolhe** receber
+> crédito de troca **ou** ajudar de graça. Reusa o escrow/voucher com **valor 0** (consistência, atomicidade).
+> Inspirada no **Buy Nothing Project** (dar + pedir + gratidão).
+
+#### 2.4.1 Doar (produto)
+```
+Anunciar Doar (0 RVM) → ProductNFT mintado no EscrowVault (mesmo mint-to-escrow do Trocar)
+  → Pedidos: interessados manifestam interesse (fila de pedidos c/ mensagem)
+  → Doador escolhe receptor (curadoria humana: proximidade, reputação, mensagem)  ← matching da doação
+  → Receptor aceita (0 RVM) → Entregue → Confirmado → NFT transfere ao receptor
+  → Recompensa multi-eixo ao DOADOR (reputação + selo de doador + bônus RVM + pontos de ajuda)
+Cancelado (antes de aceitar) → NFT devolvido/queimado do Vault; sem recompensa
+```
+
+#### 2.4.2 Voluntariar (serviço)
+```
+Anunciar Voluntariar (0 RVM) → sem voucher até o aceite
+  → Pedidos: interessados pedem ajuda
+  → Voluntário escolhe quem ajudar (curadoria)
+  → "Contratar" (0 RVM) → voucher de voluntariado (ERC-1155) mintado p/ rastreabilidade
+  → Prestado → Redeem/Confirm → voucher queimado
+  → Recompensa multi-eixo ao VOLUNTÁRIO (reputação + selo de voluntário + bônus RVM + pontos de ajuda)
+Cancelado/Expirado → sem recompensa
+```
+
+#### 2.4.3 Recompensa multi-eixo (configurável)
+| Eixo | Mecânica | Configurável |
+|------|----------|--------------|
+| **Reputação/badges** | avaliação + selos de doador/voluntário (perfil) | thresholds admin |
+| **Bônus de RVM** | faucet extra creditado ao doador/voluntário | **`DonationReward:BonusRvm` por kind/modo — admin** |
+| **Pontos de ajuda** | contador separado, não conversível; ranking comunitário | peso admin |
+
+> O bônus de RVM é **parâmetro administrativo** — o admin calibra o incentivo à ajuda sem mudar código.
+> Doação/voluntariado **não movimenta RVM do receptor** (preço 0) e **não paga taxa**.
 
 ---
 
 ## 3. Os 3 Fluxos Econômicos
 1. **Moeda → Anúncio:** comprar produto/serviço com RVM (atomic swap).
 2. **Anúncio → Moeda:** oferecer e receber RVM (ao liberar).
-3. **Moeda → Conta:** transferência **P2P** de RVM entre carteiras (self-custody, on-chain).
+3. **Moeda → Conta:** transferência **P2P** de RVM entre carteiras (inclui "presentear" RVM de graça).
 
-> P2P é entre Safes (UserOp de `transfer`). Sem taxa de transferência no MVP.
+> **Doação/voluntariado NÃO são fluxos econômicos** (não movimentam RVM do receptor) — são **fluxos de
+> ajuda** com recompensa própria (multi-eixo). Detalhe em §2.4 e `USER_FLOWS.md`.
 
 ---
 
@@ -143,12 +181,14 @@ Offer
 
 ---
 
-## 6. Reputação
+## 6. Reputação & Ajuda Mútua
 
-- **1–5 estrelas** por troca finalizada (ambos se avaliam; 1× por par por troca).
+- **1–5 estrelas** por troca/doação/voluntariado finalizado (ambos se avaliam; 1× por par por interação).
 - **Média** aritmética visível no perfil: "★★★★☆ (4.2 — 15 avaliações)".
 - **Níveis/badges:** 🌱 Iniciante → ⭐ Trocador → 🌟 Trocador Pro → 💎 Lenda.
-- **Bônus reputacional** em doar/voluntariar (incentivo à ajuda mútua).
+- **Selos de ajuda:** doador 🎁 / voluntário 🤝 (por nº de doações/voluntariados).
+- **Pontos de ajuda:** contador separado (não RVM, não conversível); ranking comunitário.
+- **Bônus de RVM** creditado ao doador/voluntário (`DonationReward:BonusRvm` admin-configurável).
 - Moderador/admin pode remover avaliação abusiva (reputação recalculada).
 
 ---
@@ -177,7 +217,8 @@ Offer
 
 | Caso | Regra |
 |------|-------|
-| Doar/voluntariar (0 RVM) | Sem escrow financeiro; transfer direta do NFT/voucher + bônus reputacional |
+| Doar/voluntariar (0 RVM) | Escrow/voucher reusados com valor 0; receptor não paga; doador/voluntário recebe **recompensa multi-eixo** (reputação + bônus RVM admin + pontos de ajuda) |
+| Matching de doação | Doador/voluntário **escolhe** o receptor (curadoria humana, não automático) |
 | Stock de produto | Decrementa **só** na liberação (não no offer). Produto sem stock → indisponível |
 | Serviço sem NFT até venda | Não há token até o voucher ser mintado (mint-on-purchase) |
 | Docs legados (sem `Version`) | `$or` + `$exists:false` (blueprint equivale) |

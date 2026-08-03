@@ -20,12 +20,15 @@
 | **Account Abstraction** | ERC-4337: Safe + módulo 4337 + EntryPoint canônico + bundler Stackup + verifying paymaster + Coinbase `webauthn-solidity` (P-256) |
 | **Pricing/LLM** | API ML + seed admin + comunidade + webfetcher(IPCA/IBGE) + Ollama Qwen 7B (GPU) |
 | **Auth** | JWT + FIDO2/WebAuthn (passkeys) — **carteira invisível** (email + passkey cria Safe) |
-| **Frontend** | React (Vite SPA) + Tailwind + viem + permissionless.js + Safe SDK + SignalR client + PWA |
+| **Frontend** | **React + TypeScript** (Vite SPA) + Tailwind + viem + permissionless.js + Safe SDK + SignalR client + PWA. **Único backend: .NET; único framework frontend: React/TypeScript.** |
 | **Reverse proxy/SSL** | Traefik + Cloudflared (infra `projetosia/infra`) |
 | **Testes** | xUnit + FluentAssertions + Testcontainers (Mongo+anvil) · Foundry · Playwright |
 
 > **Pivot travado:** o revoa **não** é mais "sem dinheiro" (trocadeira Python). É
-> **economia circular tokenizada com RVM** — DeFi, on-chain, self-custody. Ver `docs/BUSINESS.md`.
+> **economia circular e de ajuda mútua, sem fins lucrativos, com moeda social comunitária (RVM)** —
+> auto-custódia, on-chain. **Natureza jurídica: projeto informal (sem CNPJ) por ora**; formalizar
+> associação/OSC antes do público. Ver `docs/BUSINESS.md` e `docs/MARKET_RESEARCH.md`.
+> **Dois domínios:** `revoa.me` (app) · `revoa.org` (blog/transparência/impacto).
 
 ---
 
@@ -65,7 +68,7 @@
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model Indexer), transfer P2P, Paymaster/Bundler | Accounts |
 | **Catalog** | Anúncios (kind + VOs), categorias, **modo** (trocar/repassar/doar/voluntariar), **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo de preço, feed por geolocalização | Listings, Categories |
 | **Exchange** | 3 fluxos + máquina de estados do escrow (atomic swap) + disputa + Indexer (source of truth) | Trades |
-| **Token (Treasury)** | RVM mint/burn, faucet R$20, demurrage (IPCA-trimestral), taxa 2%, cupom/convite on-chain (maxUses) | (on-chain; ledger mirror) |
+| **Token (Treasury)** | RVM mint/burn, faucet R$20, demurrage (IPCA-trimestral), taxa 2%→**Fundo Comunitário** (sem FLP), cupom/convite on-chain (maxUses), **bônus de doação (admin-configurável)** | (on-chain; ledger mirror) |
 | **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path, depth 6); chat SignalR; membership com roles | Communities, Posts, Memberships |
 | **PricingIntelligence** | Quartz **semanal** → API ML + admin seed + comunidade + webfetcher IPCA/IBGE trimestral → Ollama Qwen 7B → referência BRL por categoria; mediana RVM; sugestão justa | PriceReferences |
 | **Moderation** | Árbitro de disputas (escrow), denúncias, bans, auditoria. Mods de comunidade agem em anúncios/posts da própria comunidade; admins global | Reports |
@@ -120,9 +123,11 @@ docker compose --profile chain up -d
 
 **Chain/Contratos:** Subnet-EVM própria · produto=ERC-721 mint-to-escrow, serviço=ERC-1155 mint-on-purchase · RVM=ERC-20 gas invisível (Paymaster) · AA: Safe+4337+Stackup+Coinbase webauthn (P-256) · recuperação admin+timelock (privado) / guardians (público) · escrow janela 72h `block.timestamp` + role ARBITRATOR · voucher 30d auto-reembolso · cupom ON-CHAIN (CouponRedeemer).
 
-**Tokenomia:** RVM não atrelado ao BRL · IPCA(+INPC) reajusta PARÂMETROS trimestralmente (faucet/cupom + base demurrage) · comparativo duplo (BRL ML+seed+comunidade ↔ mediana RVM) · Ollama Qwen 7B normaliza · faucet R$20 + cupom/convite + mint admin · demurrage 0,5%/mês (piso R$100, queima) · taxa 2% → Tesouraria · anti-sybil (1/dispositivo, 5/IP/dia, maxUses).
+**Tokenomia:** RVM não atrelado ao BRL · IPCA(+INPC) reajusta PARÂMETROS trimestralmente (faucet/cupom + base demurrage + **bônus de doação**) · comparativo duplo (BRL ML+seed+comunidade ↔ mediana RVM) · Ollama Qwen 7B normaliza · faucet R$20 + cupom/convite + mint admin · demurrage 0,5%/mês (piso R$100, queima) · **taxa 2% → Fundo Comunitário (sem fins lucrativos)** · anti-sybil (1/dispositivo, 5/IP/dia, maxUses) · **doação/voluntariado = recompensa multi-eixo (reputação + bônus RVM admin-configurável + pontos de ajuda)**.
 
-**Arquitetura:** monólito modular (coleções isoladas, MediatR) · MongoDB global · Anúncio único com `kind` (product|service) + VOs · Comunidades no MVP (default+user, posts recursivos materialized path depth 6, chat SignalR, geolocalização) · React SPA + PWA, carteira invisível · MinIO storage · Traefik+Cloudflared.
+**Arquitetura:** monólito modular (coleções isoladas, MediatR) · MongoDB global · Anúncio único com `kind` (product|service) + VOs · Comunidades no MVP (default+user, posts recursivos materialized path depth 6, chat SignalR, geolocalização) · **React+TypeScript SPA + PWA**, carteira invisível · MinIO storage · Traefik+Cloudflared · **backend único .NET; frontend único React/TypeScript**.
+
+**Negócio:** **sem fins lucrativos** (natureza jurídica informal por ora; formalizar OSC pré-público) · **dois domínios** (`revoa.me`=app, `revoa.org`=blog/transparência) · narrativa "moeda social comunitária + ajuda mútua" (herdeira do Banco Palmas, NÃO cripto-investimento).
 
 ---
 
@@ -133,7 +138,8 @@ docker compose --profile chain up -d
 | [BUSINESS.md](docs/BUSINESS.md) | Proposta de valor, personas, mercado, pivot tokenizado |
 | [TOKENOMICS.md](docs/TOKENOMICS.md) | RVM, emissão, demurrage, IPCA, taxa, comparativo |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Monólito modular, MongoDB, AA, Indexer, contratos |
-| [BUSINESS_RULES.md](docs/BUSINESS_RULES.md) | 3 fluxos, escrow, comunidades, geolocalização, reputação |
+| [BUSINESS_RULES.md](docs/BUSINESS_RULES.md) | 3 fluxos, escrow, **doação/voluntariado (multi-eixo)**, comunidades, geolocalização, reputação |
+| [USER_FLOWS.md](docs/USER_FLOWS.md) | Jornadas + estados + Gherkin (registro, anúncios, carteira, doação, troca, comunidade) |
 | [OOUX.md](docs/OOUX.md) | Mapa de objetos ORCA (objects-first) |
 | [MARKET_RESEARCH.md](docs/MARKET_RESEARCH.md) | TAM/SAM/SOM + competidores + cap DeFi/Web3 + Lei 14.478 |
 | [VISUAL_IDENTITY.md](docs/VISUAL_IDENTITY.md) | Marca, wordmark "revoa.me", monograma "RV", "RM$" |

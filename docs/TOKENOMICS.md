@@ -1,8 +1,9 @@
 # TOKENOMICS.md — RVM (ReVoA Money)
 
-> **RVM é "crédito de troca", NÃO ativo financeiro.** Meio de troca interno, on-chain (ERC-20),
-> self-custody, gas invisível. Não conversível em BRL no MVP, sem rentabilidade, sem promessa de
-> valorização. **Alinhado à Lei 14.478/2022.** O foco é o que o usuário **oferece**; o RVM é meio, não fim.
+> **RVM é uma moeda social comunitária / crédito de troca**, NÃO ativo financeiro. Meio de troca interno,
+> on-chain (ERC-20), auto-custódia, gas invisível. **Sem fins lucrativos.** Não conversível em BRL no MVP,
+> sem rentabilidade, sem promessa de valorização. **Alinhado à Lei 14.478/2022** (Art. 3, III — utility token).
+> Herdeira digital das moedas sociais brasileiras (Banco Palmas). O foco é o que o usuário **oferece**; o RVM é meio, não fim.
 
 ---
 
@@ -31,7 +32,8 @@
 |-------|-----------|------------|
 | **Faucet de cadastro** | **R$20 equivalente** mintados na Safe do novo usuário | 1/dispositivo · 5 contas/IP/dia · cadastro **invite/cupom-gated** |
 | **Cupom/Convite (on-chain)** | `CouponRedeemer.redeem()` → mint de RVM | `maxUses` + `expiry` on-chain · resgate único por carteira |
-| **Mint admin (Tesouraria)** | Operação autorizada para seed/eventos | Auditoria on-chain · só role `MINTER` |
+| **Bônus de doação/voluntariado** | Faucet extra creditado ao doador/voluntário (recompensa de ajuda mútua) | **`DonationReward:BonusRvm` por kind/modo — configurável admin** |
+| **Mint admin (Fundo Comunitário)** | Operação autorizada para seed/eventos | Auditoria on-chain · só role `MINTER` |
 
 > **Sem on-ramp real:** RVM não é comprado com BRL. Toda emissão vem de faucet/cupom/admin.
 > Isso mantém o RVM fora do escopo de "oferta pública de ativos" da regulação.
@@ -90,13 +92,15 @@ inflação corroa os parâmetros do sistema.
 
 ---
 
-## 5. Taxa de Transação
+## 5. Taxa de Transação → Fundo Comunitário (sem fins lucrativos)
 
 - **2%** por troca finalizada (config: `TransactionFee:Percent`).
 - **Cobrada do vendedor:** `sellerPayout = total − fee`.
-- **Creditada à Tesouraria** (Safe da plataforma, role `MINTER`/`ARBITRATOR`).
+- **Creditada ao Fundo Comunitário** (Safe da plataforma, role `MINTER`/`ARBITRATOR`).
+- **Sem fins lucrativos:** a taxa **não é lucro** — reinverte-se na operação (infra/servidores).
+  Prestação de contas publicada no `revoa.org` (transparência/impacto).
 - Visível no painel admin: `TotalFeesCollected`, `TotalVolume`, taxa média.
-- **Sem taxa de listagem** — publicar é grátis (incentiva a oferta).
+- **Sem taxa de listagem** — publicar é grátis. **Sem taxa em doação/voluntariado** (preço 0).
 
 ---
 
@@ -126,7 +130,7 @@ BRL de mercado  ↔  Mediana RVM interna  ↔  Sugestão justa
 EMISSÃO                          USO                              REMOÇÃO
 ─────────                        ────                             ───────
 faucet R$20 ─┐                  atomic swap ─┐                  demurrage (queima)
-cupom on-chain ─┼─→ mint RVM ─→ Safe ─→ P2P ─┤─→ taxa 2% ─→ Tesouraria
+cupom on-chain ─┼─→ mint RVM ─→ Safe ─→ P2P ─┤─→ taxa 2% ─→ Fundo Comunitário
 mint admin ──┘                  (escrow)     │                  (não volta)
                                             └─→ vendedor recebe sellerPayout
 ```
@@ -165,7 +169,8 @@ mint admin ──┘                  (escrow)     │                  (não vo
 | Faucet de cadastro | R$20 equivalente | Plano §14 |
 | Demurrage | 0,5%/mês | Plano §11 (resolvido) |
 | Piso demurrage | R$100 equivalente | Plano §11 |
-| Taxa de transação | 2% | Plano §11 |
+| Taxa de transação | 2% → **Fundo Comunitário** (sem FLP) | Decisão v3.0 |
+| **Bônus de doação/voluntariado** | **configurável admin** (`DonationReward:BonusRvm` por kind/modo) | Decisão v3.0 |
 | Validade voucher serviço | 30 dias | Plano §1 (#7) |
 | Janela de disputa | 72h (`block.timestamp`) | Plano §1 (#6) |
 | Chat retenção | 90 dias | Plano §14 |

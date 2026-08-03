@@ -1,17 +1,42 @@
-# VISUAL_EXPLORATIONS.md — 6 Filosofias de Design (revoa.me)
+# VISUAL_EXPLORATIONS.md — Filosofias de Design (revoa.me)
 
-> **Explorações visuais** para a identidade tokenizada do revoa. Três **híbridas** (comunidade/calor
-> humano + sopro cripto) e três **Web3** (on-chain/DeFi nativo). Cada uma é uma **filosofia estética**
-> expressa em PNG (`docs/visual-explorations/`) e interpretada sobre os mesmos três elementos de marca:
-> o **wordmark "revoa.me"**, o **monograma "RV"** e o **símbolo monetário "RM$"** (sem tagline).
+> **Explorações visuais** da identidade sem fins lucrativos do revoa. **Rodada atual (C): COMUNIDADE**
+> — mais comunidade/ajuda mútua, menos técnico (síntese das 4 direções: coletivo, reaproveitar,
+> orgânico/mão-amiga, natureza). **Rodada anterior (A+B): híbridas + Web3** (arquivo secundário).
+> Cada filosofia é expressa em PNG e interpretada sobre os mesmos elementos: **wordmark "revoa.me"**,
+> **slogan** (proposto), **monograma/símbolo "RV"**, **"RM$"**.
 >
-> Base herdada do `trocadeira/VISUAL_IDENTITY.md`: paleta esmeralda `#10b981` / sky `#0ea5e9` /
-> roxo `#a855f7` / rosa `#ec4899`; dark-first (`#0a0a0a` ink, `#171717` charcoal); Inter (→ WorkSans).
-> Cada exploração **constrói sobre** ou **diverge** dessa base.
+> Base herdada do `trocadeira/VISUAL_IDENTITY.md`: esmeralda/sky + tons quentes (âmbar/terracota/lima),
+> dark-first, Inter/WorkSans, pássaro. Narrativa: **moeda social comunitária + ajuda mútua** (Banco Palmas / Buy Nothing), NÃO cripto.
 
 ---
 
-## Bloco A — Híbridas (comunidade + calor humano)
+## Bloco C — COMUNIDADE (direção primária — nova rodada)
+
+| # | Filosofia | Direção | Slogan |
+|---|-----------|---------|--------|
+| C1 | [Mãos em Círculo](visual-explorations/c01-maos-circulo.png) | Coletivo/pessoa-a-pessoa | "Comunidade que troca, doa e cuida." |
+| C2 | [Segunda Vida](visual-explorations/c02-segunda-vida.png) ★ | Reaproveitar/segunda vida | "Tudo encontra um novo lar." |
+| C3 | [Pássaro-Folha](visual-explorations/c03-passaro-folha.png) ★ | Natureza + reaproveitar | "Dá nova vida ao que você tem." |
+| C4 | [Coração Comunitário](visual-explorations/c04-coracao-comunitario.png) | Orgânico/mão-amiga/cálido | "Onde a ajuda tem asas." |
+| C5 | [Broto / Nova Vida](visual-explorations/c05-broto.png) | Natureza/sustentabilidade | "Mais comunidade, menos desperdício." |
+| C6 | [Casa-Ninho](visual-explorations/c06-casa-ninho.png) | Comunidade/hiperlocal/novo lar | "Ajuda mútua, de vizinho para vizinho." |
+
+### Boards de sistema (elementos separados + aplicações)
+- [c00-system-elementos.png](visual-explorations/c00-system-elementos.png) — logo, ícone (3 tamanhos), favicons, RM$, 8 slogans.
+- [c00-applications-web-mobile.png](visual-explorations/c00-applications-web-mobile.png) — header web, card de anúncio, app icon, splash+home mobile.
+
+### Filosofias (resumo)
+- **Mãos em Círculo** — comunidade é pessoas de mãos dadas; multicolorido, caloroso, coletivo.
+- **Segunda Vida** — o ciclo: o que perdeu uso revoa e pousa num novo lar; setas circulares + chegada.
+- **Pássaro-Folha** — continuidade do pássaro da marca + natureza; voo que é folha (reaproveitar = nova vida).
+- **Coração Comunitário** — cuidado/ajuda; formas arredondadas, cálido; "a ajuda tem asas".
+- **Broto / Nova Vida** — sustentabilidade; o item "semente" brota em nova utilidade.
+- **Casa-Ninho** — hiperlocalidade; a casa da vizinhança que é também o "novo lar" (ninho).
+
+---
+
+## Bloco A — Híbridas (comunidade + calor humano) [arquivo]
 
 ### 1. Circuito Vivo
 **Filosofia:** a economia circular não é abstração — é movimento vivo. Coisas **revoam**: saem de

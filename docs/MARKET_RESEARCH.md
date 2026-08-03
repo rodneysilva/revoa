@@ -1,219 +1,241 @@
-# MARKET_RESEARCH.md — Pesquisa de Mercado revoa.me
+# MARKET_RESEARCH.md — Pesquisa de Mercado revoa.me / revoa.org
 
-> **Economia circular tokenizada (RVM), self-custody, DeFi.** Este documento herda/adapta a pesquisa
-> do `trocadeira/MARKET_RESEARCH.md` (C2C/economia circular) e **adiciona** os capítulos
-> **DeFi/Web3** e **Lei 14.478/2022** exigidos pelo pivot tokenizado.
-> **Data:** 03/08/2026 · **Versão:** 2.0.0 (tokenizada)
-> Relacionados: `BUSINESS.md` · `TOKENOMICS.md` · `ARCHITECTURE.md`
+> **Economia circular e de ajuda mútua, sem fins lucrativos, com moeda social comunitária (RVM).**
+> Este documento reposiciona o revoa: de "DeFi/cripto" para **moeda social + economia solidária +
+> ajuda mútua tokenizada** (auto-custódia), herdando o C2C do `trocadeira` e adicionando os capítulos
+> **economia solidária/moedas sociais**, **plataformas sem fins lucrativos de doação** e **Lei 14.478**.
+> **Data:** 03/08/2026 · **Versão:** 3.0.0 (sem fins lucrativos)
+> Relacionados: `BUSINESS.md` · `TOKENOMICS.md` · `ARCHITECTURE.md` · `BUSINESS_RULES.md`
 
 ---
 
 ## Sumário Executivo
 
-O revoa opera na interseção de **três mercados**: (1) **C2C de segunda mão/economia circular**
-(R$55–65 bi/ano no Brasil, CAGR ~12%); (2) **comunidades hiperlocais de ajuda mútua** (já existentes
-em grupos de WhatsApp, sem rastreabilidade); e (3) **criptoativos/DeFi** (Brasil entre os top do mundo
-em adoção, ~16–26 mi de brasileiros com cripto).
+O revoa é uma plataforma **sem fins lucrativos** na interseção de três movimentos:
+(1) **C2C/economia circular** (R$55–65 bi/ano no Brasil); (2) **economia solidária e moedas sociais
+comunitárias** (Brasil tem ~103 bancos comunitários; Banco Palmas desde 1998); e (3) **ajuda mútua
+hiperlocal** (Buy Nothing: 14M+ membros globais, 2,6M itens/mês doados de graça, ~162 mil t/ano de
+lixo evitado).
 
-O **pivot travado** é resolver o "desejo duplo coincidente" (que paralisa trocas puras sem dinheiro)
-com um **crédito de troca on-chain — RVM** — que **não é dinheiro nem ativo financeiro**:
-self-custody, sem on-ramp, sem promessa de rentabilidade. O design (utility token + Safe self-custody
-+ atomic swap) é o **moat de conformidade** frente à Lei 14.478.
+O RVM é uma **moeda social comunitária digital** (não ativo financeiro, não conversível em BRL),
+auto-custódia, que **resolve o desejo duplo coincidente** das trocas puras e **incentiva a ajuda mútua**
+(doar/voluntariar = bônus + reputação + pontos de ajuda). O "sem fins lucrativos" + utility token +
+auto-custódia é o **moat de conformidade** frente à Lei 14.478.
+
+**Dois domínios:** `revoa.me` = app/plataforma · `revoa.org` = blog/docs/painel de transparência/impacto.
 
 ---
 
 ## 1. Mercado C2C e Economia Circular (herdado de `trocadeira`)
 
 ### 1.1 C2C no Brasil (2024–2025)
-- Mercado brasileiro de bens de segunda mão (recommerce): **~R$ 55–65 bi/ano**, **CAGR ~12% a.a.** desde 2020 (OLX Insights + Fordays).
+- Mercado de bens de segunda mão (recommerce): **~R$ 55–65 bi/ano**, **CAGR ~12% a.a.** desde 2020.
 - C2C = **~20–25%** das transações de bens de consumo não-alimentícios.
 - "Desapego/Recommerce" cresceu **mais que o dobro** do e-commerce tradicional em 2023–2024.
 - **1 a cada 3 brasileiros** já comprou/vendeu item usado online em 2024.
-- **~15%** das negociações em classificados usam "aceita troca"; trocas puras (sem dinheiro) ~**2–5%** do volume C2C — o vácuo que o RVM preenche.
 
 ### 1.2 Economia circular / sustentabilidade
-- Brasil gera **~80 mi de toneladas de resíduos/ano** (ABRELPE); só **~4%** reciclado.
-- Tendências: consumo colaborativo, ESG, desbancarização (~34 mi sem conta bancária/limitados), hiperlocalidade (Tem Açúcar?, Nextdoor), custo de vida em alta.
+- Brasil gera **~80 mi de toneladas de resíduos/ano**; só **~4%** reciclado (ABRELPE).
+- Tendências: consumo colaborativo, ESG, desbancarização (~34 mi sem conta/limitados), hiperlocalidade,
+  custo de vida em alta.
 
 ### 1.3 TAM/SAM/SOM (revoa)
-| Camada | Estimativa (12 meses) | Premissa |
-|--------|----------------------|----------|
-| **TAM** | ~10–15 mi de brasileiros que fazem trocas/ajuda mútua online | Internautas 18–55 + interesse em segunda mão/cripto |
-| **SAM** | ~2–3 mi | C2C em cidades médias/grandes + dispostos a crédito de troca |
+| Camada | Estimativa | Premissa |
+|--------|-----------|----------|
+| **TAM** | ~10–15 mi | Brasileiros que fazem trocas/ajuda mútua online |
+| **SAM** | ~2–3 mi | C2C em cidades médias/grandes + dispostos a moeda social |
 | **SOM** (3 anos) | 50–150 mil ativos | Growth comunitário + cupom/convite |
 
 ---
 
-## 2. Competidores (matriz — herdado + tokenizado)
+## 2. Economia Solidária & Moedas Sociais (NOVO — referencial central)
+
+> O revoa é, antes de tudo, uma **iniciativa de economia solidária com moeda social digital**.
+> O referencial não é "DeFi/cripto" — é **Banco Palmas, bancos comunitários, redes de ajuda mútua**.
+
+### 2.1 Moedas sociais comunitárias no Brasil
+- **Banco Palmas** (1998, Conjunto Palmeira, periferia de Fortaleza): primeiro **banco comunitário de
+  desenvolvimento (BCD)** do Brasil; opera sob o princípio da **economia solidária**; emissão da moeda
+  social **Palmas** de circulação local. *Fonte: Wikipédia/Instituto Palmas.*
+- **103 bancos comunitários** com estruturas semelhantes em todo o Brasil (Instituto Palmas, 2012).
+- **Outras moedas sociais brasileiras:** Capivari (Lages), Endeavor/Time Bank (TEM), Cores da Vila,
+  Marrecos, etc. — todas com circulação local e propósito comunitário.
+- **Lições para o RVM:** moeda social funciona quando (a) circula numa comunidade real/coesa;
+  (b) tem lastro em confiança/não em BRL; (c) incentiva a circulação (não o acúmulo) — daí o **demurrage**.
+
+### 2.2 Economia solidária no Brasil
+- **Rede Brasileira de Economia Solidária** + sistema SIES: dezenas de milhares de empreendimentos
+  solidários (cooperativas, grupos de troca, feiras).
+- Princípios: **ajuda mútua, autogestão, solidariedade, sem fins lucrativos** — exatamente o ethos do revoa.
+- **Banco Central e moedas sociais:** entende moedas sociais de circulação local/comunitária como
+  fenômeno de economia solidária (não como "ativo virtual" especulativo) — reforça o enquadramento do RVM.
+
+### 2.3 Por que tokenizar a moeda social?
+- **Resolve o desejo duplo coincidente** (você só troca se alguém quer o que você tem e tem o que você quer)
+  — o mesmo problema que moedas sociais como Palmas/TEM resolvem offline.
+- **Auto-custódia** (Safe) = o usuário é dono do próprio crédito (alinhado à economia solidária: sem
+  intermediário financeiro central).
+- **Demurrage** = instrumento clássico de moedas complementares (Freigeld) para incentivar circulação.
+- **Programável:** bônus de doação, cupom, voucher com expiração = regras automáticas da comunidade.
+
+> **Insight central:** o RVM é uma **moeda social comunitária digital (utility token)**, herdeira
+> direta do conceito do Banco Palmas — não uma "criptomoeda de investimento". A narrativa, copy e
+> identidade devem refletir **comunidade e ajuda mútua**, não tecnologia financeira.
+
+---
+
+## 3. Plataformas Sem Fins Lucrativos de Doação/Ajuda (NOVO)
+
+> O fluxo de **doação** é central no revoa. Referenciais globais:
+
+### 3.1 Buy Nothing Project (referência principal)
+- **14M+ membros** em **50+ países**; **8k+ grupos** (Facebook + app).
+- **2,6M+ itens compartilhados por mês**, desviando **~162.000 toneladas de lixo/ano** de aterros.
+- Modelo: **dar e pedir de graça** entre vizinhos (hiperlocal); "gives", "asks", "gratitude".
+- **Sem fins lucrativos** (ONG; aceita doações viaGiveLively). *Fonte: buynothingproject.org.*
+- **Lição para o revoa:** a doação hiperlocal funciona em escala massiva; "pedir" (ask) é tão
+  importante quanto "dar" (give) — cria reciprocidade; **impacto ambiental mensurável** é narrativa forte.
+
+### 3.2 Freecycle
+- Fundado em 2003; **~9M membros** e **5.000+ grupos** globais. Doação 100% gratuita, organizada por
+  cidade, via lista/fórum. UX defasado, mas prova longevidade do modelo "keep good stuff out of landfills".
+
+### 3.3 Banco do Tempo / Time Banking
+- Troca de serviços medidos em **tempo** (1 hora = 1 crédito, independente do serviço).
+- **Bliive** é o exemplo brasileiro (banco de tempo digital). Conceito interessante mas **tempo abstrato
+  é difícil de adotar** — o RVM (moeda social concreta, lastreada em valor de mercado) é mais intuitivo.
+
+### 3.4 Lesson Bunz (falido) — anti-referência
+- App canadense de troca P2P com moeda interna "BTZ"; **faliu em 2023** por modelo financeiro
+  insustentável (rentabilidade implícita + queima de caixa).
+- **O revoa evita:** RVM sem rentabilidade, demurrage queima (não rende), não conversível em BRL,
+  **sem fins lucrativos** (nenhum acionista a remunerar).
+
+### 3.5 Insight: doar é tão importante quanto trocar
+- No Buy Nothing, **doar de graça** é o produto inteiro. No revoa, **doar/voluntariar** coexiste com
+  **trocar em RVM** — dando ao usuário **escolha** (altruísmo puro OU crédito de troca). A ajuda mútua
+  tem **recompensa multi-eixo**: reputação + bônus de RVM (admin-configurável) + pontos de ajuda.
+
+---
+
+## 4. Competidores (matriz — reposicionada)
 
 | Plataforma | Modelo | Falha | Diferencial revoa |
 |------------|--------|-------|-------------------|
-| **OLX** | Compra/venda em dinheiro (70M+ anúncios) | Sem troca estruturada, sem reputação, golpes | Troca tokenizada em RVM, reputação on-chain, escrow seguro |
-| **Mercado Livre** | E-commerce B2C+C2C + Mercado Pago | Sem troca; foco comercial | Economia circular comunitária, ajuda mútua |
-| **FB Marketplace / Grupos WA** | Troca informal caótica | Sem histórico, sem garantia, migra p/ WA | Escrow atômico + histórico on-chain + chat na plataforma |
-| **Enjoei** | Venda de moda (taxa ~20%) | Só moda, só dinheiro | Qualquer categoria, RVM, sem on-ramp |
-| **Tem Açúcar? / Nextdoor** | Hiperlocal puro | Só empréstimo/localidade, sem economia | Hiperlocal **+** economia RVM **+** reputação |
-| **Bliive** | Banco de tempo (horas abstratas) | Nichado, tempo abstrato | Marketplace direto em RVM (vê o que quer) |
-| **Freecycle** | Doação por cidade | UX defasado, sem troca | Doar/voluntariar + troca RVM + reputação |
+| **OLX** | Compra/venda em dinheiro | Sem troca estruturada, sem reputação, golpes, com fins lucrativos | Troca em RVM (moeda social), reputação on-chain, **sem FLP** |
+| **Mercado Livre** | E-commerce B2C+C2C | Com fins lucrativos, sem troca/doação | Economia solidária + ajuda mútua |
+| **FB Marketplace / Grupos WA** | Troca informal | Sem histórico, sem garantia, migra p/ WA | Escrow atômico + histórico + chat na plataforma |
+| **Buy Nothing** | Doação hiperlocal (sem FLP) | Só doação, sem troca com moeda, sem reputação financeira | **Doação E troca** (escolha), RVM, reputação, self-custody |
+| **Freecycle** | Doação por cidade (sem FLP) | UX defasado, sem troca, sem reputação | UX moderna + troca em RVM + reputação + mobile |
+| **Bliive** | Banco de tempo | Nichado, tempo abstrato | Moeda social concreta (RVM) |
+| **Banco Palmas** | Moeda social física local | Offline, local único, sem digital | **Moeda social digital**, escalável, multi-comunidade |
 
-> **Moat = comunidade hiperlocal + reputação on-chain + crédito de troca fluido + escrow seguro (atomic swap).**
-
----
-
-## 3. DeFi / Web3 — Mercado e Benchmarks (NOVO)
-
-### 3.1 Adoção de cripto no Brasil
-- Brasil está consistentemente entre os **top 10–15** do mundo no **Chainalysis Global Crypto Adoption Index** (2023–2024) — adoção real (não especulativa) alta.
-- Estimativas de detentores de cripto no Brasil: **~16–26 milhões** (varia por pesquisa: Gemini, Sherlock/CoinMarketCap, Binance). Crescimento acelerado em 2023–2024, impulsionado por PIX + exchanges locais.
-- **PIX como on-ramp de massa:** ~150 mi de usuários; facilitou a entrada no cripto (mas o revoa **não usa on-ramp** — RVM vem de faucet/cupom).
-- **CBDC (Drex/Real Digital):** Banco Central pilota moeda digital — sinaliza maturidade regulatória e infra on-chain nacional (relevante para o futuro "público" do revoa).
-
-### 3.2 Tokenização de ativos / community currencies
-- **Community/loyalty tokens** crescem como ferramenta de engajamento e economia fechada (Starbucks Odyssey, Reddit Avatares, brand tokens).
-- **Lesson Bunz (falido):** moeda interna "BTZ" faliu por modelo financeiro insustentável (rentabilidade implícita + burn de caixa). **O revoa evita isso:** RVM não promete rentabilidade, tem **demurrage** (desincentiva acúmulo), não conversível em BRL.
-- **Lesson bancos de tempo (Bliive):** tempo abstrato é difícil de adotar. RVM é concreto: vê o que quer, oferece o que tem.
-- **Account Abstraction (ERC-4337):** padrão emergente (2023+) para "carteira invisível" — chave para mass adoption (sem seed phrase). Stack madura: Safe + Stackup + Coinbase webauthn-solidity.
-
-### 3.3 Por que tokenizar ajuda mútua?
-1. **Resolve o desejo duplo coincidente** sem dinheiro (RVM conecta qualquer oferta).
-2. **Reputação imutável on-chain** — histórico de trocas é ativo público (moat de confiança).
-3. **Escrow atômico** — elimina a maior superfície de fraude (item não entregue/pagamento não recebido).
-4. **Self-custody** — o usuário é dono do próprio saldo (alinhado ao ethos Web3 + conformidade).
-5. **Programabilidade** — demurrage, cupom on-chain, taxa, vouchers com expiração são regras automáticas.
-
-### 3.4 Insights acionáveis (Web3)
-1. **Esconder a chain** — usuário vê "RVM/crédito de troca", nunca "cripto/wallet/gas" (carteira invisível).
-2. **Passkey > seed phrase** — WebAuthn é o caminho para mainstream (sem fricção de backup).
-3. **Gas invisível** (Paymaster) é não-negociável para adoção — usuário nunca vê ETH.
-4. **Não prometer rentabilidade** — anti-mensagem absoluta (conformidade + sustentabilidade).
-5. **Rede própria agora, pública depois** — mesma chain (chain ID fixo + contratos não-redeployáveis) evita migração dolorosa.
-6. **Comparativo de preço transparente** — reduz percepção de "moeda obscura"; o usuário entende o poder de compra.
+> **Moat = ajuda mútua (doar/voluntariar) + moeda social comunitária (RVM) + reputação on-chain +
+> hiperlocalidade + sem fins lucrativos.** Nenhum concorrente combina tudo.
 
 ---
 
-## 4. Lei 14.478/2022 — Análise de Conformidade (NOVO)
+## 5. Lei 14.478/2022 — Análise de Conformidade
 
-> Fonte: texto oficial da **Lei nº 14.478, de 21/12/2022** (planalto.gov.br). Esta é uma **análise de
-> produto**, não opinião jurídica formal — validar com advogado antes do lançamento público.
+> Fonte: texto oficial da **Lei nº 14.478/2022** (planalto.gov.br). **Análise de produto, não parecer
+> jurídico** — validar com advogado antes do público. **Natureza jurídica atual: projeto informal (sem CNPJ)**
+> — formalização (associação/OSC) deferida; ver ADR-0004.
 
-### 4.1 O que a lei regula
-A Lei 14.478 dispõe sobre a prestação de serviços de **ativos virtuais** e regula as **prestadoras de
-serviços de ativos virtuais (VASPs)**, sujeitas a **autorização prévia** (Art. 2). Define crimes
-(fraude com ativos virtuais — Art. 171-A CP, 4–8 anos; PLD/FT — Lei 9.613) e aplica o **CDC** (Art. 13).
+### 5.1 "Ativo virtual" (Art. 3) — e a exclusão do RVM
+> **Art. 3, III** exclui "instrumentos que provejam ao titular acesso a produtos ou serviços especificados
+> [...] a exemplo de pontos e recompensas de programas de fidelidade".
 
-### 4.2 "Ativo virtual" (Art. 3) — e a exclusão que salva o RVM
-> **Art. 3:** ativo virtual = representação digital de valor negociável/transferível eletronicamente,
-> usada para **pagamentos ou investimento**, **EXCETO** [...]
-> **III — instrumentos que provejam ao titular acesso a produtos ou serviços especificados ou a
-> benefício proveniente desses produtos ou serviços, a exemplo de pontos e recompensas de programas
-> de fidelidade.**
+**Tese:** o RVM é uma **moeda social comunitária / crédito de troca** que dá acesso a produtos/serviços
+na plataforma — análogo a pontos/recompensas de fidelidade → **excluído** da definição de "ativo virtual".
+Pilares: não conversível em BRL (sem on-ramp), sem rentabilidade (demurrage queima), **sem fins lucrativos**,
+emissão só por faucet/cupom/admin.
 
-**Tese de conformidade do RVM:** o RVM é, por design, um **crédito de troca** que dá ao titular
-**acesso a produtos e serviços especificados dentro da plataforma revoa** — análogo a pontos/recompensas
-de programa de fidelidade (Art. 3, **III**). **Pilares de design que sustentam a exclusão:**
+### 5.2 VASP (Art. 5) — auto-custódia descaracteriza
+> **Art. 5, IV:** VASP = quem custodia/administra ativos "em nome de terceiros".
 
-| Pilar de design | Apoio à exclusão (Art. 3, III) |
-|-----------------|-------------------------------|
-| **RVM não é conversível em BRL** (sem on-ramp/off-ramp) | Não é "moeda/pagamento" geral — só acesso interno a produtos/serviços |
-| **Sem propósito de investimento** (anti-mensagem; demurrage queima, não rende) | Não é "ativo de investimento" |
-| **Faucet + cupom + admin mint** (não compra com BRL) | Emissão não financeira; sem captação |
-| **"Crédito de troca" (não "cripto/token")** no UX/copy | Reforça natureza de programa de fidelidade |
+O revoa usa **auto-custódia (Safe)** — **não custodia** ativos dos usuários → **tende a não ser VASP**.
+Sem on-ramp (Art. 5, I) e transferências P2P via UserOps do próprio usuário (Art. 5, III) reforçam.
 
-> Conclusão: o RVM, **como desenhado**, tende a **não se enquadar** como "ativo virtual" (Art. 3) por
-> encaixar-se na exclusão do inciso III. Esta é a **espinha dorsal da conformidade**.
+### 5.3 Obrigações que SEMPRE se aplicam
+- **CDC (Art. 13):** transparência, publicidade não enganosa — o comparativo de preço e a clareza
+  "moeda social, não investimento" cumprem.
+- **Fraude (Art. 171-A CP):** atomic swap + Indexer (source of truth on-chain) protegem.
+- **PLD/FT (Lei 9.613):** KYC-lite (email + anti-sybil) + monitoramento prudenciais, mesmo sem ser VASP.
+- **LGPD:** dados pessoais (email, localização) sob a Lei 13.709.
+- **"Sem fins lucrativos" + informal:** reforça que não há "oferta pública de ativos" nem captação —
+  mantém o MVP de baixo risco regulatório. **Formalizar como associação/OSC antes do público** reduz
+  risco e habilita captação de doações/apoio institucional.
 
-### 4.3 VASP (Art. 5) — e como o revoa NÃO é VASP
-> **Art. 5:** VASP = pessoa jurídica que, **em nome de terceiros**, executa: troca ativo↔moeda (I),
-> troca ativo↔ativo (II), transferência de ativos (III), **custódia/administração** de ativos (IV),
-> participação em serviços financeiros/oferta (V).
-
-**Por que o revoa evita a condição de VASP:**
-| Atividade VASP (Art. 5) | Como o revoa evita |
-|--------------------------|--------------------|
-| **Custódia** (IV) | **Self-custody via Safe (AA)** — o revoa **NÃO** custodia ativos dos usuários em nome deles. Cada usuário é dono da própria Safe (passkey). *Este é o moat decisivo.* |
-| **Troca ativo↔moeda** (I) | **Sem on-ramp** — RVM não é comprado/vendido por BRL |
-| **Transferência** (III) | Transferências P2P são **UserOps assinadas pelo próprio usuário** (não "em nome de terceiros") |
-| **Participação em oferta financeira** (V) | Faucet/cupom são emissão de crédito de troca interno, não "oferta pública de ativos" |
-
-> Conclusão: com **self-custody + sem on-ramp + utility token**, o revoa **tende a não ser VASP**
-> (Art. 5). Reavaliar se futuramente abrir conversibilidade (stablecoin) — aí sim exigiria autorização.
-
-### 4.4 Obrigações que SEMPRE se aplicam (mesmo fora do regime VASP)
-- **CDC (Art. 13):** transparência, publicidade não enganosa, boa-fé objetiva. → O comparativo de preço
-  e a clareza "RVM = crédito de troca, não investimento" cumprem isso.
-- **Fraude (Art. 171-A CP):** proibido organizar/distribuir carteiras com fraude. → Transparência on-chain
-  (Indexer = source of truth) e atomic swap protegem.
-- **PLD/FT (Lei 9.613):** mesmo sem ser VASP formal, manter **KYC-lite** (email verificado + anti-sybil)
-  e **monitoramento** é prudencial (anti-farming, anti-golpe).
-- **LGPD:** dados pessoais (email, localização) seguem a Lei 13.709.
-
-### 4.5 Roadmap de conformidade
-1. **MVP privado:** utility token + self-custody + sem on-ramp → baixo risco regulatório.
-2. **Pré-público:** parecer jurídico formal sobre enquadramento do RVM (Art. 3, III).
-3. **Público (futuro):** se adotar stablecoin BRL 1:1 (lastro+KYC) ou guardians, **reentrar** no escopo
-   VASP → buscar autorização do órgão federal (a definir por decreto) + PLD completo.
+### 5.4 Roadmap de conformidade
+1. **MVP privado (informal):** utility token + auto-custódia + sem on-ramp + sem FLP → baixo risco.
+2. **Pré-público:** **formalizar associação/OSC (CNPJ)** + parecer jurídico sobre enquadramento do RVM.
+3. **Público:** se adotar stablecoin BRL (lastro+KYC) ou guardians → reentra escopo VASP (autorização + PLD completo).
 
 ---
 
-## 5. Comunidades (herdado de `trocadeira/RESEARCH_COMMUNITIES.md`)
+## 6. Comunidades (hiperlocal + ajuda mútua)
 
-> **A comunidade não é módulo a mais — é o moat.** Combina 3 eixos simultaneamente (geográfico +
-> interesse + causa), nenhum concorrente faz os três.
+> **A comunidade é o moat de retenção.** Combina 3 eixos (geográfico + interesse + causa), nenhum
+> concorrente faz os três. Inspirado em Buy Nothing (hiperlocal + gratidão) + Banco Palmas (comunidade real coesa).
 
 | Plataforma | Geográfica | Interesse | Causa | Feed | Reputação local | Moderação comunitária |
 |------------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Buy Nothing | ✓ (bairro) | △ | ✓ (ambiental) | ✓ | △ | ✓ |
+| Freecycle | ✓ (cidade) | ✗ | ✓ | ✓ | ✗ | ✓ |
 | FB Marketplace | △ | ✓ | △ | ✓ | ✗ | △ |
-| OLX | △ (cidade) | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Freecycle | ✓ (cidade) | ✗ | ✓ (ambiental) | ✓ | ✗ | ✓ |
-| Vinted | ✗ | ✓ (fóruns) | ✗ | ✓ (follow) | ✗ | ✓ |
-| Bunz | ✓ | ✓ | △ | ✓ | △ | ✓ |
-| **revoa** | **✓ (bairro)** | **✓ (categoria)** | **✓ (ESG)** | **✓** | **✓ (on-chain)** | **✓** |
+| **revoa** | **✓ (bairro)** | **✓ (categoria)** | **✓ (ESG/solidária)** | **✓** | **✓ (on-chain)** | **✓** |
 
 - **Onboarding:** auto-vínculo à comunidade da cidade (default).
 - **Feed:** prioriza comunidade + raio (1/5/10/25 km Haversine).
 - **Posts recursivos** (materialized path, depth 6) + **chat SignalR** (90 dias).
-- **A causa (ESG/ajuda mútua):** doar/voluntariar = bônus reputacional.
+- **A causa (ESG/ajuda mútua):** doar/voluntariar = recompensa multi-eixo (reputação + bônus RVM + pontos).
 
 ---
 
-## 6. Métricas-Chave (KPIs)
+## 7. Recompensa de Ajuda Mútua (gamificação do altruísmo)
 
-### 6.1 Aquisição & engajamento
-- Usuários cadastrados (alvo 12m: 5.000), DAU (500), taxa de ativação (≥40% criam listing em 7d).
-- Listings ativos (2.000), ofertas enviadas (3.000), taxa de resposta ≤48h (≥75%).
-- **Trocas finalizadas** (750), taxa de conclusão (≥65%), nota média (≥4.3).
+> Decisão travada: o fluxo de doação (produto + serviço) recompensa em **3 eixos simultâneos**.
 
-### 6.2 Econômicas (RVM)
-- Volume RVM circulante, taxa média de demurrage aplicada, cupons resgatados, transferências P2P.
-- **ComparaRVM:** % de listings com comparativo exibido (meta 100%).
+| Eixo | O que é | Visível em |
+|------|---------|-----------|
+| **Reputação/badges** | Avaliação 1–5 + selos de "ajuda mútua" (🌱→⭐→🌟→💎 + selos de doador) | Perfil público |
+| **Bônus de RVM** | Faucet extra creditado ao doador/voluntário | Carteira (RM$) |
+| **Pontos de ajuda** | Contador separado de "boas ações" (não RVM, não conversível) | Perfil + ranking comunitário |
 
-### 6.3 Comunidade & impacto
-- Posts/recursivos, mensagens de chat (retenção 90d), comunidades ativas, itens em circulação,
-  resíduo/CO₂ evitado (estimativa).
-
----
-
-## 7. Riscos (resumo — Plano §12 + Web3)
-
-| Risco | Impacto | Mitigação |
-|-------|---------|-----------|
-| Enquadramento regulatório do RVM | Alto | Utility token + self-custody + sem on-ramp (Art. 3,III / Art. 5); parecer jurídico pré-público |
-| Safe+4337+WebAuthn (contratos) | Alto | Componentes canônicos auditados; forge test/coverage; security review |
-| Adoção "carteira invisível" falha | Médio | Passkey + gas invisível + comparativo transparente |
-| Demurrage rejeitado pelos usuários | Médio | Piso generoso (R$100), isenção por atividade, copy clara |
-| PricingIntelligence (API ML+LLM GPU) | Médio | Fase 3; ToS ML; cache; Qwen 7B GPU |
-| Bunz-like (falência por modelo financeiro) | Médio | RVM sem rentabilidade + demurrage + não-convertível |
+- O **bônus de RVM é configurável na área administrativa** (`DonationReward:BonusRvm` por kind/modo),
+  permitindo calibrar o incentivo à ajuda sem mudar código.
+- Referenciais: Buy Nothing (reconhecimento/gratidão), time banking (crédito por ajuda), badges de
+  voluntariado (Volunteers' Week, UNESCO).
 
 ---
 
-## 8. Conclusões Estratégicas
+## 8. Métricas-Chave (KPIs)
 
-1. **O vácuo é real:** trocas puras sem dinheiro são ~2–5% do C2C — paralisadas pelo desejo duplo coincidente. O RVM desbloqueia isso **sem virar dinheiro**.
-2. **O design é o moat de conformidade:** utility token (Art. 3, III) + self-custody (não-VASP, Art. 5) + sem on-ramp = perfil regulatório baixo no MVP privado.
-3. **A comunidade é o moat de retenção:** três eixos + reputação on-chain + hiperlocalidade — nenhum concorrente combina tudo.
-4. **A invisibilidade da chain é o moat de adoção:** passkey, gas invisível, "crédito de troca" — mainstream sem fricção cripto.
-5. **O caminho público existe e é incremental:** mesma chain + autorização VASP + stablecoin (futuro), sem rewrite.
+### 8.1 Aquisição & engajamento
+- Usuários cadastrados, DAU, taxa de ativação (≥40% criam listing/doação em 7d).
+- Listings ativos, **doações/voluntariados** (separado de trocas), trocas finalizadas.
+
+### 8.2 Econômicas (RVM) & impacto
+- Volume RVM circulante, demurrage aplicado, cupons resgatados, **bônus de doação creditados**.
+- **Impacto (Buy Nothing-style):** itens doados/revoados/mês, **resíduo evitado (t/mês)**, CO₂ evitado,
+  serviços voluntariados. Narrativa forte para `revoa.org` (transparência).
+
+### 8.3 Comunidade
+- Comunidades ativas, posts/recursivos, mensagens de chat, **pontos de ajuda distribuídos**.
 
 ---
 
-*Documento-fonte-de-verdade de mercado. Sucessor do `trocadeira/MARKET_RESEARCH.md`. Análise da Lei 14.478 baseada no texto oficial (planalto.gov.br) — validar com parecer jurídico antes do público.*
+## 9. Conclusões Estratégicas (atualizadas)
+
+1. **O referencial é economia solidária, não cripto.** O RVM é uma **moeda social comunitária digital**
+   (herdeira do Banco Palmas), não "cripto-investimento". Comunicação, copy e identidade = **comunidade + ajuda mútua**.
+2. **Doação é produto de primeira classe** (como no Buy Nothing), coexistindo com troca em RVM — o
+   usuário **escolhe** doar/voluntariar (recompensa multi-eixo) ou trocar (RVM).
+3. **Sem fins lucrativos + auto-custódia + utility token = moat de conformidade** (Lei 14.478, Art. 3,III / Art. 5).
+4. **Dois domínios:** `revoa.me` (app) + `revoa.org` (missão, blog, painel de transparência/impacto) —
+   reforçam o caráter de iniciativa social.
+5. **Formalizar associação/OSC antes do público** reduz risco regulatório e habilita apoio institucional.
+
+---
+
+*Documento-fonte-de-verdade de mercado. Sucessor do `trocadeira/MARKET_RESEARCH.md`. Fontes: Buy Nothing Project (buynothingproject.org), Banco Palmas (Wikipédia/Instituto Palmas), Lei 14.478 (planalto.gov.br).*

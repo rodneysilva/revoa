@@ -75,7 +75,7 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model), transfer P2P, Paymaster/Bundler | `Accounts` |
 | **Catalog** | Anúncios (`kind`+VOs), categorias, **modo**, **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo, **feed por geolocalização** | `Listings`, `Categories` |
 | **Exchange** | 3 fluxos + máquina de estados escrow (atomic swap) + disputa | `Trades` |
-| **Token (Treasury)** | RVM mint/burn, faucet R$20, demurrage (IPCA), taxa 2%, cupom on-chain | ledger mirror |
+| **Token (Treasury / Fundo Comunitário)** | RVM mint/burn, faucet R$20, demurrage (IPCA), taxa 2%→Fundo Comunitário (sem FLP), cupom on-chain, **bônus de doação (admin-configurável)** | ledger mirror |
 | **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path depth 6); chat SignalR; membership | `Communities`, `Posts`, `Memberships` |
 | **PricingIntelligence** | Quartz semanal → API ML + admin seed + comunidade + IPCA/IBGE → Ollama Qwen 7B → ref BRL; mediana RVM; sugestão justa | `PriceReferences` |
 | **Moderation** | Árbitro de disputas, denúncias, bans, auditoria. Mods de comunidade (escopo) + admins (global) | `Reports` |
@@ -132,8 +132,8 @@ src/
 | **RVM** | ERC-20 | Moeda de troca; roles `MINTER`/`BURNER`; faucet/cupom/demurrage consomem `burn` |
 | **ProductNFT** | ERC-721 | Produto tokenizado; `mintToEscrow()` ao listar (NFT nasce no Vault) |
 | **ServiceVoucher** | ERC-1155 | Voucher de serviço; mint-on-purchase; `redeem`/`confirm`; validade 30d |
-| **EscrowVault** | atomic swap + role `ARBITRATOR` | Custódia NFT/RVM; janela 72h `block.timestamp`; claim pós-expira; 2%→Treasury |
-| **Treasury** | — | Recebe taxa 2%; role `MINTER`/`ARBITRATOR` da plataforma |
+| **EscrowVault** | atomic swap + role `ARBITRATOR` | Custódia NFT/RVM; janela 72h `block.timestamp`; claim pós-expira; 2%→Fundo Comunitário (contrato `Treasury`) |
+| **Treasury** (Fundo Comunitário) | — | Recebe taxa 2% (**sem fins lucrativos**, reinvestido na operação); role `MINTER`/`ARBITRATOR` da plataforma |
 | **CouponRedeemer** | on-chain | Valida cupom (`maxUses`/`expiry`) → mint RVM; unificado com convite |
 | **Safe + módulo 4337 + recovery(admin+timelock)** | AA | Custódia do usuário; EntryPoint canônico |
 | **Coinbase webauthn-solidity** | P-256 | Signer WebAuthn (passkey) dentro de cada Safe |
@@ -156,6 +156,7 @@ SERVIÇO:
 - **Estado financeiro autoritativo ON-CHAIN.** O Indexer projeta eventos → read models idempotentes.
 - **Ações do usuário = UserOperations** (assinadas pela Safe); **admin = ops autorizadas** (role `ARBITRATOR`/`MINTER`).
 - **Reorgs:** aguardar N confirmações antes de considerar final; Indexer reprocessa por `txHash+logIndex`.
+- **Doação/voluntariado:** reusam o EscrowVault/voucher com **valor 0** (mesma atomicidade; sem RVM do receptor). Recompensa multi-eixo (reputação + bônus RVM admin + pontos) creditada off-chain ao doador/voluntário.
 
 ### Ferramental Foundry
 - `forge test` (unit, todos os estados) · `forge coverage` (≥90% em EscrowVault/RVM/NFT/Voucher/Paymaster/CouponRedeemer) · `anvil` (nó local p/ Testcontainers).
@@ -190,9 +191,9 @@ SERVIÇO:
 
 ---
 
-## 8. Frontend (React SPA + PWA)
+## 8. Frontend (React + TypeScript SPA + PWA)
 
-> Stack: **React (Vite) + Tailwind + `viem` + `permissionless.js` + Safe SDK + SignalR client + PWA.**
+> Stack: **React + TypeScript (Vite SPA) + Tailwind + `viem` + `permissionless.js` + Safe SDK + SignalR client + PWA.** (Único backend: .NET; único framework frontend: React/TypeScript.)
 
 - **Carteira invisível:** passkey → cria Safe (permissão via Safe SDK + permissionless.js p/ UserOps; viem p/ assinar).
 - **Feed dinâmico por `kind`:** um objeto Anúncio; o frontend renderiza campos conforme `kind` (ProductDetails vs ServiceDetails).
@@ -247,8 +248,9 @@ O frontend renderiza o formulário/detalhe **dinamicamente** conforme `kind` + `
 ## 12. Deploy & Cutover
 
 - **Stack central** `projetosia/infra`: 1 túnel Cloudflare + 1 Traefik. Protocolo `infra/README.md`.
+- **Dois domínios:** `revoa.me` = **app/plataforma** (este host); `revoa.org` = **blog/docs/painel de transparência/impacto** (site institucional sem fins lucrativos, servido como conteúdo estático/blog — pode ser o mesmo app com rota dedicada ou site separado na Fase 4).
 - **revoa.me** hoje roteia (file-provider `routers-revoa.yml`) para `revoa-app:8000` (atualmente o Python trocadeira).
-- **Cutover (Fase 4):** parar/remover container trocadeira → o `.NET revoa-app` (mesmo nome + porta) assume `revoa.me`/`www.revoa.me`. `revoa.org` já redireciona. **Sem mudança de DNS.**
+- **Cutover (Fase 4):** parar/remover container trocadeira → o `.NET revoa-app` (mesmo nome + porta) assume `revoa.me`/`www.revoa.me`. `revoa.org`/`www.revoa.org` aponta para o app (rota `/transparencia`/blog) ou site institucional. **Sem mudança de DNS** (Cloudflare→túnel→Traefik→labels).
 - **Regras (NUNCA violar):** sem portas no host; sem docker socket; DB/chain só na rede `internal`; públicos na `traefik_net`; `/health` obrigatório; confiar em `X-Forwarded-*`; app em `0.0.0.0`.
 
 ---

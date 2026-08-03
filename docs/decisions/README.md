@@ -18,6 +18,10 @@
 | [ADR-0006](ADR-0006-react-vite-spa.md) | Frontend React (Vite SPA) em vez de SolidJS | Accepted |
 | [ADR-0007](ADR-0007-minio-storage-mvp.md) | MinIO para storage no MVP (IPFS só ao abrir público) | Accepted |
 | [ADR-0008](ADR-0008-ooux-objects-first.md) | OOUX objects-first (ORCA) como metodologia de design | Accepted |
+| [ADR-0009](ADR-0009-sem-fins-lucrativos-fundo-comunitario.md) | Sem fins lucrativos — taxa 2% vira Fundo Comunitário | Accepted |
+| [ADR-0010](ADR-0010-doacao-recompensa-multi-eixo.md) | Doação/Voluntariado com recompensa multi-eixo (bônus RVM admin) | Accepted |
+| [ADR-0011](ADR-0011-dois-dominios-me-org.md) | Dois domínios: revoa.me (app) + revoa.org (transparência) | Accepted |
+| [ADR-0012](ADR-0012-backend-dotnet-frontend-react.md) | Backend único .NET; frontend único React/TypeScript | Accepted |
 
 ## Como escrever um ADR
 

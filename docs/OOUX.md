@@ -8,7 +8,11 @@
 
 ---
 
-## Visão Geral — 16 Objetos
+## Visão Geral — 19 Objetos
+
+> **Ajuda mútua (doação/voluntariado) é primeira classe.** Objetos novos nesta rodada:
+> **Doação/Ajuda** (interação de ajuda, modo doar/voluntariar), **Pedido de Ajuda (Ask)** (manifestação
+> de interesse do receptor) e **Pontos de Ajuda** (contador não-RVM de boas ações).
 
 ```
                               ┌──────────┐
@@ -63,6 +67,10 @@
 | Post | Post (Reply) | 1:N | materialized path depth 6 |
 | Cupom/Convite | Usuário | 1:N | usado no cadastro (maxUses) |
 | Transferência | Carteira | 2:1 | from→to (P2P) |
+| Doação/Ajuda | Anúncio | 1:N | anúncio modo doar/voluntariar (valor 0) |
+| Pedido de Ajuda | Doação/Ajuda | N:1 | receptor manifesta interesse (fila) |
+| Doação/Ajuda | Usuário | 2:1 | doador + receptor |
+| Pontos de Ajuda | Usuário | 1:1 | acumula por doação/voluntariado |
 
 ---
 
@@ -195,6 +203,35 @@
 - **Views:** painel do árbitro, histórico da troca.
 - **Aggregate DDD:** `Moderation.Dispute`.
 
+### 18. Doação / Ajuda (produto de primeira classe)
+> Especialização da interação quando `modo ∈ {doar, voluntariar}`. **Reusa o EscrowVault/voucher com
+> valor 0** (sem RVM do receptor). O doador/voluntário recebe **recompensa multi-eixo** (reputação +
+> bônus RVM admin-configurável + pontos de ajuda). NÃO confundir com Troca (que movimenta RVM).
+
+- **Core:** anúncio (modo doar/voluntariar), doador, receptor (escolhido), voucher/NFT, recompensas aplicadas, createdAt.
+- **CTAs:** anunciar (doar/voluntariar, 0 RVM), pedir (receptor manifesta), **escolher receptor** (doador curador), aceitar, entregar, confirmar, cancelar.
+- **States:** `announced → requested → matched(escolhido) → delivered → confirmed → rewarded` | `cancelled`.
+- **Views:** feed (badge Doar/Voluntariar), detalhe, "minhas doações", perfil (selos).
+- **Aggregate DDD:** `Exchange.Donation` (compartilha agregado com Trade, discriminado por modo).
+
+### 19. Pedido de Ajuda (Ask)
+> O "pedir" (Buy Nothing) é tão importante quanto "oferecer". Todo receptor manifesta interesse numa
+> Doação/Ajuda ou cria um **Pedido** aberto ("preciso de X" / "preciso de ajuda com Y").
+
+- **Core:** autor, anúncio-alvo (ou pedido livre), mensagem, createdAt.
+- **CTAs:** pedir, editar, retirar pedido, ser escolhido, agradecer (gratidão).
+- **States:** `open → selected | withdrawn | closed`.
+- **Views:** fila de pedidos (no anúncio de doação), "pedidos abertos" da comunidade.
+- **Aggregate DDD:** `Catalog.HelpRequest` (ou `Community.Request`).
+
+### 20. Pontos de Ajuda
+- **Core:** usuário, saldo de pontos, histórico (por doação/voluntariado), ranking comunitário.
+- **Metadata:** selos desbloqueados (🎁 doador, 🤝 voluntário, por marcos).
+- **CTAs:** acumular (ao recompensar doação), ver ranking, ver selos.
+- **States:** implícitos (saldo crescente + marcos).
+- **Views:** perfil (selos + pontos), ranking da comunidade.
+- **Aggregate DDD:** `Reputation.HelpPoints` (não-RVM, não conversível).
+
 ---
 
 ## Ranking Forçado (prioridade de implementação por fase)
@@ -203,7 +240,7 @@
 |-----------|--------|------|
 | 1 | Usuário, Carteira, Anúncio, Cupom/Convite | Fase 1 (foundation) |
 | 2 | ProductNFT, ServiceVoucher, Troca, Categoria | Fase 2 (MVP trocas) |
-| 3 | Comunidade, Post, Reply, Chat, Notificação | Fase 2 (comunidades) |
+| 3 | Comunidade, Post, Reply, Chat, Notificação, **Doação/Ajuda, Pedido de Ajuda, Pontos de Ajuda** | Fase 2 (comunidades + ajuda mútua) |
 | 4 | Avaliação, Transferência, Ref. Preço, Disputa | Fase 3 (confiança/inteligência) |
 
 > **Regra YAGNI:** não modele objetos de fases futuras além do necessário para o contexto atual.

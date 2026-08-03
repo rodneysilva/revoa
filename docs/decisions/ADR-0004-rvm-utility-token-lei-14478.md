@@ -1,12 +1,16 @@
 # ADR-0004: RVM como utility token (não ativo financeiro) — Lei 14.478
 
 ## Status
-Accepted — baseline travado no Plano (§1, decisão #9). Análise jurídica formal deferida (pré-público).
+Accepted — baseline travado no Plano (§1, decisão #9). **Atualização v3.0:** natureza jurídica =
+**projeto informal (sem CNPJ) por ora**; formalizar associação/OSC antes do público. Análise jurídica
+formal deferida (pré-público).
 
 ## Contexto
-O revoa emite RVM. A **Lei 14.478/2022** regula "ativos virtuais" e VASPs (autorização prévia, PLD,
-crimes). Se o RVM for "ativo virtual" e o revoa for "VASP", o MVP privado fica inviável
-(burocracia/autorização). Precisamos de um design que **mantenha o RVM fora do regime** no MVP.
+O revoa emite RVM e é **sem fins lucrativos**. A **Lei 14.478/2022** regula "ativos virtuais" e VASPs
+(autorização prévia, PLD, crimes). Se o RVM for "ativo virtual" e o revoa for "VASP", o MVP privado fica
+inviável (burocracia/autorização). Precisamos de um design que **mantenha o RVM fora do regime** no MVP.
+**Sem CNPJ por ora** reforça que não há "oferta pública" nem captação formal (baixo risco), mas exige
+formalização antes do público (ver ADR-0009).
 
 ## Decisão
 Desenhar o RVM como **utility token / crédito de troca**, não ativo financeiro:
