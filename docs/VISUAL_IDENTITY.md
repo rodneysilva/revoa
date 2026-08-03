@@ -76,6 +76,10 @@ Mais **comunidade e menos técnico**, cobrindo as 4 direções escolhidas:
 > reaproveitar, sem jargão. Funciona em hero, PWA e `revoa.org`.
 > Alternativa forte: **#3 "Comunidade que troca, doa e cuida."** (descritiva dos 3 modos).
 
+> **Aplicação na hero da home:** os **8 slogans alternam (rotação)** na hero do `revoa.me` — não há
+> um slogan fixo único; todos os 8 giram (carousel/frase rotativa) para reforçar os múltiplos aspectos
+> da marca (reaproveitar, comunidade, ajuda mútua, sustentabilidade, hiperlocal).
+
 ---
 
 ## 3. Direção Final (comunidade primária)
@@ -165,10 +169,12 @@ Fonte primária: **Inter** (WorkSans como fallback próximo).
 
 ## 8. Aplicações (web + mobile)
 
-Ver board **[c00-applications-web-mobile.png](visual-explorations/c00-applications-web-mobile.png)**:
+Ver board **[c00-applications-web-mobile.png](visual-explorations/c00-applications-web-mobile.png)** —
+**aprovado** (board mobile). Usar como referência de layout para o frontend:
 - **Web header:** wordmark + nav (Feed/Comunidade/Doar/Carteira) + saldo `RM$`.
+- **Web hero da home:** wordmark + **slogan rotativo** (os 8 alternam) + CTA "Ofereça o que você tem".
 - **Web card de anúncio:** imagem + badge Doar (rosa/terracota) + título + "Grátis · RM$ 0".
-- **Mobile app icon:** RV sobre esmeralda (PWA).
+- **Mobile app icon:** RV/Pássaro-Folha sobre esmeralda (PWA).
 - **Mobile splash:** ícone + wordmark + slogan + home com feed.
 
 ---

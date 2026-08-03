@@ -169,15 +169,21 @@ Cancelado/Expirado → sem recompensa
 
 ## 5. Cadastro & Onboarding (carteira invisível)
 
-- **Invite/cupom-gated:** sem cupom/convite válido (on-chain, `maxUses`/`expiry`), não cria conta.
-- **Email** verificado + **passkey (WebAuthn)** — **sem seed phrase**.
-- Ao criar: backend gera **Safe** (4337 + módulo + signer webauthn-solidity) + **faucet R$20**.
-- **Anti-sybil:** 1 conta/dispositivo · 5 contas/IP/dia · email único.
+- **Cupom/convite OPCIONAL:** o registro **não exige** cupom.
+  - **Sem cupom:** usuário recebe o crédito normal da plataforma (**faucet R$20** equivalente).
+  - **Com cupom:** recebe **faucet R$20 + o valor do cupom** (acrescido, on-chain via `CouponRedeemer`).
+- **Confirmação dupla (obrigatória):** **e-mail** (link/token) **E telefone** (OTP via SMS/WhatsApp). Conta só ativa após ambos verificados.
+- **Passkey (WebAuthn)** — **sem seed phrase** (carteira invisível).
+- Ao ativar: backend gera **Safe** (4337 + módulo + signer webauthn-solidity) + **faucet R$20** (+ cupom se houver).
+- **Anti-sybil:** 1 conta/dispositivo · 5 contas/IP/dia · **e-mail único** · **telefone único**.
 
-### Cupom = Convite (unificado, ON-CHAIN)
-- `CouponRedeemer` valida (`maxUses`, `expiry`, `usedBy`) → mint RVM na Safe.
-- Admin: CRUD off-chain + deploy/revogação on-chain.
-- Resgate **único por carteira**.
+> **Campo de cadastro — ver análise e itens críticos em `USER_FLOWS.md` (F1) e
+> `MARKET_RESEARCH.md`.** Automatizáveis: CEP→ViaCEP, geolocalização HTML5, comunidade default por cidade.
+
+### Cupom/Convite (on-chain, OPCIONAL)
+- `CouponRedeemer` valida (`maxUses`, `expiry`, `usedBy`) → mint **RVM extra** na Safe (somado ao faucet).
+- Admin: CRUD off-chain + deploy/revogação on-chain. Resgate **único por carteira**.
+- Cupom é **incentivo de captação**, não portão de entrada.
 
 ---
 

@@ -64,7 +64,7 @@
 
 | Módulo | Responsabilidade | Coleções MongoDB próprias |
 |--------|------------------|---------------------------|
-| **Identity** | Registro invite/cupom-gated, login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | Users |
+| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e telefone**), login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | Users |
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model Indexer), transfer P2P, Paymaster/Bundler | Accounts |
 | **Catalog** | Anúncios (kind + VOs), categorias, **modo** (trocar/repassar/doar/voluntariar), **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo de preço, feed por geolocalização | Listings, Categories |
 | **Exchange** | 3 fluxos + máquina de estados do escrow (atomic swap) + disputa + Indexer (source of truth) | Trades |

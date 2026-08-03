@@ -225,6 +225,63 @@ Sem on-ramp (Art. 5, I) e transferências P2P via UserOps do próprio usuário (
 
 ---
 
+## 9. Campos de Cadastro — Benchmark e Recomendação
+
+> Objetivo: cadastro **enxuto e sem fricção** (mainstream, auto-custódia, sem FLP), com
+> **confirmação dupla (e-mail + telefone)** e **automações** que preencham o resto.
+
+### 9.1 Benchmark — o que os concorrentes pedem
+| Plataforma | Campos no cadastro | Login social |
+|------------|--------------------|--------------|
+| **OLX** | nome, e-mail, telefone, CEP, senha | Google / Facebook |
+| **Mercado Livre** | nome, sobrenome, **CPF**, e-mail, telefone, senha, endereço | Google / Facebook / Apple |
+| **Enjoei** | e-mail, apelido, senha, foto (opcional) | Google / Facebook / Apple |
+| **Buy Nothing** | nome, e-mail, **endereço** (define o grupo do bairro) | Google / Facebook / Apple |
+| **FB Marketplace / Nextdoor** | nome, e-mail/telefone, localização | (próprio) |
+
+**Padrão emergente:** nome + e-mail + telefone + localização (CEP) + login social opcional. CPF só quem
+é marketplace financeiro (ML). Endereço é central para quem é hiperlocal (Buy Nothing/Nextdoor) — como o revoa.
+
+### 9.2 Recomendação para o revoa (cadastro mínimo viável)
+**Obrigatórios (no cadastro):**
+- Nome ou apelido
+- E-mail (verificado por link/token)
+- Telefone (verificado por OTP — **meio a confirmar**)
+- CEP (→ ViaCEP automatiza o resto)
+- Passkey (WebAuthn) — carteira invisível
+- Aceite de Termos + LGPD
+- Cupom (OPCIONAL)
+
+**Opcionais (completar depois / no perfil):**
+- Avatar (auto-gerado se vazio)
+- Bio
+- Data de nascimento (**idade mínima a confirmar**)
+- Categorias de interesse (sugere feed/comunidades)
+- Foto de capa
+
+### 9.3 Automações (preencher pelo usuário, sem digitar)
+| Automação | Entrada → Saída |
+|-----------|-----------------|
+| **ViaCEP** | CEP → rua, bairro, cidade, estado |
+| **Geocodificação** | endereço → lat/lng (Nominatim/OSM ou Google) |
+| **HTML5 geolocation** | consentimento → lat/lng preciso |
+| **Comunidade default** | cidade → auto-vínculo à comunidade da cidade |
+| **Device fingerprint** | navegador/dispositivo → anti-sybil (1 conta/dispositivo) |
+| **Avatar automático** | nome/e-mail → inicial + cor (ou DiceBear) se vazio |
+| **Validação de formato** | e-mail/telefone/CEP → máscara + validação instantânea |
+| **Sugestão de apelido** | e-mail → apelido sugerido (editável) |
+
+### 9.4 Itens críticos a confirmar (decisão do dono) — *ver perguntas em paralelo*
+1. Meio de OTP do telefone (SMS / WhatsApp / ambos).
+2. Idade mínima (18+ / 16+ / sem restrição).
+3. CPF (obrigatório / opcional / não coletar).
+4. Login social (Google/Apple/Facebook) — sim/não.
+5. Provedor de OTP/SMS (Twilio / Zenvia-TotalVoice BR / outro).
+6. Verificação do telefone: obrigatória no cadastro ou gate progressivo (só para anunciar/trocar).
+7. Avatar: obrigatório na hora ou auto-gerado (preencher depois).
+
+---
+
 ## 9. Conclusões Estratégicas (atualizadas)
 
 1. **O referencial é economia solidária, não cripto.** O RVM é uma **moeda social comunitária digital**

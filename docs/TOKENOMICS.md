@@ -30,7 +30,7 @@
 
 | Fonte | Mecanismo | Anti-abuso |
 |-------|-----------|------------|
-| **Faucet de cadastro** | **R$20 equivalente** mintados na Safe do novo usuário | 1/dispositivo · 5 contas/IP/dia · cadastro **invite/cupom-gated** |
+| **Faucet de cadastro** | **R$20 equivalente** mintados na Safe do novo usuário (sempre; +cupom se houver) | 1/dispositivo · 5 contas/IP/dia · **e-mail + telefone verificados** · cadastro aberto (cupom opcional) |
 | **Cupom/Convite (on-chain)** | `CouponRedeemer.redeem()` → mint de RVM | `maxUses` + `expiry` on-chain · resgate único por carteira |
 | **Bônus de doação/voluntariado** | Faucet extra creditado ao doador/voluntário (recompensa de ajuda mútua) | **`DonationReward:BonusRvm` por kind/modo — configurável admin** |
 | **Mint admin (Fundo Comunitário)** | Operação autorizada para seed/eventos | Auditoria on-chain · só role `MINTER` |
@@ -38,7 +38,11 @@
 > **Sem on-ramp real:** RVM não é comprado com BRL. Toda emissão vem de faucet/cupom/admin.
 > Isso mantém o RVM fora do escopo de "oferta pública de ativos" da regulação.
 
-### Cupom = Convite (unificado, ON-CHAIN)
+> **Cupom é OPCIONAL:** o registro não exige cupom. Sem cupom → crédito normal (**faucet R$20**).
+> Com cupom válido → **R$20 + valor do cupom** (somado, on-chain). Cupom inválido/esgotado é ignorado
+> (registro prossegue com crédito normal).
+
+### Cupom = Convite (on-chain, OPCIONAL)
 - Contrato **`CouponRedeemer`** valida cupom → minta RVM direto na Safe do resgatante.
 - Campos on-chain: `code` (hash), `amount`, `maxUses`, `expiry`, `usedBy[]`.
 - Anti-farming off-chain complementar: rate-limit por IP/dispositivo + validação de email.
@@ -144,7 +148,7 @@ mint admin ──┘                  (escrow)     │                  (não vo
 
 | Vetor | Defesa |
 |-------|--------|
-| Múltiplas contas por pessoa | Cadastro **invite/cupom-gated** (maxUses) + email verificado + **1 conta/dispositivo** |
+| Múltiplas contas por pessoa | Cadastro **aberto (cupom opcional)** + **e-mail + telefone verificados** + **1 conta/dispositivo** |
 | Farms por IP | **5 contas/IP/dia** (rate-limit) |
 | Faucet farming | Cupom `maxUses`/`expiry` on-chain + resgate único por carteira |
 | Acúmulo especulativo | **Demurrage** (queima saldo parado acima do piso) |

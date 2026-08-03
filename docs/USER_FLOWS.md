@@ -10,7 +10,7 @@ Relacionados: `BUSINESS.md` · `BUSINESS_RULES.md` · `OOUX.md` · `ARCHITECTURE
 ---
 
 ## Índice
-- [F1 — Registro (cupom-gated + passkey + Safe + faucet)](#f1--registro)
+- [F1 — Registro (cupom opcional + email/telefone + passkey + Safe + faucet)](#f1--registro)
 - [F2 — Onboarding (comunidade default + primeiro anúncio)](#f2--onboarding)
 - [F3 — Anúncio de produto](#f3--anúncio-de-produto)
 - [F4 — Anúncio de serviço](#f4--anúncio-de-serviço)
@@ -26,40 +26,51 @@ Relacionados: `BUSINESS.md` · `BUSINESS_RULES.md` · `OOUX.md` · `ARCHITECTURE
 ---
 
 ## F1 — Registro
-**Objetos:** Usuário, Carteira, Cupom/Convite · **Anti-sybil:** 1/dispositivo, 5/IP/dia, email único.
+**Objetos:** Usuário, Carteira, Cupom/Convite · **Anti-sybil:** 1/dispositivo, 5/IP/dia, e-mail único, telefone único.
 
 ### Jornada
-1. Visitante recebe/tem um **cupom/convite** (on-chain, `maxUses`/`expiry`).
-2. Preenche **email** + valida; escolhe **passkey** (WebAuthn — biometria/dispositivo). **Sem seed phrase.**
-3. Backend valida cupom + anti-sybil → cria **Usuário** + gera **Safe** (Account Abstraction: módulo 4337 + signer `webauthn-solidity`).
-4. **Faucet R$20** minta RVM na nova Safe (e resgata o cupom, se aplicável → mint extra).
-5. Usuário é autenticado (JWT) + auto-vinculado à **comunidade default da cidade** (F2).
+1. Visitante começa o cadastro. **Cupom é OPCIONAL** — pode deixar vazio.
+2. Preenche **nome/apelido**, **e-mail**, **telefone**, **CEP** (→ ViaCEP automatiza bairro/cidade/estado; geolocalização via HTML5 opcional).
+3. **Confirmação dupla obrigatória:** valida **e-mail** (link/token) **E telefone** (OTP SMS/WhatsApp). Conta só ativa após ambos.
+4. Cria **passkey** (WebAuthn — biometria/dispositivo). **Sem seed phrase.**
+5. Backend valida anti-sybil (device/IP/e-mail/telefone) → cria **Usuário** + gera **Safe** (Account Abstraction).
+6. **Crédito de boas-vindas:** **faucet R$20** sempre; se informou **cupom válido** → + valor do cupom (on-chain, somado).
+7. Usuário autenticado (JWT) + auto-vinculado à **comunidade default da cidade** (F2).
 
 ### Estados
-`convite → email_validado → passkey_criada → safe_gerada → faucet_creditado → ativo`
+`iniciado → email_validado → telefone_validado → passkey_criada → safe_gerada → creditada → ativo`
 
 ### Gherkin
 ```gherkin
-Cenário: Registro bem-sucedido com cupom válido
-  Dado um visitante com um cupom "BEMVINDO" (maxUses=100, válido)
-  E que o dispositivo e o IP não excederam os limites anti-sybil
-  Quando preenche email "ana@x.com" e valida
+Cenário: Registro sem cupom (crédito normal)
+  Dado um visitante sem cupom
+  E que o dispositivo/IP não excederam os limites anti-sybil
+  Quando preenche nome, e-mail "ana@x.com" e telefone, valida ambos (e-mail + OTP)
   E cria uma passkey (WebAuthn)
-  Então uma Safe (auto-custódia) é gerada para o usuário
-  E o faucet credita R$20 equivalente em RVM na Safe
-  E o cupom é resgatado (mint extra de RVM, se houver amount)
+  Então uma Safe é gerada e o faucet credita R$20 equivalente em RVM
   E o usuário é autenticado e vinculado à comunidade default da cidade
 
-Cenário: Cupom inválido bloqueia registro
-  Dado um visitante com um cupom expirado ou esgotado (maxUses atingido)
-  Quando tenta se registrar
-  Então o registro é bloqueado com "cupom inválido ou esgotado"
+Cenário: Registro com cupom (crédito normal + bônus do cupom)
+  Dado um visitante com um cupom "BEMVINDO" válido (maxUses>0, dentro da validade)
+  Quando conclui o cadastro (e-mail + telefone verificados, passkey criada)
+  Então o faucet credita R$20 equivalente + o valor do cupom (somado, on-chain)
+  E o cupom é marcado como usado (resgate único por carteira)
 
-Cenário: Anti-sybil bloqueia dispositivo duplicado
-  Dado um dispositivo que já criou uma conta hoje
-  Quando tenta um segundo registro no mesmo dispositivo
-  Então o registro é bloqueado por "limite de 1 conta/dispositivo"
+Cenário: Cupom inválido não bloqueia o registro
+  Dado um visitante com um cupom expirado/esgotado
+  Quando conclui o cadastro
+  Então o registro PROSSEGUE normalmente (crédito normal R$20)
+  E o cupom é ignorado com aviso "cupom inválido ou esgotado"
+
+Cenário: Confirmação dupla obrigatória
+  Dado um visitante que validou o e-mail mas não o telefone
+  Quando tenta ativar a conta
+  Então a ativação é bloqueada até validar o telefone (OTP)
 ```
+
+> **Campos de cadastro — análise e itens críticos a confirmar:** ver `MARKET_RESEARCH.md`
+> (benchmark de concorrentes) e a lista de automações. Itens abertos (decisão do dono): meio de OTP
+> (SMS vs WhatsApp), idade mínima, CPF opcional, login social, provedor de OTP.
 
 ---
 

@@ -71,7 +71,7 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 | Módulo | Responsabilidade | Coleções |
 |--------|------------------|----------|
-| **Identity** | Registro invite/cupom-gated, login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | `Users` |
+| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e telefone**), login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | `Users` |
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model), transfer P2P, Paymaster/Bundler | `Accounts` |
 | **Catalog** | Anúncios (`kind`+VOs), categorias, **modo**, **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo, **feed por geolocalização** | `Listings`, `Categories` |
 | **Exchange** | 3 fluxos + máquina de estados escrow (atomic swap) + disputa | `Trades` |

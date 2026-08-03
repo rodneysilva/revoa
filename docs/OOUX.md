@@ -79,7 +79,7 @@
 ### 1. Usuário
 - **Core:** id, nome, email, avatar, localização (lat/lng, bairro, cidade), role (`user`/`mod`/`admin`).
 - **Metadata:** bio, reputação (média/badges), data cadastro, status (`active`/`banned`).
-- **CTAs:** cadastrar (cupom-gated), editar perfil, criar passkey, listar, comprar, transferir, avaliar, denunciar, entrar/sair comunidade.
+- **CTAs:** cadastrar (cupom opcional + confirmação e-mail/telefone), editar perfil, criar passkey, listar, comprar, transferir, avaliar, denunciar, doar/voluntariar, entrar/sair comunidade.
 - **States:** `active` | `banned(temp/perm)` | `inactive`.
 - **Views:** perfil público, perfil próprio, card no feed/chat, admin.
 - **Aggregate DDD:** `Identity.User`.

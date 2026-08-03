@@ -6,7 +6,7 @@ Accepted — baseline travado no Plano (§1, decisão #1).
 ## Contexto
 O revoa precisa de uma chain para RVM (ERC-20), NFTs/vouchers e escrow. Opções: L1 pública existente
 (Ethereum/Polygon/Avalanche C-Chain), testnet (Fuji), rollup/L2, ou **Subnet própria**. O MVP é
-privado (acesso controlado, cupom-gated), mas o plano é abrir público depois. Migrar de chain depois
+privado (acesso controlado em beta; cupom opcional), mas o plano é abrir público depois. Migrar de chain depois
 (contratos não-redeployáveis, saldos, history) é caro e arriscado.
 
 ## Decisão
