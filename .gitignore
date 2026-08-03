@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════════════════════
+# .gitignore — revoa
+# (herda regras globais: nunca commitar secrets, binários > 50MB)
+# ═══════════════════════════════════════════════════════════════
+
+# ── Secrets / ambiente (NUNCA commitar) ─────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+.env.cloudflare
+cloudflared/cred.json
+**/cred.json
+
+# ── .NET ────────────────────────────────────────────────────────
+**/bin/
+**/obj/
+**/artifacts/
+*.user
+*.suo
+*.userprefs
+*.cache
+*.log
+*.pidb
+*.swp
+TestResults/
+*.coverage
+*.coveragexml
+
+# ── Node / Frontend (React + Vite) ──────────────────────────────
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+*.local
+.eslintcache
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+
+# ── Foundry / Solidity ──────────────────────────────────────────
+cache/
+out/
+broadcast/
+lib/            # forge dependencies (instaladas via forge install)
+*.tsbuildinfo
+
+# ── Binários grandes (regra global) ─────────────────────────────
+*.msi
+*.exe
+*.dll
+*.zip
+*.tar.gz
+*.7z
+*.iso
+
+# ── Dados locais / volumes ──────────────────────────────────────
+data/
+mongo-data/
+minio-data/
+chain-data/
+
+# ── IDE / SO ────────────────────────────────────────────────────
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.iml
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# ── Ollama / modelos ────────────────────────────────────────────
+ollama-models/
+*.gguf

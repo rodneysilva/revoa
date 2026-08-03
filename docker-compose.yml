@@ -1,0 +1,211 @@
+# ═══════════════════════════════════════════════════════════════
+# docker-compose.yml — revoa
+# Plataforma DeFi de troca de produtos e serviços (token RVM, self-custody)
+# ═══════════════════════════════════════════════════════════════
+#
+# Contrato de deploy: segue o protocolo `projetosia/infra/README.md`.
+#   - NENHUMA porta exposta no host (TUDO via Traefik)
+#   - NENHUM docker socket montado
+#   - Redes: `internal` (bridge isolada) + `traefik_net` (external)
+#   - Públicos (app/frontend/minio) na traefik_net; demais SÓ na interna
+#
+# Roteamento revoa.me: definido por file-provider em
+#   `infra/traefik/dynamic/routers-revoa.yml` → http://revoa-app:8000
+# O container `app` DEVE se chamar `revoa-app` e escutar em 0.0.0.0:8000.
+# No cutover (Fase 4) o container Python do trocadeira é removido e o
+# `revoa-app` (.NET) assume revoa.me automaticamente (mesmo nome + porta).
+#
+# PROFILES: serviços ainda sem Dockerfile/imagem pronta ficam sob `profiles`
+# e só sobem com `docker compose --profile <nome> up -d`. Assim este arquivo é
+# o contrato-vivo da topologia completa, enquanto mongo/minio já rodam hoje.
+#   app, frontend            → profile:app        (Fase 1+)
+#   avalanche, bundler,
+#   paymaster, ollama        → profile:chain      (Fase 1)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ═══════════════════════════════════════════════════════════
+  # APP — ASP.NET único (API + SignalR hub + SPA estática)
+  # Em prod serve frontend + /api + /health. Escuta 0.0.0.0:8000.
+  # ═══════════════════════════════════════════════════════════
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: src/Revoa.Api/Dockerfile
+    container_name: revoa-app          # NÃO mudar: routers-revoa.yml aponta aqui
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8000
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true   # confia em X-Forwarded-* (Traefik)
+      - Mongo__ConnectionString=mongodb://mongo:27017/?replicaSet=rs0
+      - Mongo__Database=revoa
+      - Minio__Endpoint=minio:9000
+      - Chain__Rpc=http://avalanche:9650/ext/bc/RVM/rpc
+      - Ollama__Endpoint=http://ollama:11434
+      - Bundler__Rpc=http://bundler:4337
+      - Paymaster__Rpc=http://paymaster:3000
+    volumes:
+      - revoa-app-data:/app/data
+    networks: [internal, traefik_net]
+    depends_on:
+      mongo: { condition: service_healthy }
+      minio: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ═══════════════════════════════════════════════════════════
+  # FRONTEND — dev server (Vite). Em prod a SPA é servida pelo app.
+  # Profile separado para hot-reload durante o desenvolvimento.
+  # ═══════════════════════════════════════════════════════════
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: revoa-frontend
+    environment:
+      - VITE_API_URL=/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks: [internal, traefik_net]
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════════
+  # MONGODB — replica set rs0 (otimistic locking + ACID seletiva)
+  # SÓ na rede interna. Nunca no traefik_net.
+  # ═══════════════════════════════════════════════════════════
+  mongo:
+    image: mongo:7
+    container_name: revoa-mongo
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - revoa-mongo-data:/data/db
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'try{rs.status().ok}catch(e){exit 1}'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # ═══════════════════════════════════════════════════════════
+  # MINIO — S3-compatible (metadata/imagens NFT). tokenURI aponta p/ cá.
+  # Acessível via Traefik em assets.revoa.me (labels) + interno p/ app.
+  # ═══════════════════════════════════════════════════════════
+  minio:
+    image: minio/minio:latest
+    container_name: revoa-minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-revoa}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-revoa12345}
+    volumes:
+      - revoa-minio-data:/data
+    networks: [internal, traefik_net]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      # Console MinIO — acesso admin (proteger/limitar depois)
+      - "traefik.http.routers.revoa-minio.rule=Host(`assets.revoa.me`)"
+      - "traefik.http.routers.revoa-minio.entrypoints=web"
+      - "traefik.http.routers.revoa-minio.middlewares=security-headers@file,gzip@file"
+      - "traefik.http.services.revoa-minio.loadbalancer.server.port=9000"
+
+  # ═══════════════════════════════════════════════════════════
+  # CHAIN STACK (Fase 1, profile:chain) — TODOS só na rede interna
+  # ═══════════════════════════════════════════════════════════
+
+  # Nó Avalanche Subnet-EVM própria (privada agora → pública depois)
+  avalanche:
+    profiles: ["chain"]
+    image: avaplatform/avalanchego:latest
+    container_name: revoa-avalanche
+    command: ["/avalanchego/build/avalanchego",
+              "--network-id=local",
+              "--http-host=0.0.0.0",
+              "--chain-config-dir=/config"]
+    volumes:
+      - revoa-chain-data:/root/.avalanchego
+      - ./chain:/config:ro
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9650/ext/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  # Bundler ERC-4337 (Stackup)
+  bundler:
+    profiles: ["chain"]
+    image: stackupstackup/stackup-bundler:latest
+    container_name: revoa-bundler
+    environment:
+      - BUNDLER_RPC=http://0.0.0.0:4337
+      - BUNDLER_PRIVATE_NODE_RPC=http://avalanche:9650/ext/bc/RVM/rpc
+    networks: [internal]
+    depends_on: [avalanche]
+    restart: unless-stopped
+
+  # Verifying Paymaster (patrocina gas — usuário só vê RVM)
+  paymaster:
+    profiles: ["chain"]
+    image: shaharyar123/verifying-paymaster:latest
+    container_name: revoa-paymaster
+    environment:
+      - RPC_URL=http://avalanche:9650/ext/bc/RVM/rpc
+    networks: [internal]
+    depends_on: [avalanche]
+    restart: unless-stopped
+
+  # Ollama + Qwen 7B (GPU) — normalização de preços (PricingIntelligence)
+  # Requer runtime NVIDIA; em host sem GPU, trocar image por CPU (lento).
+  ollama:
+    profiles: ["chain"]
+    image: ollama/ollama:latest
+    container_name: revoa-ollama
+    volumes:
+      - revoa-ollama-data:/root/.ollama
+    networks: [internal]
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+# ═══════════════════════════════════════════════════════════════
+# Redes
+# ═══════════════════════════════════════════════════════════════
+networks:
+  internal:
+    driver: bridge
+  traefik_net:
+    external: true
+    name: traefik_net
+
+# ═══════════════════════════════════════════════════════════════
+# Volumes
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  revoa-app-data:
+  revoa-mongo-data:
+  revoa-minio-data:
+  revoa-chain-data:
+  revoa-ollama-data:
