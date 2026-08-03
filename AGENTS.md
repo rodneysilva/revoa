@@ -64,7 +64,7 @@
 
 | Módulo | Responsabilidade | Coleções MongoDB próprias |
 |--------|------------------|---------------------------|
-| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e telefone**), login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | Users |
+| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e WhatsApp/telefone** + login **Google/Apple**), WebAuthn/passkeys, JWT, roles, recuperação admin+timelock. **E-mail: MailKit→Postfix** (revoa.me, ADR-0014); **WhatsApp/SMS: Zenvia** | Users |
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model Indexer), transfer P2P, Paymaster/Bundler | Accounts |
 | **Catalog** | Anúncios (kind + VOs), categorias, **modo** (trocar/repassar/doar/voluntariar), **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo de preço, feed por geolocalização | Listings, Categories |
 | **Exchange** | 3 fluxos + máquina de estados do escrow (atomic swap) + disputa + Indexer (source of truth) | Trades |
@@ -128,6 +128,8 @@ docker compose --profile chain up -d
 **Arquitetura:** monólito modular (coleções isoladas, MediatR) · MongoDB global · Anúncio único com `kind` (product|service) + VOs · Comunidades no MVP (default+user, posts recursivos materialized path depth 6, chat SignalR, geolocalização) · **React+TypeScript SPA + PWA**, carteira invisível · MinIO storage · Traefik+Cloudflared · **backend único .NET; frontend único React/TypeScript**.
 
 **Negócio:** **sem fins lucrativos** (natureza jurídica informal por ora; formalizar OSC pré-público) · **dois domínios** (`revoa.me`=app, `revoa.org`=blog/transparência) · narrativa "moeda social comunitária + ajuda mútua" (herdeira do Banco Palmas, NÃO cripto-investimento).
+
+**Cadastro & acesso:** cupom **opcional** (sem cupom→faucet R$20; com cupom→R$20+cupom) · confirmação dupla **e-mail (MailKit+Postfix, revoa.me) + WhatsApp/SMS (Zenvia)** · **idade 18+** · **CPF opcional** · login social **Google+Apple** · avatar **auto-gerado** · **aberto p/ navegar, fechado p/ agir** (anônimo vê tudo, ação exige login+verificação). Anti-sybil: 1/dispositivo, 5/IP/dia, e-mail+telefone únicos. Ver ADR-0013/0014.
 
 ---
 

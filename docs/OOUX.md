@@ -69,7 +69,9 @@
 | Transferência | Carteira | 2:1 | from→to (P2P) |
 | Doação/Ajuda | Anúncio | 1:N | anúncio modo doar/voluntariar (valor 0) |
 | Pedido de Ajuda | Doação/Ajuda | N:1 | receptor manifesta interesse (fila) |
-| Doação/Ajuda | Usuário | 2:1 | doador + receptor |
+| Usuário | Pedido de Ajuda | 1:N | solicita doação/voluntariado (ação — exige login+verificação) |
+| Usuário | Doação/Ajuda | 2:1 | doador + receptor |
+| Anônimo | Anúncio/Comunidade | N:M | **só visualiza** (sem ofertar/pedir — gate de ação) |
 | Pontos de Ajuda | Usuário | 1:1 | acumula por doação/voluntariado |
 
 ---
@@ -77,9 +79,9 @@
 ## Objetos (detalhe ORCA)
 
 ### 1. Usuário
-- **Core:** id, nome, email, avatar, localização (lat/lng, bairro, cidade), role (`user`/`mod`/`admin`).
-- **Metadata:** bio, reputação (média/badges), data cadastro, status (`active`/`banned`).
-- **CTAs:** cadastrar (cupom opcional + confirmação e-mail/telefone), editar perfil, criar passkey, listar, comprar, transferir, avaliar, denunciar, doar/voluntariar, entrar/sair comunidade.
+- **Core:** id, nome/apelido, email (verificado), telefone (verificado OTP WhatsApp+SMS), localização (lat/lng, bairro, cidade, CEP→ViaCEP), role (`user`/`mod`/`admin`), idade≥18 (declaração/DOB).
+- **Metadata:** avatar (auto-gerado: inicial+cor/DiceBear se vazio), bio, CPF (OPCIONAL), login social (Google/Apple id, se usado), reputação (média/badges + selos de ajuda), pontos de ajuda, data cadastro, status (`active`/`banned`).
+- **CTAs:** cadastrar (cupom opcional + confirmação e-mail/telefone), login social (Google/Apple), editar perfil, criar passkey, listar, comprar, transferir, avaliar, denunciar, doar/voluntariar, entrar/sair comunidade.
 - **States:** `active` | `banned(temp/perm)` | `inactive`.
 - **Views:** perfil público, perfil próprio, card no feed/chat, admin.
 - **Aggregate DDD:** `Identity.User`.
@@ -217,8 +219,9 @@
 ### 19. Pedido de Ajuda (Ask)
 > O "pedir" (Buy Nothing) é tão importante quanto "oferecer". Todo receptor manifesta interesse numa
 > Doação/Ajuda ou cria um **Pedido** aberto ("preciso de X" / "preciso de ajuda com Y").
+> **Exige login + verificação (e-mail + WhatsApp)** — anônimo só vê, não pede.
 
-- **Core:** autor, anúncio-alvo (ou pedido livre), mensagem, createdAt.
+- **Core:** autor (usuário verificado), anúncio-alvo (ou pedido livre), mensagem, createdAt.
 - **CTAs:** pedir, editar, retirar pedido, ser escolhido, agradecer (gratidão).
 - **States:** `open → selected | withdrawn | closed`.
 - **Views:** fila de pedidos (no anúncio de doação), "pedidos abertos" da comunidade.

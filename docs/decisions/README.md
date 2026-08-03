@@ -22,6 +22,8 @@
 | [ADR-0010](ADR-0010-doacao-recompensa-multi-eixo.md) | Doação/Voluntariado com recompensa multi-eixo (bônus RVM admin) | Accepted |
 | [ADR-0011](ADR-0011-dois-dominios-me-org.md) | Dois domínios: revoa.me (app) + revoa.org (transparência) | Accepted |
 | [ADR-0012](ADR-0012-backend-dotnet-frontend-react.md) | Backend único .NET; frontend único React/TypeScript | Accepted |
+| [ADR-0013](ADR-0013-cadastro-campos-verificacao.md) | Cadastro: campos, verificação dupla (e-mail+WhatsApp), Zenvia, login Google+Apple | Accepted |
+| [ADR-0014](ADR-0014-email-auto-hospedado-mailkit-postfix.md) | E-mail transacional auto-hospedado (MailKit + Postfix, domínio revoa.me) | Accepted |
 
 ## Como escrever um ADR
 

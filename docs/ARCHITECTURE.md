@@ -52,6 +52,7 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 | `revoa-bundler` (Stackup) | **internal** | chain | ERC-4337 |
 | `revoa-paymaster` | **internal** | chain | gas invisível |
 | `revoa-ollama` (Qwen 7B GPU) | **internal** | chain | normalização de preços |
+| `revoa-mail` (Postfix+OpenDKIM) | **internal** | app | MTA leve auto-hospedado (e-mail transacional, domínio revoa.me); MailKit (.NET) envia; ver ADR-0014 |
 
 ---
 
@@ -71,7 +72,7 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 | Módulo | Responsabilidade | Coleções |
 |--------|------------------|----------|
-| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e telefone**), login WebAuthn/passkeys, JWT, roles, recuperação admin+timelock | `Users` |
+| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e WhatsApp/telefone**), login WebAuthn/passkeys + **Google/Apple**, JWT, roles, recuperação admin+timelock. **E-mail via MailKit→Postfix** (ADR-0014); **WhatsApp/SMS via Zenvia** | `Users` |
 | **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model), transfer P2P, Paymaster/Bundler | `Accounts` |
 | **Catalog** | Anúncios (`kind`+VOs), categorias, **modo**, **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo, **feed por geolocalização** | `Listings`, `Categories` |
 | **Exchange** | 3 fluxos + máquina de estados escrow (atomic swap) + disputa | `Trades` |
@@ -190,6 +191,13 @@ SERVIÇO:
 - Confirmações: eventos só "finalizam" o fluxo de UI após N confirmações.
 
 ---
+
+## 7b. Autorização (anônimo × autenticado)
+- **Aberto para navegar, fechado para agir.** Endpoints `GET` públicos (feed, listing, comunidade, perfil,
+  posts, busca) liberados a anônimos.
+- **Gate de ação:** todo endpoint que **modifica estado** (ofertar, pedir/doar, publicar, postar, chat,
+  transferir, avaliar) exige `[Authorize]` + verificação dupla (claim `email_verified` + `phone_verified`).
+- CTA anônimo → cadastro (F1) com retorno ao contexto. Detalhes: `BUSINESS_RULES.md` (Acesso) · `USER_FLOWS.md` (F0).
 
 ## 8. Frontend (React + TypeScript SPA + PWA)
 

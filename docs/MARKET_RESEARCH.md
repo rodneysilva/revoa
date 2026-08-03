@@ -271,14 +271,14 @@ Sem on-ramp (Art. 5, I) e transferências P2P via UserOps do próprio usuário (
 | **Validação de formato** | e-mail/telefone/CEP → máscara + validação instantânea |
 | **Sugestão de apelido** | e-mail → apelido sugerido (editável) |
 
-### 9.4 Itens críticos a confirmar (decisão do dono) — *ver perguntas em paralelo*
-1. Meio de OTP do telefone (SMS / WhatsApp / ambos).
-2. Idade mínima (18+ / 16+ / sem restrição).
-3. CPF (obrigatório / opcional / não coletar).
-4. Login social (Google/Apple/Facebook) — sim/não.
-5. Provedor de OTP/SMS (Twilio / Zenvia-TotalVoice BR / outro).
-6. Verificação do telefone: obrigatória no cadastro ou gate progressivo (só para anunciar/trocar).
-7. Avatar: obrigatório na hora ou auto-gerado (preencher depois).
+### 9.4 Itens críticos — DECIDIDOS (ver `ADR-0013`)
+1. **OTP do telefone:** **WhatsApp + SMS** (provedor **Zenvia/TotalVoice**).
+2. **Idade mínima:** **18+**.
+3. **CPF:** **opcional**.
+4. **Login social:** **Google + Apple** (além da passkey).
+5. **Provedor OTP/SMS/WhatsApp:** **Zenvia (TotalVoice) BR**.
+6. **Verificação do telefone:** **obrigatória no cadastro**.
+7. **Avatar:** **auto-gerado** (inicial+cor/DiceBear; preencher depois).
 
 ---
 

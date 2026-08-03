@@ -10,6 +10,7 @@ Relacionados: `BUSINESS.md` · `BUSINESS_RULES.md` · `OOUX.md` · `ARCHITECTURE
 ---
 
 ## Índice
+- [F0 — Navegação anônima (ver tudo, agir exige login)](#f0--navegação-anônima)
 - [F1 — Registro (cupom opcional + email/telefone + passkey + Safe + faucet)](#f1--registro)
 - [F2 — Onboarding (comunidade default + primeiro anúncio)](#f2--onboarding)
 - [F3 — Anúncio de produto](#f3--anúncio-de-produto)
@@ -25,17 +26,43 @@ Relacionados: `BUSINESS.md` · `BUSINESS_RULES.md` · `OOUX.md` · `ARCHITECTURE
 
 ---
 
+## F0 — Navegação anônima
+**Regra:** aberto para navegar, fechado para agir.
+
+### Jornada
+1. Visitante (sem login) acessa `revoa.me` → vê o **feed** (listings, por raio/kind/categoria/comunidade).
+2. Pode **abrir listings**, ver comunidades públicas, perfis públicos (reputação/selos), posts públicos e o **comparativo de preços**.
+3. Pode **buscar/filtrar** sem login.
+4. Ao clicar numa **ação** (ofertar, pedir doação/voluntariado, publicar, postar, chat, transferir) → **gate**: "Entre para continuar" → vai ao **cadastro (F1)** preservando o contexto de volta.
+
+### Gherkin
+```gherkin
+Cenário: Anônimo vê o feed e um anúncio
+  Dado um visitante sem login
+  Quando acessa revoa.me e abre um anúncio
+  Então vê título, descrição, imagens, comparativo e comunidade
+  Mas não vê o botão "Oferecer/Pedir" habilitado (apenas "Entre para continuar")
+
+Cenário: Anônimo tenta agir e é levado ao cadastro
+  Dado um visitante sem login num anúncio de doação
+  Quando clica em "Pedir"
+  Então é redirecionado ao cadastro (F1) com retorno ao anúncio após verificar e-mail + WhatsApp
+```
+
+---
+
 ## F1 — Registro
 **Objetos:** Usuário, Carteira, Cupom/Convite · **Anti-sybil:** 1/dispositivo, 5/IP/dia, e-mail único, telefone único.
 
 ### Jornada
-1. Visitante começa o cadastro. **Cupom é OPCIONAL** — pode deixar vazio.
-2. Preenche **nome/apelido**, **e-mail**, **telefone**, **CEP** (→ ViaCEP automatiza bairro/cidade/estado; geolocalização via HTML5 opcional).
-3. **Confirmação dupla obrigatória:** valida **e-mail** (link/token) **E telefone** (OTP SMS/WhatsApp). Conta só ativa após ambos.
-4. Cria **passkey** (WebAuthn — biometria/dispositivo). **Sem seed phrase.**
-5. Backend valida anti-sybil (device/IP/e-mail/telefone) → cria **Usuário** + gera **Safe** (Account Abstraction).
-6. **Crédito de boas-vindas:** **faucet R$20** sempre; se informou **cupom válido** → + valor do cupom (on-chain, somado).
-7. Usuário autenticado (JWT) + auto-vinculado à **comunidade default da cidade** (F2).
+1. Visitante começa o cadastro (ou via **login social Google/Apple**, que pré-preenche nome/e-mail). **Cupom é OPCIONAL** — pode deixar vazio.
+2. Preenche **nome/apelido**, **e-mail**, **telefone**, **CEP** (→ ViaCEP automatiza bairro/cidade/estado; geolocalização via HTML5 opcional). Declara **idade ≥18** (obrigatório).
+3. **Avatar auto-gerado** (inicial+cor/DiceBear) se não enviar foto (preenche depois).
+4. **Confirmação dupla obrigatória:** valida **e-mail** (link/token) **E telefone** (OTP **WhatsApp+SMS via Zenvia/TotalVoice**). Conta só ativa após ambos.
+5. Cria **passkey** (WebAuthn — biometria/dispositivo). **Sem seed phrase.**
+6. Backend valida anti-sybil (device fingerprint/IP/e-mail/telefone únicos) → cria **Usuário** + gera **Safe** (Account Abstraction).
+7. **Crédito de boas-vindas:** **faucet R$20** sempre; se informou **cupom válido** → + valor do cupom (on-chain, somado).
+8. Usuário autenticado (JWT) + auto-vinculado à **comunidade default da cidade** (F2).
 
 ### Estados
 `iniciado → email_validado → telefone_validado → passkey_criada → safe_gerada → creditada → ativo`
@@ -68,9 +95,9 @@ Cenário: Confirmação dupla obrigatória
   Então a ativação é bloqueada até validar o telefone (OTP)
 ```
 
-> **Campos de cadastro — análise e itens críticos a confirmar:** ver `MARKET_RESEARCH.md`
-> (benchmark de concorrentes) e a lista de automações. Itens abertos (decisão do dono): meio de OTP
-> (SMS vs WhatsApp), idade mínima, CPF opcional, login social, provedor de OTP.
+> **Campos de cadastro — DECIDIDOS (ver `ADR-0013`):** OTP **WhatsApp+SMS (Zenvia/TotalVoice)** ·
+> idade mínima **18+** · **CPF opcional** · login social **Google+Apple** · telefone **obrigatório no cadastro** ·
+> avatar **auto-gerado**. Benchmark e automações: `MARKET_RESEARCH.md` §9.
 
 ---
 

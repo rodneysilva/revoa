@@ -45,12 +45,17 @@ services:
       - Ollama__Endpoint=http://ollama:11434
       - Bundler__Rpc=http://bundler:4337
       - Paymaster__Rpc=http://paymaster:3000
-    volumes:
-      - revoa-app-data:/app/data
-    networks: [internal, traefik_net]
+      - Smtp__Host=mail                 # MailKit entrega ao Postfix local (ADR-0014)
+      - Smtp__Port=25
+      - Smtp__From=no-reply@revoa.me
+      - Zenvia__Token=${ZENVIA_TOKEN:-} # WhatsApp/SMS OTP (anti-farming via secrets)
     depends_on:
       mongo: { condition: service_healthy }
       minio: { condition: service_healthy }
+      mail: { condition: service_started }
+    volumes:
+      - revoa-app-data:/app/data
+    networks: [internal, traefik_net]
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
@@ -124,6 +129,30 @@ services:
       - "traefik.http.routers.revoa-minio.entrypoints=web"
       - "traefik.http.routers.revoa-minio.middlewares=security-headers@file,gzip@file"
       - "traefik.http.services.revoa-minio.loadbalancer.server.port=9000"
+
+  # ═══════════════════════════════════════════════════════════
+  # MAIL — MTA leve auto-hospedado (Postfix + OpenDKIM)
+  # E-mail transacional do domínio revoa.me (verificação de cadastro,
+  # notificações). MailKit (.NET) entrega aqui. SÓ na rede interna.
+  # DNS revoa.me: MX + SPF + DKIM + DMARC (ver ADR-0014).
+  # ═══════════════════════════════════════════════════════════
+  mail:
+    profiles: ["app"]
+    image: mwader/postfix-relay:latest
+    container_name: revoa-mail
+    environment:
+      - POSTFIX_MYDOMAIN=revoa.me
+      - POSTFIX_HOSTNAME=mail.revoa.me
+      - OPENDKIM_DOMAINS=revoa.me
+    volumes:
+      - revoa-mail-dkim:/etc/opendkim/keys
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 25 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   # ═══════════════════════════════════════════════════════════
   # CHAIN STACK (Fase 1, profile:chain) — TODOS só na rede interna
@@ -209,3 +238,4 @@ volumes:
   revoa-minio-data:
   revoa-chain-data:
   revoa-ollama-data:
+  revoa-mail-dkim:

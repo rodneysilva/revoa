@@ -172,13 +172,32 @@ Cancelado/Expirado → sem recompensa
 - **Cupom/convite OPCIONAL:** o registro **não exige** cupom.
   - **Sem cupom:** usuário recebe o crédito normal da plataforma (**faucet R$20** equivalente).
   - **Com cupom:** recebe **faucet R$20 + o valor do cupom** (acrescido, on-chain via `CouponRedeemer`).
-- **Confirmação dupla (obrigatória):** **e-mail** (link/token) **E telefone** (OTP via SMS/WhatsApp). Conta só ativa após ambos verificados.
+- **Confirmação dupla (obrigatória no cadastro):** **e-mail** (link/token) **E telefone** (OTP via **WhatsApp + SMS**, provedor **Zenvia/TotalVoice**). Conta só ativa após ambos verificados.
+- **Idade mínima:** **18+** (responsabilidade legal plena; auto-custódia/contratos on-chain).
+- **CPF:** **OPCIONAL** (anti-sybil extra; sem FLP não é obrigatório; dado sensível sob LGPD).
+- **Login social:** **Google + Apple** (além da passkey) — reduz fricção.
 - **Passkey (WebAuthn)** — **sem seed phrase** (carteira invisível).
 - Ao ativar: backend gera **Safe** (4337 + módulo + signer webauthn-solidity) + **faucet R$20** (+ cupom se houver).
-- **Anti-sybil:** 1 conta/dispositivo · 5 contas/IP/dia · **e-mail único** · **telefone único**.
+- **Anti-sybil:** 1 conta/dispositivo (fingerprint) · 5 contas/IP/dia · **e-mail único** · **telefone único**.
 
-> **Campo de cadastro — ver análise e itens críticos em `USER_FLOWS.md` (F1) e
-> `MARKET_RESEARCH.md`.** Automatizáveis: CEP→ViaCEP, geolocalização HTML5, comunidade default por cidade.
+### 5.1 Campos do cadastro
+**Obrigatórios:** nome/apelido · e-mail (verificado) · telefone (OTP WhatsApp+SMS) · CEP (→ ViaCEP) · passkey (WebAuthn) · aceite de Termos + LGPD · idade ≥18 (declaração/data) · cupom (opcional).
+
+**Opcionais:** CPF (opcional) · avatar (**auto-gerado**: inicial+cor/DiceBear se vazio) · bio · categorias de interesse (sugestão de feed/comunidades) · foto de capa.
+
+### 5.2 Automações (preencher pelo usuário, sem digitar)
+| Automação | Entrada → Saída |
+|-----------|-----------------|
+| **ViaCEP** | CEP → rua, bairro, cidade, estado |
+| **Geocodificação** | endereço → lat/lng (Nominatim/OSM ou Google) |
+| **HTML5 geolocation** | consentimento → lat/lng preciso |
+| **Comunidade default** | cidade → auto-vínculo à comunidade da cidade |
+| **Device fingerprint** | navegador/dispositivo → anti-sybil (1 conta/dispositivo) |
+| **Avatar automático** | nome/e-mail → inicial+cor (DiceBear) se vazio |
+| **Validação de formato** | e-mail/telefone/CEP → máscara + validação instantânea |
+| **Sugestão de apelido** | e-mail → apelido sugerido (editável) |
+
+> **Campo de cadastro — benchmark e decisões travadas:** ver `MARKET_RESEARCH.md` §9 e `ADR-0013`.
 
 ### Cupom/Convite (on-chain, OPCIONAL)
 - `CouponRedeemer` valida (`maxUses`, `expiry`, `usedBy`) → mint **RVM extra** na Safe (somado ao faucet).
@@ -186,6 +205,19 @@ Cancelado/Expirado → sem recompensa
 - Cupom é **incentivo de captação**, não portão de entrada.
 
 ---
+
+## Acesso (anônimo × autenticado)
+
+> **Gate de ação:** o revoa é **aberto para navegar, fechado para agir.**
+
+| Quem | Pode | Não pode |
+|------|------|----------|
+| **Anônimo** (sem login) | **Ver** o feed, listings, comunidades públicas, perfis públicos (reputação/selos), posts públicos; **buscar/filtrar**; ver comparativo de preços | Ofertar, pedir doação/voluntariado, publicar anúncio, postar/comentar, chat, transferir RVM, avaliar |
+| **Autenticado + verificado** (e-mail **E** WhatsApp/telefone confirmados) | Tudo do anônimo + **todas as ações** (ofertar, pedir, doar, publicar, postar, chat, transferir, avaliar) | — |
+
+- **Toda ação que modifica estado** exige login + verificação dupla (e-mail + WhatsApp/telefone).
+- CTA de ação para anônimo → leva ao cadastro ("entre para oferecer/pedir/doar"), preservando o contexto de volta.
+- Ver detalhes de contato (telefone/endereço) de um anunciante pode exigir login (privacidade/anti-scraping).
 
 ## 6. Reputação & Ajuda Mútua
 
