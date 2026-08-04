@@ -145,3 +145,87 @@ export interface TradesParams {
   sellerId?: string;
   page?: number;
 }
+
+// Comunidades (Fase 2B).
+
+export type TipoComunidade = "Default" | "User";
+export type EixoComunidade = "Geo" | "Interesse" | "Causa";
+export type VisibilidadeComunidade = "Open" | "Private";
+export type PapelMembro = "Membro" | "Moderador" | "Criador";
+export type StatusMembro = "Ativa" | "Bloqueada";
+
+export interface Community {
+  Id: string;
+  Nome: string;
+  Descricao: string;
+  Tipo: TipoComunidade;
+  Eixo: EixoComunidade;
+  Visibilidade: VisibilidadeComunidade;
+  Lat?: number;
+  Lng?: number;
+  Bairro?: string;
+  Cidade?: string;
+  Estado?: string;
+  CriadorId: string;
+  CriadorNome: string;
+  CriadorAvatarUrl?: string;
+  MembrosCount: number;
+}
+
+export interface Post {
+  Id: string;
+  ComunidadeId: string;
+  AutorId: string;
+  AutorNome: string;
+  AutorAvatarUrl?: string;
+  Conteudo: string;
+  ParentId?: string;
+  Path: string;
+  Depth: number;
+  Status: string;
+  OcultadoPor?: string;
+  CreatedAt: string;
+}
+
+export interface Membership {
+  Id: string;
+  UsuarioId: string;
+  UsuarioNome: string;
+  UsuarioAvatarUrl?: string;
+  ComunidadeId: string;
+  Papel: PapelMembro;
+  Status: StatusMembro;
+  JoinedAt: string;
+}
+
+export interface ChatMessage {
+  Id: string;
+  ComunidadeId: string;
+  AutorId: string;
+  AutorNome: string;
+  AutorAvatarUrl?: string;
+  Conteudo: string;
+  CreatedAt: string;
+}
+
+export interface CreateCommunityBody {
+  Nome: string;
+  Descricao: string;
+  Tipo: TipoComunidade;
+  Eixo: EixoComunidade;
+  Visibilidade: VisibilidadeComunidade;
+  Password?: string;
+  Lat?: number;
+  Lng?: number;
+  Bairro?: string;
+  Cidade?: string;
+  Estado?: string;
+}
+
+export interface CommunityFeedParams {
+  raio?: number;
+  lat?: number;
+  lng?: number;
+  eixo?: EixoComunidade;
+  page?: number;
+}

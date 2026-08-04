@@ -3,11 +3,16 @@
 
 import type {
   Category,
+  Community,
+  CommunityFeedParams,
+  CreateCommunityBody,
   CreateListingBody,
   FeedItem,
   FeedParams,
   Listing,
   LoginResult,
+  Membership,
+  Post,
   RegisterBody,
   RegisterResult,
   Trade,
@@ -156,4 +161,45 @@ export const api = {
     apiPost<LoginResult>("/api/auth/login/confirm", { Email: email, Code: code }),
   login: (email: string): Promise<LoginResult> =>
     apiPost<LoginResult>(`/api/auth/login`, { Email: email }),
+
+  communities: (p: CommunityFeedParams = {}): Promise<Community[]> =>
+    apiGet<Community[]>(
+      `/api/communities${qs({
+        raio: p.raio,
+        lat: p.lat,
+        lng: p.lng,
+        eixo: p.eixo,
+        page: p.page,
+      })}`
+    ),
+  community: (id: string): Promise<Community> =>
+    apiGet<Community>(`/api/communities/${encodeURIComponent(id)}`),
+  createCommunity: (body: CreateCommunityBody): Promise<string> =>
+    apiPost<string>(`/api/communities`, body),
+  joinCommunity: (id: string, password?: string): Promise<{ id: string }> =>
+    apiPost<{ id: string }>(
+      `/api/communities/${encodeURIComponent(id)}/join`,
+      password ? { Password: password } : {}
+    ),
+  leaveCommunity: (id: string): Promise<void> =>
+    apiPost<void>(`/api/communities/${encodeURIComponent(id)}/leave`),
+  communityPosts: (
+    id: string,
+    parentId?: string,
+    page?: number
+  ): Promise<Post[]> =>
+    apiGet<Post[]>(
+      `/api/communities/${encodeURIComponent(id)}/posts${qs({ parentId, page })}`
+    ),
+  createPost: (
+    communityId: string,
+    parentId: string | undefined,
+    conteudo: string
+  ): Promise<string> =>
+    apiPost<string>(
+      `/api/communities/${encodeURIComponent(communityId)}/posts`,
+      { ParentId: parentId, Conteudo: conteudo }
+    ),
+  communityMembers: (id: string): Promise<Membership[]> =>
+    apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
 };
