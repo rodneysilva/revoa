@@ -150,6 +150,10 @@ export const api = {
     apiPost<void>(`/api/auth/verify-phone`, { UserId: uid, Code: code }),
   resendVerification: (email: string): Promise<RegisterResult> =>
     apiPost<RegisterResult>("/api/auth/resend-verification", { Email: email }),
+  loginRequest: (email: string): Promise<{ message: string }> =>
+    apiPost<{ message: string }>("/api/auth/login/request", { Email: email }),
+  loginConfirm: (email: string, code: string): Promise<LoginResult> =>
+    apiPost<LoginResult>("/api/auth/login/confirm", { Email: email, Code: code }),
   login: (email: string): Promise<LoginResult> =>
     apiPost<LoginResult>(`/api/auth/login`, { Email: email }),
 };

@@ -78,6 +78,32 @@ public class AuthController : ControllerBase
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
 
+    // Login passwordless (produção): etapa 1 — solicita código de acesso por e-mail.
+    // Resposta neutra (anti-enumeração): não revela se a conta existe.
+    [HttpPost("login/request")]
+    [AllowAnonymous]
+    public async Task<ActionResult> LoginRequest([FromBody] ResendRequest request, CancellationToken ct)
+    {
+        await _mediator.Send(new LoginRequestCommand(request.Email), ct);
+        return Ok(new { message = "Se a conta existir, enviamos um código para o e-mail informado." });
+    }
+
+    // Login passwordless (produção): etapa 2 — valida o código e emite o JWT.
+    [HttpPost("login/confirm")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResult>> LoginConfirm([FromBody] LoginConfirmRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new LoginConfirmCommand(request.Email, request.Code), ct);
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        var c = result.Value;
+        var token = IssueJwt(c.UserId, c.Nome, c.Email, c.EmailVerified, c.PhoneVerified);
+        return Ok(new LoginResult(token, c.UserId, c.Nome, c.Email));
+    }
+
     // DEV-ONLY: emite JWT para um usuário já verificado (Status=Active). A auth real é passkey/AA
     // (carteira invisível); este atalho existe só para destravar o desenvolvimento/teste do frontend.
     // Em produção retorna 404. Não exige senha (não há) — confia no estado verificado do usuário.
@@ -101,7 +127,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Usuário não encontrado ou não verificado." });
         }
 
-        var token = IssueDevJwt(user);
+        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified);
         return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
     }
 
@@ -131,12 +157,12 @@ public class AuthController : ControllerBase
         user.DevActivate();
         await _users.UpdateAsync(user, ct);
 
-        var token = IssueDevJwt(user);
+        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified);
         return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
     }
 
-    // JWT dev com as claims que a policy "Verified" exige (email_verified + phone_verified).
-    private string IssueDevJwt(User user)
+    // JWT com as claims que a policy "Verified" exige (email_verified + phone_verified).
+    private string IssueJwt(Guid userId, string name, string email, bool emailVerified, bool phoneVerified)
     {
         var key = _config["Jwt:Key"] ?? "revoa-dev-key-do-not-use-in-prod-min-32-chars!!";
         var issuer = _config["Jwt:Issuer"] ?? "revoa";
@@ -144,11 +170,11 @@ public class AuthController : ControllerBase
 
         var claims = new[]
         {
-            new Claim("sub", user.Id.ToString()),
-            new Claim("name", user.Nome),
-            new Claim("email", user.Email),
-            new Claim("email_verified", user.EmailVerified.ToString().ToLowerInvariant()),
-            new Claim("phone_verified", user.PhoneVerified.ToString().ToLowerInvariant()),
+            new Claim("sub", userId.ToString()),
+            new Claim("name", name),
+            new Claim("email", email),
+            new Claim("email_verified", emailVerified.ToString().ToLowerInvariant()),
+            new Claim("phone_verified", phoneVerified.ToString().ToLowerInvariant()),
         };
 
         var creds = new SigningCredentials(
@@ -178,6 +204,8 @@ public sealed record VerifyTokenRequest(Guid UserId, string Token);
 public sealed record VerifyPhoneRequest(Guid UserId, string Code);
 
 public sealed record LoginRequest(string Email);
+
+public sealed record LoginConfirmRequest(string Email, string Code);
 
 public sealed record ResendRequest(string Email);
 

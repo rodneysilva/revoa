@@ -57,4 +57,35 @@ public class MailKitEmailSender : IEmailSender
             _logger.LogWarning("[MailKit DEV] Token de e-mail {Token} -> {Email} (link: {Link})", token, toEmail, link);
         }
     }
+
+    public async Task SendLoginCodeAsync(string toEmail, string code, CancellationToken ct)
+    {
+        var message = new MimeMessage();
+        message.From.Add(MailboxAddress.Parse(_options.From));
+        message.To.Add(MailboxAddress.Parse(toEmail));
+        message.Subject = "Seu código de acesso — revoa.me";
+        message.Body = new TextPart("plain") { Text = $"Seu código de acesso ao revoa.me é: {code}\n\nEle expira em 10 minutos. Se não foi você, ignore este e-mail." };
+
+        using var client = new SmtpClient();
+        try
+        {
+            await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, ct);
+            await client.SendAsync(message, ct);
+            await client.DisconnectAsync(true, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Falha ao enviar código de login para {Email} via {Host}:{Port}", toEmail, _options.Host, _options.Port);
+            if (_options.LogVerificationTokenInDev)
+            {
+                _logger.LogWarning("[MailKit DEV] Código de login {Code} -> {Email}", code, toEmail);
+            }
+            throw;
+        }
+
+        if (_options.LogVerificationTokenInDev)
+        {
+            _logger.LogWarning("[MailKit DEV] Código de login {Code} -> {Email}", code, toEmail);
+        }
+    }
 }

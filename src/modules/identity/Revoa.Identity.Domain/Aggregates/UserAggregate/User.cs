@@ -41,6 +41,11 @@ public class User : AggregateRoot
     public DateTime? PhoneOtpExpiry { get; private set; }
     public int PhoneOtpAttempts { get; private set; }
 
+    // Login passwordless por código de e-mail (magic OTP). Prova posse do e-mail no login.
+    public string? LoginCodeHash { get; private set; }
+    public DateTime? LoginCodeExpiry { get; private set; }
+    public int LoginCodeAttempts { get; private set; }
+
     private User()
     {
     }
@@ -148,6 +153,41 @@ public class User : AggregateRoot
     }
 
     public void Ban() => Status = UserStatus.Banned;
+
+    // --- Login passwordless por código de e-mail ---
+    public void SetLoginCode(string code, DateTime expiry)
+    {
+        LoginCodeHash = HashOtp(code);
+        LoginCodeExpiry = expiry;
+        LoginCodeAttempts = 0;
+    }
+
+    public bool VerifyLoginCode(string code)
+    {
+        if (LoginCodeAttempts >= OtpMaxAttempts)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(LoginCodeHash)
+            || LoginCodeExpiry is null
+            || LoginCodeExpiry < DateTime.UtcNow)
+        {
+            return false;
+        }
+
+        if (!CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(LoginCodeHash), Encoding.UTF8.GetBytes(HashOtp(code ?? string.Empty))))
+        {
+            LoginCodeAttempts++;
+            return false;
+        }
+
+        LoginCodeHash = null;
+        LoginCodeExpiry = null;
+        LoginCodeAttempts = 0;
+        return true;
+    }
 
     // DEV-ONLY: ativa o usuário sem token/OTP (bypass da verificação dupla). Usado apenas pelo
     // endpoint /api/auth/dev-verify (gated IsDevelopment). NUNCA em produção. Marca verificado,
