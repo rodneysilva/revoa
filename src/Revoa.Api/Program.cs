@@ -170,6 +170,7 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is CategoriesRepository categoriesRepo)
         {
             await categoriesRepo.EnsureIndexesAsync();
+            await categoriesRepo.EnsureSeedAsync();
         }
 
         // Community: índices de Communities/Memberships (único Usuario+Comunidade)/Posts/ChatMessages (TTL 90d).

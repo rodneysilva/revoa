@@ -53,4 +53,40 @@ public class CategoriesRepository : ICategoryRepository
             new CreateIndexModel<Category>(keys, new CreateIndexOptions { Name = "ux_Slug", Unique = true }),
             cancellationToken: ct);
     }
+
+    /// <summary>
+    /// Popula categorias padrão se a coleção estiver vazia (dev/onboarding). Idempotente.
+    /// </summary>
+    public async Task EnsureSeedAsync(CancellationToken ct = default)
+    {
+        if (await _categories.EstimatedDocumentCountAsync(cancellationToken: ct) > 0)
+        {
+            return;
+        }
+
+        var defaults = new[]
+        {
+            ("Geral", "geral"),
+            ("Eletrônicos", "eletronicos"),
+            ("Móveis e Decoração", "moveis-decoracao"),
+            ("Roupas e Acessórios", "roupas-acessorios"),
+            ("Casa e Cozinha", "casa-cozinha"),
+            ("Livros e Mídia", "livros-midia"),
+            ("Esporte e Lazer", "esporte-lazer"),
+            ("Serviços", "servicos"),
+            ("Ajuda e Voluntariado", "ajuda-voluntariado"),
+        };
+
+        foreach (var (nome, slug) in defaults)
+        {
+            try
+            {
+                await _categories.InsertOneAsync(Category.Create(nome, slug), cancellationToken: ct);
+            }
+            catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+            {
+                // Slug já existe (race/legado) — ignora.
+            }
+        }
+    }
 }

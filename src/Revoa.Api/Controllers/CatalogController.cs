@@ -109,6 +109,15 @@ public class CatalogController : ControllerBase
         return result.IsFailure ? NotFound(new { error = result.Error }) : Ok(result.Value);
     }
 
+    // Categorias ativas (dropdown do Criar Anúncio + filtros). Anônimo.
+    [HttpGet("/api/categories")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<CategoryDto>>> Categories(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetCategoriesQuery(), ct);
+        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+    }
+
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum
         => Enum.TryParse(value, ignoreCase: true, out result);
 }
