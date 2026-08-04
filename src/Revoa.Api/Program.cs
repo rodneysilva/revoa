@@ -9,6 +9,8 @@ using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Community.Infrastructure;
 using Revoa.Community.Infrastructure.Persistence;
+using Revoa.Exchange.Infrastructure;
+using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
@@ -38,6 +40,9 @@ builder.Services.AddCatalogInfrastructure(builder.Configuration);
 
 // Community module: comunidades, memberships, posts recursivos, chat SignalR (100% off-chain).
 builder.Services.AddCommunityInfrastructure(builder.Configuration);
+
+// Exchange module: trocas/doação (escrow on-chain atomic swap), vouchers, fila de doação.
+builder.Services.AddExchangeInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -183,6 +188,19 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is ChatMessageRepository chatRepo)
         {
             await chatRepo.EnsureIndexesAsync();
+        }
+
+        // Exchange: índices de Trades (ListingId/BuyerId/SellerId/State) e HelpRequests (ListingId+State/AuthorId).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Exchange.Domain.Repositories.ITradeRepository>()
+            is TradesRepository tradesRepo)
+        {
+            await tradesRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Exchange.Domain.Repositories.IHelpRequestRepository>()
+            is HelpRequestsRepository helpRepo)
+        {
+            await helpRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

@@ -19,6 +19,8 @@
     <ProjectReference Include="..\modules\catalog\Revoa.Catalog.Infrastructure\Revoa.Catalog.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\community\Revoa.Community.Application\Revoa.Community.Application.csproj" />
     <ProjectReference Include="..\modules\community\Revoa.Community.Infrastructure\Revoa.Community.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\exchange\Revoa.Exchange.Application\Revoa.Exchange.Application.csproj" />
+    <ProjectReference Include="..\modules\exchange\Revoa.Exchange.Infrastructure\Revoa.Exchange.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\token\Revoa.Token.Infrastructure\Revoa.Token.Infrastructure.csproj" />
     <ProjectReference Include="..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>

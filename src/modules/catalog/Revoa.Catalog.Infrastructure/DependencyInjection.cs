@@ -41,6 +41,9 @@ public static class DependencyInjection
         services.AddHttpClient<ViaCepService>();
         services.AddScoped<IViaCepService>(sp => sp.GetRequiredService<ViaCepService>());
 
+        // Porta IListingSummaryProvider: expõe resumo do anúncio ao módulo Exchange (isolamento).
+        services.AddScoped<Revoa.IntegrationContracts.Listings.IListingSummaryProvider, ListingSummaryProvider>();
+
         // Chain (ProductNFT mint-to-escrow). Scoped: isola nonce por request.
         services.Configure<CatalogChainOptions>(configuration.GetSection(CatalogChainOptions.SectionName));
         services.AddScoped<IProductNftService, NethereumProductNftService>();

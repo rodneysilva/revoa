@@ -1,0 +1,56 @@
+using FluentValidation;
+using MediatR;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using MongoDB.Driver;
+using Revoa.Exchange.Application.Commands;
+using Revoa.Exchange.Application.Services;
+using Revoa.Exchange.Application.Validators;
+using Revoa.Exchange.Domain.Repositories;
+using Revoa.Exchange.Infrastructure.Persistence;
+using Revoa.Exchange.Infrastructure.Services;
+
+namespace Revoa.Exchange.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddExchangeInfrastructure(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string? mongoConnectionString = null,
+        string? mongoDatabase = null)
+    {
+        var conn = mongoConnectionString
+                   ?? configuration["Mongo:ConnectionString"]
+                   ?? "mongodb://localhost:27017";
+
+        var dbName = mongoDatabase
+                     ?? configuration["Mongo:Database"]
+                     ?? "revoa";
+
+        // Mongo client/database compartilhados (TryAdd: não duplica se outro módulo já registrou).
+        services.TryAddSingleton<IMongoClient>(_ => new MongoClient(conn));
+        services.TryAddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
+
+        // Repositórios (coleções próprias: Trades, HelpRequests).
+        services.AddScoped<ITradeRepository, TradesRepository>();
+        services.AddScoped<IHelpRequestRepository, HelpRequestsRepository>();
+
+        // Chain (EscrowVault + ServiceVoucher + RVM approve). Orquestração on-chain do escrow.
+        services.Configure<ExchangeChainOptions>(configuration.GetSection(ExchangeChainOptions.SectionName));
+        services.AddScoped<IExchangeEscrowService, NethereumExchangeEscrowService>();
+
+        // CQRS — MediatR (assembly da Application) + pipeline de validação.
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssembly(typeof(PurchaseCommandHandler).Assembly);
+            cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
+        });
+
+        // Validators (FluentValidation).
+        services.AddValidatorsFromAssembly(typeof(RequestHelpCommandValidator).Assembly);
+
+        return services;
+    }
+}
