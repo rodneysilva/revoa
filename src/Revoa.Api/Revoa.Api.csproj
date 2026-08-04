@@ -21,6 +21,8 @@
     <ProjectReference Include="..\modules\community\Revoa.Community.Infrastructure\Revoa.Community.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\exchange\Revoa.Exchange.Application\Revoa.Exchange.Application.csproj" />
     <ProjectReference Include="..\modules\exchange\Revoa.Exchange.Infrastructure\Revoa.Exchange.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\notifications\Revoa.Notifications.Application\Revoa.Notifications.Application.csproj" />
+    <ProjectReference Include="..\modules\notifications\Revoa.Notifications.Infrastructure\Revoa.Notifications.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\token\Revoa.Token.Infrastructure\Revoa.Token.Infrastructure.csproj" />
     <ProjectReference Include="..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>

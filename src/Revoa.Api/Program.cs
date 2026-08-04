@@ -14,6 +14,9 @@ using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
+using Revoa.Notifications.Infrastructure;
+using Revoa.Notifications.Infrastructure.Hubs;
+using Revoa.Notifications.Infrastructure.Persistence;
 using Revoa.Token.Infrastructure;
 using System.Text;
 
@@ -43,6 +46,9 @@ builder.Services.AddCommunityInfrastructure(builder.Configuration);
 
 // Exchange module: trocas/doação (escrow on-chain atomic swap), vouchers, fila de doação.
 builder.Services.AddExchangeInfrastructure(builder.Configuration);
+
+// Notifications module: in-app SignalR + Web Push (escrow/oferta/transfer/post/chat/doação/preço).
+builder.Services.AddNotificationsInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -125,6 +131,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<CommunityHub>("/hubs/community");
+app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", ts = DateTime.UtcNow }));
 
@@ -201,6 +208,19 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is HelpRequestsRepository helpRepo)
         {
             await helpRepo.EnsureIndexesAsync();
+        }
+
+        // Notifications: índices de Notifications (UserId+CreatedAt / UserId+Lida) e PushSubscriptions (único Endpoint).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Notifications.Domain.Repositories.INotificationRepository>()
+            is NotificationsRepository notificationsRepo)
+        {
+            await notificationsRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Notifications.Domain.Repositories.IPushSubscriptionRepository>()
+            is PushSubscriptionsRepository pushRepo)
+        {
+            await pushRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)
