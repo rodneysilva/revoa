@@ -5,6 +5,8 @@ using Revoa.Abstractions;
 using Revoa.Account.Infrastructure;
 using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Api.Hubs;
+using Revoa.Catalog.Infrastructure;
+using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
@@ -28,6 +30,9 @@ builder.Services.AddAccountInfrastructure(builder.Configuration);
 
 // Token module: faucet RVM (R$20) via Nethereum + handler de WalletCreatedEvent.
 builder.Services.AddTokenInfrastructure(builder.Configuration);
+
+// Catalog module: anúncios (Listings/Categories), ViaCEP, ProductNFT mint-to-escrow.
+builder.Services.AddCatalogInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -120,6 +125,19 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is AccountsRepository accountsRepo)
         {
             await accountsRepo.EnsureIndexesAsync();
+        }
+
+        // Catalog: índices do feed (Listings) + slug único (Categories).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.IListingRepository>()
+            is ListingsRepository listingsRepo)
+        {
+            await listingsRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.ICategoryRepository>()
+            is CategoriesRepository categoriesRepo)
+        {
+            await categoriesRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)
