@@ -99,7 +99,7 @@ UF-07 a UF-15, UF-18 a UF-22, UF-32. (Doação = produto de primeira classe.)
 | **2B — Community** | Comunidades (default+user), membership (criador/mod/membro), posts recursivos (materialized path depth 6), chat SignalR (90d). UF-18..21. | ✅ |
 | **2C — Exchange** | Trocas (atomic swap) + doação/voluntariado (valor 0, recompensa multi-eixo). Integra `EscrowVault`/`ProductNFT`/`ServiceVoucher`. UF-12..15. | ✅ |
 | **2D — Notifications** | Hub SignalR + Web Push. UF-32. | ✅ |
-| **2E — Frontend** | React+TS SPA+PWA: carteira invisível, feed por kind, 5 forms de anúncio, troca tracker, doação, comunidade, hero slogans rotativos. | ⏳ |
+| **2E — Frontend** | React+TS SPA+PWA: carteira invisível, feed por kind, 5 forms de anúncio, troca tracker, doação, comunidade, hero slogans rotativos. | ✅ |
 
 ---
 
