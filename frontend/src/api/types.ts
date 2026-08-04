@@ -80,13 +80,30 @@ export interface Trade {
   Kind: Kind;
   SellerId: string;
   SellerNome: string;
+  SellerAvatarUrl?: string;
   BuyerId: string;
   BuyerNome: string;
+  BuyerAvatarUrl?: string;
   TotalRvm: number;
   State: TradeState;
   FundedAt?: string;
   ReleasedAt?: string;
+  VoucherRedeemed: boolean;
   IsDonation: boolean;
+  OnChainTradeId?: string;
+  LastTxHash?: string;
+}
+
+export interface HelpRequest {
+  Id: string;
+  ListingId: string;
+  AuthorId: string;
+  AuthorNome: string;
+  AuthorAvatarUrl?: string;
+  Mensagem: string;
+  State: string;
+  CreatedAt: string;
+  SelectedTradeId?: string;
 }
 
 export interface RegisterResult {

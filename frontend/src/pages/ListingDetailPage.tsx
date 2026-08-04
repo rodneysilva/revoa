@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { Badge } from "../components/Badge";
+import { Avatar } from "../components/Avatar";
 import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
-import { useAuth } from "../auth/AuthContext";
-import type { Comment, Listing } from "../api/types";
+import { useAuth, type AuthUser } from "../auth/AuthContext";
+import type { Comment, HelpRequest, Listing } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -78,7 +79,6 @@ export function ListingDetailPage() {
     );
 
   const gratis = listing.PrecoRvm === 0;
-  const isDonation = listing.Modo === "Doar" || listing.Modo === "Voluntariar";
   const images = listing.Imagens?.length ? listing.Imagens : [];
 
   return (
@@ -214,26 +214,7 @@ export function ListingDetailPage() {
 
           {/* CTA */}
           <div className="mt-6">
-            {!user ? (
-              <Link
-                to="/login"
-                className="block text-center bg-brand text-ink font-semibold px-6 py-3 rounded-xl"
-              >
-                Entre para oferecer ou pedir
-              </Link>
-            ) : (
-              <button
-                disabled
-                className="block w-full text-center bg-charcoal text-silver border border-smoke px-6 py-3 rounded-xl cursor-not-allowed"
-              >
-                {isDonation
-                  ? "Pedir"
-                  : listing.Kind === "Service"
-                  ? "Contratar"
-                  : "Comprar/Trocar"}{" "}
-                · integração de troca via tracker (em breve)
-              </button>
-            )}
+            <ListingActions listing={listing} user={user} />
           </div>
         </div>
       </div>
@@ -291,6 +272,292 @@ export function ListingDetailPage() {
           />
         )}
       </section>
+    </div>
+  );
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff) || diff < 0) return "agora";
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "1 dia" : `${d} dias`;
+}
+
+function VerifyHint({ action }: { action: string }) {
+  return (
+    <div className="bg-charcoal border border-smoke rounded-xl p-4 text-sm text-silver text-center">
+      Confirme seu e-mail e telefone para {action}.
+    </div>
+  );
+}
+
+function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | null }) {
+  const isOwner = !!user && user.userId === listing.VendedorId;
+  const isDonation = listing.Modo === "Doar" || listing.Modo === "Voluntariar";
+  const isService = listing.Kind === "Service";
+  const buyLabel = isService ? "Contratar" : "Comprar/Trocar";
+
+  const [purchasing, setPurchasing] = useState(false);
+  const [purchaseErr, setPurchaseErr] = useState<string | null>(null);
+  const [purchased, setPurchased] = useState(false);
+
+  const [showHelp, setShowHelp] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [sendingHelp, setSendingHelp] = useState(false);
+  const [helpErr, setHelpErr] = useState<string | null>(null);
+  const [helpSent, setHelpSent] = useState(false);
+
+  const [queue, setQueue] = useState<HelpRequest[]>([]);
+  const [queueLoading, setQueueLoading] = useState(false);
+  const [selecting, setSelecting] = useState<string | null>(null);
+  const [queueErr, setQueueErr] = useState<string | null>(null);
+  const [queueOk, setQueueOk] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOwner || !isDonation) return;
+    let active = true;
+    setQueueLoading(true);
+    api
+      .helpQueue(listing.Id)
+      .then((q) => {
+        if (active) setQueue(q);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setQueueLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOwner, isDonation, listing.Id]);
+
+  async function doPurchase() {
+    setPurchasing(true);
+    setPurchaseErr(null);
+    try {
+      await api.purchase(listing.Id);
+      setPurchased(true);
+    } catch (e) {
+      setPurchaseErr(
+        e instanceof ApiError ? e.message : "Não foi possível iniciar a troca."
+      );
+    } finally {
+      setPurchasing(false);
+    }
+  }
+
+  async function doRequest() {
+    if (!msg.trim()) return;
+    setSendingHelp(true);
+    setHelpErr(null);
+    try {
+      await api.requestHelp(listing.Id, msg.trim());
+      setHelpSent(true);
+      setMsg("");
+    } catch (e) {
+      setHelpErr(
+        e instanceof ApiError ? e.message : "Não foi possível enviar o pedido."
+      );
+    } finally {
+      setSendingHelp(false);
+    }
+  }
+
+  async function doSelect(req: HelpRequest) {
+    setSelecting(req.Id);
+    setQueueErr(null);
+    setQueueOk(null);
+    try {
+      await api.selectRecipient(req.Id);
+      setQueueOk(`Receptor escolhido: ${req.AuthorNome}`);
+      setQueue(await api.helpQueue(listing.Id));
+    } catch (e) {
+      setQueueErr(
+        e instanceof ApiError ? e.message : "Não foi possível selecionar o receptor."
+      );
+    } finally {
+      setSelecting(null);
+    }
+  }
+
+  if (isDonation) {
+    if (isOwner) {
+      return (
+        <div className="space-y-4">
+          <div className="bg-charcoal border border-smoke rounded-xl p-4 text-sm text-silver">
+            👋 Este é o seu anúncio. Aqui ficam os pedidos de quem precisa.
+          </div>
+          <div>
+            <h3 className="text-cream font-semibold mb-2">Fila de pedidos</h3>
+            {queueErr && <p className="text-rosa text-sm mb-2">{queueErr}</p>}
+            {queueOk && (
+              <p className="text-esmeralda text-sm mb-2">
+                ✓ {queueOk} ·{" "}
+                <Link to="/trades" className="underline">
+                  Ver no tracker →
+                </Link>
+              </p>
+            )}
+            {queueLoading ? (
+              <p className="text-silver text-sm">Carregando pedidos…</p>
+            ) : queue.length === 0 ? (
+              <p className="text-silver text-sm">Nenhum pedido ainda.</p>
+            ) : (
+              <ul className="space-y-2">
+                {queue.map((req) => (
+                  <li key={req.Id} className="bg-smoke rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Avatar
+                        name={req.AuthorNome}
+                        src={req.AuthorAvatarUrl}
+                        size={28}
+                      />
+                      <span className="text-cream text-sm font-medium">
+                        {req.AuthorNome}
+                      </span>
+                      <span className="text-silver text-xs ml-auto">
+                        {timeAgo(req.CreatedAt)}
+                      </span>
+                    </div>
+                    <p className="text-cream/90 text-sm whitespace-pre-wrap">
+                      {req.Mensagem}
+                    </p>
+                    {req.SelectedTradeId ? (
+                      <span className="inline-block mt-2 text-xs text-esmeralda">
+                        ✓ Selecionado
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => doSelect(req)}
+                        disabled={selecting !== null}
+                        className="mt-2 bg-brand text-ink text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
+                      >
+                        {selecting === req.Id
+                          ? "Selecionando…"
+                          : `Selecionar ${req.AuthorNome.split(" ")[0]}`}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return (
+        <Link
+          to="/login"
+          className="block text-center bg-help text-ink font-semibold px-6 py-3 rounded-xl"
+        >
+          Entre para pedir
+        </Link>
+      );
+    }
+    if (!user.verified) return <VerifyHint action="pedir" />;
+    if (helpSent) {
+      return (
+        <div className="bg-esmeralda/10 border border-esmeralda/30 rounded-xl p-4 text-sm text-cream">
+          ✓ Pedido enviado! O doador vai avaliar.
+        </div>
+      );
+    }
+    return (
+      <div>
+        {helpErr && <p className="text-rosa text-sm mb-2">{helpErr}</p>}
+        {showHelp ? (
+          <div className="space-y-2">
+            <textarea
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              rows={3}
+              placeholder="Conte por que você precisa, em poucas palavras…"
+              className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none text-sm"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={doRequest}
+                disabled={sendingHelp || !msg.trim()}
+                className="bg-help text-ink text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+              >
+                {sendingHelp ? "Enviando…" : "Enviar pedido"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowHelp(false);
+                  setMsg("");
+                  setHelpErr(null);
+                }}
+                className="text-silver text-sm px-3 py-2 hover:text-cream"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowHelp(true)}
+            className="w-full bg-help text-ink font-semibold px-6 py-3 rounded-xl"
+          >
+            Pedir
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (isOwner) {
+    return (
+      <div className="bg-charcoal border border-smoke rounded-xl p-4 text-sm text-silver text-center">
+        Este é o seu anúncio. 🌱
+      </div>
+    );
+  }
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        className="block text-center bg-brand text-ink font-semibold px-6 py-3 rounded-xl"
+      >
+        Entre para {isService ? "contratar" : "comprar/trocar"}
+      </Link>
+    );
+  }
+  if (!user.verified) {
+    return <VerifyHint action={isService ? "contratar" : "comprar"} />;
+  }
+  if (purchased) {
+    return (
+      <div className="bg-esmeralda/10 border border-esmeralda/30 rounded-xl p-4 text-sm text-cream">
+        ✓ Troca iniciada!{" "}
+        <Link to="/trades" className="underline font-medium">
+          Ver no tracker →
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div>
+      {purchaseErr && <p className="text-rosa text-sm mb-2">{purchaseErr}</p>}
+      <button
+        type="button"
+        onClick={doPurchase}
+        disabled={purchasing}
+        className="w-full bg-brand text-ink font-semibold px-6 py-3 rounded-xl disabled:opacity-60"
+      >
+        {purchasing ? "Processando…" : buyLabel}
+      </button>
     </div>
   );
 }

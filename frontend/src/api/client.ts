@@ -10,6 +10,7 @@ import type {
   CreateListingBody,
   FeedItem,
   FeedParams,
+  HelpRequest,
   Listing,
   LoginResult,
   Membership,
@@ -161,8 +162,34 @@ export const api = {
     apiGet<Trade[]>(
       `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`
     ),
+  tradeHistory: (p: TradesParams): Promise<Trade[]> =>
+    apiGet<Trade[]>(
+      `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`
+    ),
   trade: (id: string): Promise<Trade> =>
     apiGet<Trade>(`/api/trades/${encodeURIComponent(id)}`),
+  purchase: (listingId: string): Promise<string> =>
+    apiPost<string>(`/api/trades/purchase`, { ListingId: listingId }),
+  redeem: (tradeId: string): Promise<void> =>
+    apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/redeem`),
+  release: (tradeId: string): Promise<void> =>
+    apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/release`),
+  dispute: (tradeId: string): Promise<void> =>
+    apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/dispute`),
+  cancelTrade: (tradeId: string): Promise<void> =>
+    apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/cancel`),
+  resolveTrade: (tradeId: string, releaseToSeller: boolean): Promise<void> =>
+    apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/resolve`, {
+      ReleaseToSeller: releaseToSeller,
+    }),
+  requestHelp: (listingId: string, mensagem: string): Promise<string> =>
+    apiPost<string>(`/api/help`, { ListingId: listingId, Mensagem: mensagem }),
+  helpQueue: (listingId: string): Promise<HelpRequest[]> =>
+    apiGet<HelpRequest[]>(
+      `/api/help${qs({ listingId })}`
+    ),
+  selectRecipient: (helpRequestId: string): Promise<string> =>
+    apiPost<string>(`/api/help/${encodeURIComponent(helpRequestId)}/select`),
   register: (body: RegisterBody): Promise<RegisterResult> =>
     apiPost<RegisterResult>(`/api/auth/register`, body),
   verifyEmail: (uid: string, token: string): Promise<void> =>

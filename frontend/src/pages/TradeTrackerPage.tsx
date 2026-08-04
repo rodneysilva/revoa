@@ -2,98 +2,265 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { MODO_META } from "../lib/config";
+import { Avatar } from "../components/Avatar";
+import { Badge } from "../components/Badge";
+import { KIND_LABELS } from "../lib/config";
 import type { Trade, TradeState } from "../api/types";
 
-// Happy path: Ofertada → Financiada → Liberada.
 const HAPPY: TradeState[] = ["Ofertada", "Financiada", "Liberada"];
+const BRANCH: TradeState[] = ["Disputada", "Reembolsada", "Cancelada"];
 
-const TERMINAL: Record<TradeState, { label: string; cls: string }> = {
-  Ofertada: { label: "Ofertada", cls: "text-silver" },
-  Financiada: { label: "Financiada", cls: "text-sky" },
-  Liberada: { label: "Liberada", cls: "text-esmeralda" },
-  Disputada: { label: "Disputada", cls: "text-amber" },
-  Reembolsada: { label: "Reembolsada", cls: "text-sky" },
-  Cancelada: { label: "Cancelada", cls: "text-rosa" },
+const STATE_STYLE: Record<TradeState, string> = {
+  Ofertada: "text-silver border-smoke",
+  Financiada: "text-sky border-sky/40",
+  Liberada: "text-esmeralda border-esmeralda/40",
+  Disputada: "text-amber border-amber/40",
+  Reembolsada: "text-sky border-sky/40",
+  Cancelada: "text-rosa border-rosa/40",
 };
 
-function isTerminal(state: TradeState): boolean {
-  return state === "Disputada" || state === "Reembolsada" || state === "Cancelada";
+const BRANCH_STYLE: Record<TradeState, string> = {
+  Ofertada: "",
+  Financiada: "",
+  Liberada: "",
+  Disputada: "text-amber",
+  Reembolsada: "text-sky",
+  Cancelada: "text-rosa",
+};
+
+const BTN_PRI =
+  "bg-brand text-ink text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-60";
+const BTN_SEC =
+  "bg-smoke text-cream text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-60 border border-smoke";
+const BTN_WARN =
+  "bg-rosa/15 text-rosa text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-60 border border-rosa/40";
+
+function happyIndex(state: TradeState, funded: boolean): number {
+  if (state === "Liberada") return 2;
+  if (state === "Financiada") return 1;
+  if (state === "Disputada" || state === "Reembolsada") return 1;
+  if (state === "Cancelada") return funded ? 1 : 0;
+  return 0;
 }
 
-function Stepper({ state }: { state: TradeState }) {
-  if (isTerminal(state)) {
-    const t = TERMINAL[state];
-    return (
-      <div className={`inline-flex items-center gap-1 text-sm font-semibold ${t.cls}`}>
-        ⚠ {t.label}
-      </div>
-    );
-  }
-  const currentIdx = HAPPY.indexOf(state);
+function tradeTimestamp(t: Trade): number {
+  const candidates = [t.ReleasedAt, t.FundedAt].filter(Boolean) as string[];
+  if (!candidates.length) return 0;
+  return Math.max(...candidates.map((d) => new Date(d).getTime()));
+}
+
+function Stepper({ trade }: { trade: Trade }) {
+  const idx = happyIndex(trade.State, !!trade.FundedAt);
+  const branch = BRANCH.includes(trade.State) ? trade.State : null;
   return (
-    <ol className="flex items-center gap-1 text-xs">
-      {HAPPY.map((s, i) => {
-        const done = i <= currentIdx;
-        const isCurrent = i === currentIdx;
-        return (
-          <li key={s} className="flex items-center gap-1">
-            <span
-              className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ${
-                done
-                  ? "bg-esmeralda text-ink border-transparent"
-                  : "bg-charcoal text-silver border-smoke"
-              } ${isCurrent ? "ring-2 ring-esmeralda/50" : ""}`}
-            >
-              {done ? "✓" : i + 1}
-            </span>
-            <span className={done ? "text-cream" : "text-silver"}>{s}</span>
-            {i < HAPPY.length - 1 && <span className="text-smoke mx-1">›</span>}
-          </li>
-        );
-      })}
-    </ol>
+    <div className="space-y-2">
+      <ol className="flex items-center gap-1 text-xs">
+        {HAPPY.map((s, i) => {
+          const done = i <= idx;
+          return (
+            <li key={s} className="flex items-center gap-1">
+              <span
+                className={`inline-flex items-center justify-center w-5 h-5 rounded-full border text-[10px] ${
+                  done
+                    ? "bg-esmeralda text-ink border-transparent"
+                    : "bg-charcoal text-silver border-smoke"
+                }`}
+              >
+                {done ? "✓" : i + 1}
+              </span>
+              <span className={done ? "text-cream" : "text-silver"}>{s}</span>
+              {i < HAPPY.length - 1 && (
+                <span className="text-smoke mx-0.5">›</span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+      {branch && (
+        <div className={`text-xs font-semibold ${BRANCH_STYLE[branch]}`}>
+          ↳ {branch}
+          {branch === "Disputada" && " · aguardando resolução"}
+        </div>
+      )}
+    </div>
   );
 }
 
-function TradeCard({ trade, role }: { trade: Trade; role: "buyer" | "seller" }) {
-  const counterparty = role === "buyer" ? trade.SellerNome : trade.BuyerNome;
+function TradeCard({
+  trade,
+  userId,
+  onReload,
+}: {
+  trade: Trade;
+  userId: string;
+  onReload: () => void;
+}) {
+  const isSeller = trade.SellerId === userId;
+  const counterNome = isSeller ? trade.BuyerNome : trade.SellerNome;
+  const counterAvatar = isSeller ? trade.BuyerAvatarUrl : trade.SellerAvatarUrl;
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [releaseToSeller, setReleaseToSeller] = useState(true);
+
+  async function run(
+    action: string,
+    label: string,
+    fn: () => Promise<unknown>,
+    confirmMsg?: string
+  ) {
+    if (confirmMsg && !window.confirm(confirmMsg)) return;
+    setBusy(action);
+    setErr(null);
+    try {
+      await fn();
+      onReload();
+    } catch (e) {
+      setErr(`${label}: ${e instanceof ApiError ? e.message : "falha."}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="bg-charcoal rounded-xl border border-smoke p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-silver">{MODO_META[trade.Modo].emoji}</span>
-        <span className="text-xs text-silver uppercase tracking-wide">
-          {role === "buyer" ? "Você comprou" : "Você ofereceu"} · {trade.Kind}
+    <div className="bg-charcoal rounded-xl border border-smoke p-4 flex flex-col">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <Badge modo={trade.Modo} />
+        <span className="text-xs text-silver">{KIND_LABELS[trade.Kind]}</span>
+        <span
+          className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full border ${STATE_STYLE[trade.State]}`}
+        >
+          {trade.State}
         </span>
-        {trade.IsDonation && (
-          <span className="ml-auto text-xs bg-terracota/15 text-terracota px-2 py-0.5 rounded-full font-semibold">
-            🎁 Doação
+      </div>
+
+      <div className="text-lg mb-2">
+        {trade.IsDonation ? (
+          <span className="text-lima">🎁 Doação</span>
+        ) : (
+          <span className="rms text-cream">
+            RM$ {trade.TotalRvm.toLocaleString("pt-BR")}
           </span>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <div className="text-cream font-medium">
-            {trade.TotalRvm === 0 ? (
-              <span className="text-lima">Grátis</span>
-            ) : (
-              <span className="rms">RM$ {trade.TotalRvm.toLocaleString("pt-BR")}</span>
-            )}
-          </div>
-          <div className="text-xs text-silver">
-            {role === "buyer" ? "com" : "para"} {counterparty || "—"}
+
+      <div className="flex items-center gap-2 mb-3">
+        <Avatar name={counterNome} src={counterAvatar} size={28} />
+        <span className="text-xs text-silver">
+          {isSeller
+            ? `Você vende p/ ${counterNome || "—"}`
+            : `Você comprou de ${counterNome || "—"}`}
+        </span>
+      </div>
+
+      <div className="pt-3 border-t border-smoke">
+        <Stepper trade={trade} />
+      </div>
+
+      {err && <p className="text-rosa text-xs mt-2">{err}</p>}
+
+      {trade.State === "Financiada" && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {trade.Kind === "Service" && !isSeller && !trade.VoucherRedeemed && (
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() =>
+                run("redeem", "Confirmar serviço", () => api.redeem(trade.Id))
+              }
+              className={BTN_PRI}
+            >
+              {busy === "redeem" ? "…" : "Confirmar serviço"}
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() =>
+              run("release", "Liberar", () => api.release(trade.Id))
+            }
+            className={BTN_PRI}
+          >
+            {busy === "release" ? "…" : "Liberar"}
+          </button>
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() =>
+              run(
+                "dispute",
+                "Abrir disputa",
+                () => api.dispute(trade.Id),
+                "Abrir disputa desta troca?"
+              )
+            }
+            className={BTN_WARN}
+          >
+            {busy === "dispute" ? "…" : "Abrir disputa"}
+          </button>
+          <button
+            type="button"
+            disabled={!!busy}
+            onClick={() =>
+              run(
+                "cancel",
+                "Cancelar",
+                () => api.cancelTrade(trade.Id),
+                "Cancelar esta troca de comum acordo?"
+              )
+            }
+            className={BTN_SEC}
+          >
+            {busy === "cancel" ? "…" : "Cancelar"}
+          </button>
+        </div>
+      )}
+
+      {trade.State === "Disputada" && (
+        <div className="mt-3">
+          <p className="text-xs text-silver mb-2">
+            Aguardando resolução da equipe.
+          </p>
+          <div className="border border-dashed border-smoke rounded-lg p-2">
+            <div className="text-[10px] uppercase tracking-wide text-amber mb-1">
+              DEV · modo árbitro
+            </div>
+            <label className="flex items-center gap-2 text-xs text-cream mb-2">
+              <input
+                type="checkbox"
+                checked={releaseToSeller}
+                onChange={(e) => setReleaseToSeller(e.target.checked)}
+              />
+              Liberar para o vendedor
+            </label>
+            <button
+              type="button"
+              disabled={!!busy}
+              onClick={() =>
+                run(
+                  "resolve",
+                  "Resolver",
+                  () => api.resolveTrade(trade.Id, releaseToSeller),
+                  `Resolver a favor do ${
+                    releaseToSeller ? "vendedor" : "comprador"
+                  }?`
+                )
+              }
+              className={BTN_WARN}
+            >
+              {busy === "resolve"
+                ? "…"
+                : "Resolver como árbitro (dev)"}
+            </button>
           </div>
         </div>
-        <Link
-          to={`/listings/${trade.ListingId}`}
-          className="text-xs text-esmeralda hover:underline"
-        >
-          ver anúncio →
-        </Link>
-      </div>
-      <div className="mt-3 pt-3 border-t border-smoke">
-        <Stepper state={trade.State} />
-      </div>
+      )}
+
+      <Link
+        to={`/listings/${trade.ListingId}`}
+        className="mt-3 text-xs text-esmeralda hover:underline"
+      >
+        ver anúncio →
+      </Link>
     </div>
   );
 }
@@ -104,22 +271,51 @@ export function TradeTrackerPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = () => {
     if (!user) return;
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      api.tradeHistory({ buyerId: user.userId }).catch(() => [] as Trade[]),
+      api.tradeHistory({ sellerId: user.userId }).catch(() => [] as Trade[]),
+    ])
+      .then(([asBuyer, asSeller]) => {
+        const map = new Map<string, Trade>();
+        [...asBuyer, ...asSeller].forEach((t) => map.set(t.Id, t));
+        const merged = Array.from(map.values()).sort(
+          (a, b) => tradeTimestamp(b) - tradeTimestamp(a)
+        );
+        setTrades(merged);
+      })
+      .catch((e) => {
+        setError(
+          e instanceof ApiError ? e.message : "Erro ao carregar trocas."
+        );
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
     let active = true;
+    if (!user) return;
     setLoading(true);
     Promise.all([
-      api.trades({ buyerId: user.userId }).catch(() => [] as Trade[]),
-      api.trades({ sellerId: user.userId }).catch(() => [] as Trade[]),
+      api.tradeHistory({ buyerId: user.userId }).catch(() => [] as Trade[]),
+      api.tradeHistory({ sellerId: user.userId }).catch(() => [] as Trade[]),
     ])
       .then(([asBuyer, asSeller]) => {
         if (!active) return;
         const map = new Map<string, Trade>();
         [...asBuyer, ...asSeller].forEach((t) => map.set(t.Id, t));
-        setTrades(Array.from(map.values()));
+        setTrades(
+          Array.from(map.values()).sort(
+            (a, b) => tradeTimestamp(b) - tradeTimestamp(a)
+          )
+        );
       })
       .catch((e) => {
-        if (active) setError(e instanceof ApiError ? e.message : "Erro ao carregar trocas.");
+        if (active)
+          setError(e instanceof ApiError ? e.message : "Erro ao carregar trocas.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -133,18 +329,19 @@ export function TradeTrackerPage() {
     return (
       <div className="app-container">
         <div className="app-read text-center">
-        <h1 className="text-2xl font-bold text-cream mb-2">Suas trocas</h1>
-        <p className="text-silver mb-4">Entre para acompanhar suas trocas e doações.</p>
-        <Link to="/login" className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl">
-          Entrar
-        </Link>
+          <h1 className="text-2xl font-bold text-cream mb-2">Suas trocas</h1>
+          <p className="text-silver mb-4">
+            Entre para acompanhar suas trocas e doações.
+          </p>
+          <Link
+            to="/login"
+            className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl"
+          >
+            Entrar
+          </Link>
         </div>
       </div>
     );
-
-  const buyerIds = new Set(
-    trades.filter((t) => t.BuyerId === user.userId).map((t) => t.Id)
-  );
 
   return (
     <div className="app-container">
@@ -158,15 +355,25 @@ export function TradeTrackerPage() {
         <p className="text-silver">Carregando…</p>
       ) : trades.length === 0 ? (
         <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
-          <p className="text-silver mb-4">Você ainda não participou de trocas.</p>
-          <Link to="/feed" className="bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl">
+          <p className="text-silver mb-4">
+            Você ainda não fez trocas. Explore o feed!
+          </p>
+          <Link
+            to="/feed"
+            className="bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+          >
             Explorar o feed
           </Link>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
           {trades.map((t) => (
-            <TradeCard key={t.Id} trade={t} role={buyerIds.has(t.Id) ? "buyer" : "seller"} />
+            <TradeCard
+              key={t.Id}
+              trade={t}
+              userId={user.userId}
+              onReload={load}
+            />
           ))}
         </div>
       )}
