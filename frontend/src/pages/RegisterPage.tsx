@@ -20,6 +20,8 @@ export function RegisterPage() {
   const [step, setStep] = useState<"form" | "verify">("form");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Detecção inteligente: e-mail já cadastrado -> oferece login + reenvio de verificação.
+  const [accountExists, setAccountExists] = useState(false);
 
   // Etapa 1 — cadastro
   const [nome, setNome] = useState("");
@@ -40,6 +42,7 @@ export function RegisterPage() {
   async function submitRegister(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    setAccountExists(false);
     if (!ageOk(birthDate)) {
       setError("É preciso ter 18 anos ou mais para participar.");
       return;
@@ -57,8 +60,30 @@ export function RegisterPage() {
       setNeedsEmail(res.NeedsEmailVerification);
       setNeedsPhone(res.NeedsPhoneVerification);
       setStep("verify");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Falha no cadastro.");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Falha no cadastro.";
+      setError(msg);
+      // Conta já existe -> ativa o caminho de recuperação de acesso.
+      if (/já está cadastrado|recupere|cadastro/i.test(msg)) setAccountExists(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Recuperação de acesso: reenvia verificação para a conta existente (passwordless — sem senha).
+  async function recover() {
+    if (!email.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.resendVerification(email.trim());
+      setUserId(res.UserId);
+      setNeedsEmail(res.NeedsEmailVerification);
+      setNeedsPhone(res.NeedsPhoneVerification);
+      setAccountExists(false);
+      setStep("verify");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Não foi possível reenviar a verificação.");
     } finally {
       setLoading(false);
     }
@@ -165,6 +190,34 @@ export function RegisterPage() {
             />
           </label>
           {error && <p className="text-rosa text-sm">{error}</p>}
+
+          {accountExists && (
+            <div className="bg-amber/10 border border-amber/40 rounded-lg p-4 space-y-3">
+              <p className="text-sm text-cream">
+                Detectamos que <strong>{email}</strong> já tem conta. Como você acessa sem senha
+                (passkey), recupere o acesso:
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => navigate("/login", { state: { email: email.trim() } })}
+                  className="w-full bg-brand text-ink font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+                >
+                  Fazer login
+                </button>
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={recover}
+                  className="w-full bg-smoke text-cream font-semibold px-4 py-2 rounded-lg border border-smoke disabled:opacity-60"
+                >
+                  {loading ? "Reenviando…" : "Reenviar verificação (e-mail + telefone)"}
+                </button>
+              </div>
+            </div>
+          )}
+
           <button
             disabled={loading}
             className="w-full bg-brand text-ink font-semibold px-6 py-3 rounded-xl disabled:opacity-60"

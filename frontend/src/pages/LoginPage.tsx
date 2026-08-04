@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
@@ -9,7 +9,10 @@ const inputCls =
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+  const initialEmail =
+    (location.state as { email?: string } | null)?.email?.trim() ?? "";
+  const [email, setEmail] = useState(initialEmail);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,8 +24,9 @@ export function LoginPage() {
       const res = await api.login(email.trim());
       login(res.Token);
       navigate("/");
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Falha no login.");
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Falha no login.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -59,6 +63,16 @@ export function LoginPage() {
         Não tem conta?{" "}
         <Link to="/register" className="text-esmeralda hover:underline">
           Cadastre-se
+        </Link>
+      </p>
+      <p className="mt-2 text-sm text-silver text-center">
+        Não recebeu a verificação?{" "}
+        <Link
+          to="/register"
+          state={{ focusEmail: email.trim() }}
+          className="text-sky hover:underline"
+        >
+          Reenviar verificação
         </Link>
       </p>
     </div>

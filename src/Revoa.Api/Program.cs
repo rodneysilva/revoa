@@ -122,6 +122,38 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// Tratamento global de exceções: erros de domínio/validação/concorrência viram HTTP limpo
+// (400/409) em vez de 500 genérico — UX consistente em todos os endpoints.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (FluentValidation.ValidationException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Verifique os campos informados.",
+            errors = ex.Errors.Select(e => new { field = e.PropertyName, message = e.ErrorMessage }),
+        });
+    }
+    catch (Revoa.Abstractions.DomainException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+    catch (Revoa.Abstractions.ConcurrencyException)
+    {
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Conflito de concorrência: o registro mudou desde a última leitura. Recarregue e tente novamente.",
+        });
+    }
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

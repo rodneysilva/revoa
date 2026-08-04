@@ -67,6 +67,17 @@ public class AuthController : ControllerBase
         return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
     }
 
+    // Recuperação de acesso: reenvia token de e-mail + OTP p/ conta ainda não verificada.
+    // (Passwordless: não há senha — recuperar = concluir a verificação.)
+    [HttpPost("resend-verification")]
+    [AllowAnonymous]
+    public async Task<ActionResult<RegisterUserResult>> ResendVerification(
+        [FromBody] ResendRequest request, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new ResendVerificationCommand(request.Email), ct);
+        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+    }
+
     // DEV-ONLY: emite JWT para um usuário já verificado (Status=Active). A auth real é passkey/AA
     // (carteira invisível); este atalho existe só para destravar o desenvolvimento/teste do frontend.
     // Em produção retorna 404. Não exige senha (não há) — confia no estado verificado do usuário.
@@ -167,5 +178,7 @@ public sealed record VerifyTokenRequest(Guid UserId, string Token);
 public sealed record VerifyPhoneRequest(Guid UserId, string Code);
 
 public sealed record LoginRequest(string Email);
+
+public sealed record ResendRequest(string Email);
 
 public sealed record LoginResult(string Token, Guid UserId, string Nome, string Email);

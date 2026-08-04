@@ -40,10 +40,16 @@ export function clearToken(): void {
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  fieldErrors?: { field: string; message: string }[];
+  constructor(
+    message: string,
+    status: number,
+    fieldErrors?: { field: string; message: string }[]
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -92,12 +98,17 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   if (!res.ok) {
     let message = `Erro ${res.status}`;
-    if (data && typeof data === "object" && "error" in data) {
-      message = String((data as { error: unknown }).error);
+    let fieldErrors: { field: string; message: string }[] | undefined;
+    if (data && typeof data === "object") {
+      const obj = data as Record<string, unknown>;
+      if (typeof obj.error === "string") message = obj.error;
+      if (Array.isArray(obj.errors)) {
+        fieldErrors = obj.errors as { field: string; message: string }[];
+      }
     } else if (typeof data === "string" && data) {
       message = data;
     }
-    throw new ApiError(message, res.status);
+    throw new ApiError(message, res.status, fieldErrors);
   }
 
   return data as T;
@@ -137,6 +148,8 @@ export const api = {
     apiPost<void>(`/api/auth/verify-email`, { UserId: uid, Token: token }),
   verifyPhone: (uid: string, code: string): Promise<void> =>
     apiPost<void>(`/api/auth/verify-phone`, { UserId: uid, Code: code }),
+  resendVerification: (email: string): Promise<RegisterResult> =>
+    apiPost<RegisterResult>("/api/auth/resend-verification", { Email: email }),
   login: (email: string): Promise<LoginResult> =>
     apiPost<LoginResult>(`/api/auth/login`, { Email: email }),
 };

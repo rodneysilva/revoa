@@ -32,23 +32,33 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
 
     public async Task<Result<RegisterUserResult>> Handle(RegisterUserCommand request, CancellationToken ct)
     {
-        // Anti-sybil + resposta neutra (sem enumeração de contas): e-mail E telefone únicos.
-        if (await _users.GetByEmailAsync(request.Email, ct) is not null
-            || await _users.GetByPhoneAsync(request.Telefone, ct) is not null)
+        // Mensagens específicas e acionáveis (UX) — para uma plataforma comunitária, orientar o
+        // usuário vale mais que ofuscar a existência da conta (anti-enumeração). E-mail/telefone únicos.
+        if (await _users.GetByEmailAsync(request.Email, ct) is not null)
         {
-            return Result<RegisterUserResult>.Fail(NeutralError);
+            return Result<RegisterUserResult>.Fail(
+                "Este e-mail já está cadastrado. Faça login ou reenvie a verificação para recuperar seu acesso.");
+        }
+
+        if (await _users.GetByPhoneAsync(request.Telefone, ct) is not null)
+        {
+            return Result<RegisterUserResult>.Fail("Este telefone já está cadastrado em outra conta.");
         }
 
         var idadeOk = ComputeAge(request.BirthDate) >= 18;
+        if (!idadeOk)
+        {
+            return Result<RegisterUserResult>.Fail("Você precisa ter 18 anos ou mais para se cadastrar.");
+        }
 
         User user;
         try
         {
             user = User.Create(request.Nome, request.Email, request.Telefone, idadeOk);
         }
-        catch (DomainException)
+        catch (DomainException ex)
         {
-            return Result<RegisterUserResult>.Fail(NeutralError);
+            return Result<RegisterUserResult>.Fail(ex.Message);
         }
 
         var now = DateTime.UtcNow;
@@ -64,7 +74,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         catch (DuplicateKeyException)
         {
             // Race (TOCTOU) entre o check e o insert: o índice único (Email/Telefone) rejeitou.
-            return Result<RegisterUserResult>.Fail(NeutralError);
+            return Result<RegisterUserResult>.Fail("E-mail ou telefone já cadastrado. Tente fazer login.");
         }
 
         // I/O independente (SMTP + Zenvia): paralelo para reduzir latência do cadastro.
