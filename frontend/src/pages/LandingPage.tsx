@@ -89,7 +89,7 @@ export function LandingPage() {
               Ainda não há anúncios. {offline ? "" : "Seja o primeiro!"}
             </p>
           ) : (
-            items.slice(0, 6).map((it) => <ListingCard key={it.Id} item={it} />)
+            items.slice(0, 6).map((it, i) => <ListingCard key={it.Id ?? i} item={it} />)
           )}
         </div>
       </section>
