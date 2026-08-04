@@ -134,7 +134,8 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-12">
+    <div className="app-container">
+      <div className="app-read">
       <h1 className="text-3xl font-bold text-cream mb-6">Criar conta</h1>
 
       {step === "form" && (
@@ -301,6 +302,7 @@ export function RegisterPage() {
           Entrar
         </Link>
       </p>
+      </div>
     </div>
   );
 }

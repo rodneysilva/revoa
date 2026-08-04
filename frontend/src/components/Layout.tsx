@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 const navItems = [
@@ -15,20 +16,37 @@ function navClass(active: boolean): string {
 
 export function Layout() {
   const { user } = useAuth();
+  const [open, setOpen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 bg-ink/85 backdrop-blur border-b border-smoke">
-        <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-          <Link to="/" className="wordmark text-2xl shrink-0" aria-label="revoa.me início">
+    <div className="app-shell">
+      <header className="app-bar sticky top-0 z-40 bg-ink/85 backdrop-blur border-b border-smoke">
+        <div className="app-bar-inner h-16 flex items-center gap-4">
+          <Link
+            to="/"
+            className="wordmark text-2xl shrink-0"
+            aria-label="revoa.me início"
+          >
             revoa.me
           </Link>
-          <nav className="hidden sm:flex items-center gap-1">
+
+          <nav className="hidden md:flex items-center gap-1">
             {navItems.map((n) => (
-              <NavLink key={n.to} to={n.to} className={({ isActive }) => navClass(isActive)}>
+              <NavLink
+                key={n.to}
+                to={n.to}
+                className={({ isActive }) => navClass(isActive)}
+              >
                 {n.label}
               </NavLink>
             ))}
           </nav>
+
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>
@@ -37,14 +55,19 @@ export function Layout() {
                     ✓ Verificado
                   </span>
                 )}
-                <span className="rms text-cream text-sm hidden sm:inline">RM$ —</span>
-                <Link to="/profile" className="text-sm text-cream hover:text-esmeralda truncate max-w-[10ch]">
+                <Link
+                  to="/profile"
+                  className="hidden sm:inline text-sm text-cream hover:text-esmeralda truncate max-w-[12ch]"
+                >
                   {user.nome || "Perfil"}
                 </Link>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-sm text-silver hover:text-cream">
+                <Link
+                  to="/login"
+                  className="hidden sm:inline text-sm text-silver hover:text-cream"
+                >
                   Entrar
                 </Link>
                 <Link
@@ -55,32 +78,80 @@ export function Layout() {
                 </Link>
               </>
             )}
+
+            <button
+              type="button"
+              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-cream hover:bg-smoke"
+              aria-label={open ? "Fechar menu" : "Abrir menu"}
+              aria-expanded={open}
+              onClick={() => setOpen((o) => !o)}
+            >
+              {open ? "✕" : "≡"}
+            </button>
           </div>
         </div>
-        {/* Nav mobile */}
-        <nav className="sm:hidden flex items-center gap-1 px-4 sm:px-6 lg:px-8 pb-2 overflow-x-auto">
-          {navItems.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              className={({ isActive }) =>
-                `px-3 py-1.5 rounded-lg text-xs font-medium ${
-                  isActive ? "text-esmeralda" : "text-silver"
-                }`
-              }
-            >
-              {n.label}
-            </NavLink>
-          ))}
-        </nav>
+
+        {open && (
+          <div className="md:hidden border-t border-smoke bg-ink/95 backdrop-blur">
+            <div className="app-bar-inner py-3 flex flex-col gap-1">
+              {navItems.map((n) => (
+                <NavLink
+                  key={n.to}
+                  to={n.to}
+                  className={({ isActive }) =>
+                    `px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? "text-esmeralda bg-smoke/60"
+                        : "text-silver hover:text-cream"
+                    }`
+                  }
+                >
+                  {n.label}
+                </NavLink>
+              ))}
+              {!user && (
+                <div className="mt-1 pt-2 border-t border-smoke flex flex-col gap-1">
+                  <Link
+                    to="/login"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    Entrar
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-3 py-2.5 rounded-lg text-sm text-esmeralda font-semibold"
+                  >
+                    Cadastrar
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
-      <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="flex-1 w-full">
         <Outlet />
       </main>
 
-      <footer className="mt-auto border-t border-smoke py-6 text-center text-xs text-silver">
-        revoa.me · Economia circular · sem fins lucrativos
+      <footer className="app-bar mt-auto border-t border-smoke">
+        <div className="app-bar-inner py-6 flex flex-col sm:flex-row gap-2 justify-between items-center text-xs text-silver">
+          <span>revoa.me · Economia circular · sem fins lucrativos</span>
+          <div className="flex items-center gap-3">
+            <Link to="/feed" className="hover:text-cream">
+              Feed
+            </Link>
+            <Link to="/community" className="hover:text-cream">
+              Comunidade
+            </Link>
+            <Link to="/login" className="hover:text-cream">
+              Entrar
+            </Link>
+            <span className="hidden sm:inline">
+              RM$ = crédito de troca, não cripto
+            </span>
+          </div>
+        </div>
       </footer>
     </div>
   );

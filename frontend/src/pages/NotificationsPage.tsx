@@ -1,6 +1,7 @@
 export function NotificationsPage() {
   return (
-    <div className="mx-auto max-w-2xl py-16 text-center">
+    <div className="app-container">
+      <div className="app-read text-center">
       <div className="text-5xl mb-4" aria-hidden>
         🔔
       </div>
@@ -8,6 +9,7 @@ export function NotificationsPage() {
       <p className="text-silver">
         Em breve: avisos de troca, doações e mensagens da comunidade (Web Push + SignalR).
       </p>
+      </div>
     </div>
   );
 }

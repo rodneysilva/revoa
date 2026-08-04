@@ -23,7 +23,7 @@ export function Hero() {
   const primaryTo = verified ? "/listings/new" : "/register";
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-smoke mt-6">
+    <section className="relative overflow-hidden border-b border-smoke">
       <div className="absolute inset-0 bg-brand opacity-[0.12]" aria-hidden />
       <div className="absolute inset-0 bg-help opacity-[0.08]" aria-hidden />
       <div
@@ -35,36 +35,38 @@ export function Hero() {
         aria-hidden
       />
 
-      <div className="relative px-6 sm:px-10 py-16 sm:py-24 lg:py-28 text-center">
-        <h1 className="wordmark text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tight">
-          revoa.me
-        </h1>
-        <p
-          className={`mt-6 text-2xl sm:text-3xl lg:text-4xl font-semibold text-cream transition-opacity duration-300 ${
-            fade ? "opacity-100" : "opacity-0"
-          }`}
-          aria-live="polite"
-        >
-          {SLOGANS[idx]}
-        </p>
-        <p className="mt-5 text-base sm:text-lg text-silver max-w-2xl mx-auto">
-          Economia circular e ajuda mútua, sem fins lucrativos, com a moeda
-          social RVM. Você oferece o que sabe fazer ou o que não usa mais —
-          troca, doa e cuida, de vizinho para vizinho.
-        </p>
-        <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            to={primaryTo}
-            className="bg-brand text-ink font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-black/30"
+      <div className="app-bar-inner relative py-16 sm:py-24 lg:py-28">
+        <div className="app-read text-center">
+          <h1 className="wordmark text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tight">
+            revoa.me
+          </h1>
+          <p
+            className={`mt-6 text-2xl sm:text-3xl lg:text-4xl font-semibold text-cream transition-opacity duration-300 ${
+              fade ? "opacity-100" : "opacity-0"
+            }`}
+            aria-live="polite"
           >
-            Ofereça o que você tem
-          </Link>
-          <Link
-            to="/feed"
-            className="border border-smoke bg-charcoal/40 text-cream font-semibold px-7 py-3.5 rounded-xl hover:border-esmeralda transition"
-          >
-            Explorar o feed
-          </Link>
+            {SLOGANS[idx]}
+          </p>
+          <p className="mt-5 text-base sm:text-lg text-silver">
+            Economia circular e ajuda mútua, sem fins lucrativos, com a moeda
+            social RVM. Você oferece o que sabe fazer ou o que não usa mais —
+            troca, doa e cuida, de vizinho para vizinho.
+          </p>
+          <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to={primaryTo}
+              className="bg-brand text-ink font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-black/30"
+            >
+              Ofereça o que você tem
+            </Link>
+            <Link
+              to="/feed"
+              className="border border-smoke bg-charcoal/40 text-cream font-semibold px-7 py-3.5 rounded-xl hover:border-esmeralda transition"
+            >
+              Explorar o feed
+            </Link>
+          </div>
         </div>
       </div>
     </section>

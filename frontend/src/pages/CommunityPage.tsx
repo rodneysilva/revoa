@@ -1,6 +1,7 @@
 export function CommunityPage() {
   return (
-    <div className="mx-auto max-w-3xl py-16 text-center">
+    <div className="app-container">
+      <div className="app-read text-center">
       <div className="bg-community/10 border border-smoke rounded-2xl p-10">
         <div className="text-5xl mb-4" aria-hidden>
           🫂
@@ -9,6 +10,7 @@ export function CommunityPage() {
         <p className="text-silver">
           Em breve: grupos locais, posts, chat e ajuda mútua de vizinho para vizinho.
         </p>
+      </div>
       </div>
     </div>
   );

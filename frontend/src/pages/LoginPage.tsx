@@ -71,7 +71,8 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md py-16">
+    <div className="app-container">
+      <div className="app-read">
       <h1 className="text-3xl font-bold text-cream mb-2">Entrar</h1>
       <p className="text-sm text-silver mb-6">
         Acesso sem senha. Você recebe um código no e-mail para confirmar que é você.
@@ -180,6 +181,7 @@ export function LoginPage() {
           Cadastre-se
         </Link>
       </p>
+      </div>
     </div>
   );
 }

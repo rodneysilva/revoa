@@ -187,174 +187,190 @@ export function LandingPage() {
     <>
       <Hero />
 
-      <section className="py-12 sm:py-16">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-cream">
-            Como você quer participar?
-          </h2>
-          <p className="mt-2 text-silver max-w-xl mx-auto">
-            Escolha um modo e veja o passo a passo — simples, para todas as idades.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-3">
-          {MODO_CARDS.map((c) => (
-            <button
-              key={c.modo}
-              type="button"
-              onClick={() => focusModo(c.modo)}
-              aria-label={`Ver como funciona: ${c.title}`}
-              className={`group text-left bg-charcoal rounded-2xl border border-smoke p-6 transition ${c.hover}`}
-            >
-              <div
-                className={`inline-flex items-center justify-center w-14 h-14 rounded-xl text-3xl mb-4 ${c.iconBg}`}
-              >
-                <span aria-hidden>{c.emoji}</span>
-              </div>
-              <h3 className={`text-xl font-bold mb-1 ${c.accent}`}>{c.title}</h3>
-              <p className="text-sm text-silver">{c.desc}</p>
-              <span
-                className={`mt-4 inline-block text-sm font-semibold ${c.accent} group-hover:underline`}
-              >
-                Ver como funciona →
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section id="como-funciona" className="py-12 sm:py-16 border-t border-smoke">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-cream">Como funciona</h2>
-          <p className="mt-2 text-silver max-w-2xl mx-auto">
-            O passo a passo de cada modo, do anúncio até o novo lar. Sem complicação.
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {GUIDES.map((g) => {
-            const active = activeModo === g.modo;
-            return (
-              <div
-                key={g.modo}
-                id={`guia-${g.modo}`}
-                className={`scroll-mt-24 bg-charcoal/60 rounded-2xl border p-6 sm:p-8 ring-2 transition ${
-                  active ? `${g.ringActive} border-transparent` : "ring-transparent border-smoke"
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl" aria-hidden>
-                    {g.emoji}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${g.chip}`}
-                  >
-                    {g.title}
-                  </span>
-                </div>
-                <p className="text-cream/90 mb-6">{g.intro}</p>
-
-                <ol className="space-y-3">
-                  {g.steps.map((s, i) => (
-                    <li key={i} className="flex gap-3 items-start">
-                      <span
-                        className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-smoke text-sm font-bold text-cream"
-                        aria-hidden
-                      >
-                        {i + 1}
-                      </span>
-                      <span className="flex items-center gap-2 text-cream/90">
-                        <span aria-hidden>{s.icon}</span>
-                        <span>{s.text}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {g.faqs.map((f, i) => (
-                    <details
-                      key={i}
-                      className="bg-smoke rounded-xl border border-smoke px-4 py-3"
-                    >
-                      <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-cream font-medium text-sm">
-                        <span>{f.q}</span>
-                        <span className="faq-plus text-silver transition-transform" aria-hidden>
-                          +
-                        </span>
-                      </summary>
-                      <p className="mt-2 text-sm text-silver">{f.a}</p>
-                    </details>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="py-12 sm:py-16 border-t border-smoke">
-        <div className="text-center mb-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-cream">Por que o revoa.me</h2>
-          <p className="mt-2 text-silver max-w-2xl mx-auto">
-            Uma comunidade que se ajuda, sem fins lucrativos.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PILARES.map((p) => (
-            <div key={p.title} className="bg-charcoal rounded-2xl border border-smoke p-6">
-              <div className="text-3xl mb-3" aria-hidden>
-                {p.icon}
-              </div>
-              <h3 className="font-semibold text-cream mb-1">{p.title}</h3>
-              <p className="text-sm text-silver">{p.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="py-12 sm:py-16 border-t border-smoke">
-        <div className="flex items-end justify-between gap-4 mb-6">
-          <h2 className="text-2xl sm:text-3xl font-bold text-cream">No feed agora</h2>
-          <Link to="/feed" className="text-sm text-esmeralda hover:underline whitespace-nowrap">
-            Ver tudo →
-          </Link>
-        </div>
-        {offline && (
-          <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
-            Não foi possível carregar o feed — backend offline? Rode o servidor .NET na porta 8000.
-          </div>
-        )}
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-          {items === null ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-smoke rounded-xl animate-pulse" />
-            ))
-          ) : items.length === 0 ? (
-            <p className="text-silver col-span-full">
-              Ainda não há anúncios. {offline ? "" : "Seja o primeiro!"}
-            </p>
-          ) : (
-            items.slice(0, 6).map((it, i) => <ListingCard key={it.Id ?? i} item={it} />)
-          )}
-        </div>
-      </section>
-
-      <section className="py-14 sm:py-20">
-        <div className="relative overflow-hidden rounded-3xl border border-smoke text-center px-6 py-12 sm:py-16">
-          <div className="absolute inset-0 bg-community opacity-20" aria-hidden />
-          <div className="relative">
-            <h2 className="text-2xl sm:text-4xl font-bold text-cream">
-              Comunidade que troca, doa e cuida.
+      <section>
+        <div className="app-container">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+              Como você quer participar?
             </h2>
-            <p className="mt-3 text-silver max-w-xl mx-auto">
-              Junte-se a quem acredita que o que não usa merece um novo lar.
+            <p className="mt-2 text-silver max-w-xl mx-auto">
+              Escolha um modo e veja o passo a passo — simples, para todas as idades.
             </p>
-            <Link
-              to={ctaTo}
-              className="mt-7 inline-block bg-brand text-ink font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-black/30"
-            >
-              {user ? "Ofereça o que você tem" : "Participe da comunidade"}
+          </div>
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-3">
+            {MODO_CARDS.map((c) => (
+              <button
+                key={c.modo}
+                type="button"
+                onClick={() => focusModo(c.modo)}
+                aria-label={`Ver como funciona: ${c.title}`}
+                className={`group text-left bg-charcoal rounded-2xl border border-smoke p-6 transition ${c.hover}`}
+              >
+                <div
+                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl text-3xl mb-4 ${c.iconBg}`}
+                >
+                  <span aria-hidden>{c.emoji}</span>
+                </div>
+                <h3 className={`text-xl font-bold mb-1 ${c.accent}`}>{c.title}</h3>
+                <p className="text-sm text-silver">{c.desc}</p>
+                <span
+                  className={`mt-4 inline-block text-sm font-semibold ${c.accent} group-hover:underline`}
+                >
+                  Ver como funciona →
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="como-funciona" className="border-t border-smoke">
+        <div className="app-container">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+              Como funciona
+            </h2>
+            <p className="mt-2 text-silver max-w-2xl mx-auto">
+              O passo a passo de cada modo, do anúncio até o novo lar. Sem complicação.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {GUIDES.map((g) => {
+              const active = activeModo === g.modo;
+              return (
+                <div
+                  key={g.modo}
+                  id={`guia-${g.modo}`}
+                  className={`scroll-mt-24 bg-charcoal/60 rounded-2xl border p-6 sm:p-8 ring-2 transition ${
+                    active ? `${g.ringActive} border-transparent` : "ring-transparent border-smoke"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl" aria-hidden>
+                      {g.emoji}
+                    </span>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${g.chip}`}
+                    >
+                      {g.title}
+                    </span>
+                  </div>
+                  <p className="text-cream/90 mb-6">{g.intro}</p>
+
+                  <ol className="space-y-3">
+                    {g.steps.map((s, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <span
+                          className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-smoke text-sm font-bold text-cream"
+                          aria-hidden
+                        >
+                          {i + 1}
+                        </span>
+                        <span className="flex items-center gap-2 text-cream/90">
+                          <span aria-hidden>{s.icon}</span>
+                          <span>{s.text}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {g.faqs.map((f, i) => (
+                      <details
+                        key={i}
+                        className="bg-smoke rounded-xl border border-smoke px-4 py-3"
+                      >
+                        <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-cream font-medium text-sm">
+                          <span>{f.q}</span>
+                          <span className="faq-plus text-silver transition-transform" aria-hidden>
+                            +
+                          </span>
+                        </summary>
+                        <p className="mt-2 text-sm text-silver">{f.a}</p>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-smoke">
+        <div className="app-container">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+              Por que o revoa.me
+            </h2>
+            <p className="mt-2 text-silver max-w-2xl mx-auto">
+              Uma comunidade que se ajuda, sem fins lucrativos.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {PILARES.map((p) => (
+              <div key={p.title} className="bg-charcoal rounded-2xl border border-smoke p-6">
+                <div className="text-3xl mb-3" aria-hidden>
+                  {p.icon}
+                </div>
+                <h3 className="font-semibold text-cream mb-1">{p.title}</h3>
+                <p className="text-sm text-silver">{p.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-smoke">
+        <div className="app-container">
+          <div className="flex items-end justify-between gap-4 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+              No feed agora
+            </h2>
+            <Link to="/feed" className="text-sm text-esmeralda hover:underline whitespace-nowrap">
+              Ver tudo →
             </Link>
+          </div>
+          {offline && (
+            <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
+              Não foi possível carregar o feed — backend offline? Rode o servidor .NET na porta 8000.
+            </div>
+          )}
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-6">
+            {items === null ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square bg-smoke rounded-xl animate-pulse" />
+              ))
+            ) : items.length === 0 ? (
+              <p className="text-silver col-span-full">
+                Ainda não há anúncios. {offline ? "" : "Seja o primeiro!"}
+              </p>
+            ) : (
+              items.slice(0, 6).map((it, i) => <ListingCard key={it.Id ?? i} item={it} />)
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-smoke">
+        <div className="app-container">
+          <div className="relative overflow-hidden rounded-3xl border border-smoke text-center px-6 py-12 sm:py-16">
+            <div className="absolute inset-0 bg-community opacity-20" aria-hidden />
+            <div className="relative">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+                Comunidade que troca, doa e cuida.
+              </h2>
+              <p className="mt-3 text-silver max-w-xl mx-auto">
+                Junte-se a quem acredita que o que não usa merece um novo lar.
+              </p>
+              <Link
+                to={ctaTo}
+                className="mt-7 inline-block bg-brand text-ink font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-black/30"
+              >
+                {user ? "Ofereça o que você tem" : "Participe da comunidade"}
+              </Link>
+            </div>
           </div>
         </div>
       </section>

@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-md py-24 text-center">
+    <div className="app-container">
+      <div className="app-read text-center">
       <div className="text-6xl mb-4" aria-hidden>
         🧭
       </div>
@@ -13,6 +14,7 @@ export function NotFoundPage() {
       <Link to="/" className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl">
         Voltar ao início
       </Link>
+      </div>
     </div>
   );
 }

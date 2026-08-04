@@ -131,12 +131,14 @@ export function TradeTrackerPage() {
 
   if (!user)
     return (
-      <div className="mx-auto max-w-md py-16 text-center">
+      <div className="app-container">
+        <div className="app-read text-center">
         <h1 className="text-2xl font-bold text-cream mb-2">Suas trocas</h1>
         <p className="text-silver mb-4">Entre para acompanhar suas trocas e doações.</p>
         <Link to="/login" className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl">
           Entrar
         </Link>
+        </div>
       </div>
     );
 
@@ -145,7 +147,7 @@ export function TradeTrackerPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl py-8">
+    <div className="app-container">
       <h1 className="text-2xl font-bold text-cream mb-6">Suas trocas</h1>
       {error && (
         <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
@@ -162,7 +164,7 @@ export function TradeTrackerPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
           {trades.map((t) => (
             <TradeCard key={t.Id} trade={t} role={buyerIds.has(t.Id) ? "buyer" : "seller"} />
           ))}

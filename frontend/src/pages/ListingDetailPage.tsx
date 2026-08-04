@@ -40,11 +40,11 @@ export function ListingDetailPage() {
   }, [id]);
 
   if (loading)
-    return <div className="mx-auto max-w-5xl py-16 text-silver">Carregando…</div>;
+    return <div className="app-container text-silver">Carregando…</div>;
 
   if (error || !listing)
     return (
-      <div className="mx-auto max-w-5xl py-16 text-center">
+      <div className="app-container text-center">
         <p className="text-silver mb-4">{error ?? "Anúncio não encontrado."}</p>
         <Link to="/feed" className="text-esmeralda hover:underline">
           ← Voltar ao feed
@@ -57,12 +57,12 @@ export function ListingDetailPage() {
   const images = listing.Imagens?.length ? listing.Imagens : [];
 
   return (
-    <div className="mx-auto max-w-5xl py-8">
+    <div className="app-container">
       <Link to="/feed" className="text-sm text-silver hover:text-cream mb-4 inline-block">
         ← Feed
       </Link>
 
-      <div className="grid md:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Galeria */}
         <div>
           <div className="aspect-square bg-smoke rounded-xl border border-smoke overflow-hidden flex items-center justify-center text-7xl">

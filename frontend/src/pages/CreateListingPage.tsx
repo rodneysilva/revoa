@@ -128,7 +128,8 @@ export function CreateListingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl py-8">
+    <div className="app-container">
+      <div className="app-read-lg">
       <h1 className="text-2xl font-bold text-cream mb-6">Anunciar</h1>
 
       {/* Tipo (Kind) */}
@@ -414,6 +415,7 @@ export function CreateListingPage() {
           </p>
         )}
       </form>
+      </div>
     </div>
   );
 }

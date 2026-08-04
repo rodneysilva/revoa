@@ -90,7 +90,7 @@ export function FeedPage() {
   }
 
   return (
-    <div className="py-8">
+    <div className="app-container">
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-cream">Feed</h1>
@@ -158,7 +158,7 @@ export function FeedPage() {
       )}
 
       {loading ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
           {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="aspect-[3/4] bg-smoke rounded-xl animate-pulse" />
           ))}
@@ -179,7 +179,7 @@ export function FeedPage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
             {visible.map((it) => (
               <ListingCard key={it.Id} item={it} />
             ))}
