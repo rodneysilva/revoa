@@ -28,7 +28,7 @@ public class PostsRepository : IPostRepository
                     & fb.Eq(p => p.Status, PostStatus.Visivel);
 
         query &= parentId is null
-            ? fb.Exists(p => p.ParentId, false)
+            ? fb.Eq(p => p.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull
             : fb.Eq(p => p.ParentId, parentId);
 
         return await _posts.Find(query)

@@ -197,6 +197,11 @@ export interface Post {
   CreatedAt: string;
 }
 
+// Comentário de anúncio = mesmo shape do Post (+ ListingId). Reaproveita o <PostThread> no detalhe.
+export interface Comment extends Post {
+  ListingId: string;
+}
+
 export interface Membership {
   Id: string;
   UsuarioId: string;

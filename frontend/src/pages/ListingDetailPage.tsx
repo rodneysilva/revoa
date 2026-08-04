@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { Badge } from "../components/Badge";
+import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
 import { useAuth } from "../auth/AuthContext";
-import type { Listing } from "../api/types";
+import type { Comment, Listing } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,11 @@ export function ListingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImg, setActiveImg] = useState(0);
+
+  // Comentários (thread recursiva — reuso do <PostThread>).
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentBox, setCommentBox] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -34,10 +40,29 @@ export function ListingDetailPage() {
       .finally(() => {
         if (active) setLoading(false);
       });
+
+    api.listingComments(id).then((c) => { if (active) setComments(c); }).catch(() => {});
+
     return () => {
       active = false;
     };
   }, [id]);
+
+  async function submitRootComment() {
+    if (!id || !commentBox.trim()) return;
+    setSubmitting(true);
+    try {
+      await api.createComment(id, null, commentBox.trim());
+      setCommentBox("");
+      setComments(await api.listingComments(id));
+    } catch {
+      /* ignora — feedback opcional */
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const canComment = !!user?.verified;
 
   if (loading)
     return <div className="app-container text-silver">Carregando…</div>;
@@ -212,6 +237,60 @@ export function ListingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Comentários — thread recursiva reutilizando o <PostThread> */}
+      <section className="mt-10 lg:mt-14">
+        <h2 className="text-xl font-bold text-cream mb-4">
+          Comentários
+          {comments.length > 0 && (
+            <span className="text-silver text-sm font-normal"> · {comments.length}</span>
+          )}
+        </h2>
+
+        {canComment ? (
+          <div className="mb-5">
+            <textarea
+              value={commentBox}
+              onChange={(e) => setCommentBox(e.target.value)}
+              rows={2}
+              placeholder="Pergunte ou comente sobre este anúncio…"
+              className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none text-sm"
+            />
+            <button
+              type="button"
+              onClick={submitRootComment}
+              disabled={submitting || !commentBox.trim()}
+              className="mt-2 bg-brand text-ink text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+            >
+              {submitting ? "Enviando…" : "Comentar"}
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-silver mb-5">
+            {user
+              ? "Confirme seu e-mail e telefone para comentar."
+              : (
+                <>
+                  <Link to="/login" className="text-esmeralda hover:underline">Entre</Link> para comentar.
+                </>
+              )}
+          </p>
+        )}
+
+        {comments.length === 0 ? (
+          <p className="text-silver text-sm">Nenhum comentário ainda. Seja o primeiro!</p>
+        ) : (
+          <PostThread
+            posts={comments}
+            onReply={async (parentId, conteudo) => {
+              await api.createComment(id!, parentId, conteudo);
+            }}
+            loadChildren={(parentId) => api.listingComments(id!, parentId)}
+            canPost={canComment}
+            currentUserId={user?.userId}
+          />
+        )}
+      </section>
     </div>
   );
 }

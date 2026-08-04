@@ -3,6 +3,7 @@
 
 import type {
   Category,
+  Comment,
   Community,
   CommunityFeedParams,
   CreateCommunityBody,
@@ -144,6 +145,15 @@ export const api = {
     ),
   listing: (id: string): Promise<Listing> =>
     apiGet<Listing>(`/api/listings/${encodeURIComponent(id)}`),
+  listingComments: (listingId: string, parentId?: string): Promise<Comment[]> =>
+    apiGet<Comment[]>(
+      `/api/listings/${encodeURIComponent(listingId)}/comments${qs({ parentId })}`
+    ),
+  createComment: (listingId: string, parentId: string | null, conteudo: string): Promise<string> =>
+    apiPost<string>(`/api/listings/${encodeURIComponent(listingId)}/comments`, {
+      ParentId: parentId,
+      Conteudo: conteudo,
+    }),
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
     apiPost<string>(`/api/listings`, body),

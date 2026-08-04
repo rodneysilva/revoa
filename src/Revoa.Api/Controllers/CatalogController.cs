@@ -127,9 +127,54 @@ public class CatalogController : ControllerBase
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
 
+    // Comentários de um anúncio (thread recursiva — reuso do <PostThread> no FE). Raízes ou
+    // respostas diretas de parentId. Anônimo vê (UF-01).
+    [HttpGet("{id:guid}/comments")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<CommentDto>>> Comments(
+        Guid id, [FromQuery] Guid? parentId, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetListingCommentsQuery(id, parentId), ct);
+        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+    }
+
+    // Cria comentário/resposta (gate Verified). Autor do token; depth ≤ 6.
+    [HttpPost("{id:guid}/comments")]
+    [Authorize(Policy = "Verified")]
+    public async Task<ActionResult<string>> CreateComment(
+        Guid id, [FromBody] CreateCommentRequest request, CancellationToken ct)
+    {
+        var (autorId, nome, avatar, unauthorized) = ReadActor();
+        if (unauthorized is not null)
+        {
+            return Unauthorized(unauthorized);
+        }
+
+        var result = await _mediator.Send(
+            new CreateCommentCommand(autorId, nome, avatar, id, request.ParentId, request.Conteudo), ct);
+
+        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+    }
+
+    // Ownership: lê claims sub/name/avatar do token (compartilhado por Create + CreateComment).
+    private (Guid autorId, string nome, string? avatar, object? unauthorized) ReadActor()
+    {
+        var sub = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var autorId))
+        {
+            return (Guid.Empty, "Usuário", null, new { error = "Token sem claim 'sub'." });
+        }
+
+        var nome = User.FindFirst("name")?.Value ?? User.FindFirst("nickname")?.Value ?? "Usuário";
+        var avatar = User.FindFirst("avatar")?.Value;
+        return (autorId, nome, avatar, null);
+    }
+
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum
         => Enum.TryParse(value, ignoreCase: true, out result);
 }
+
+public sealed record CreateCommentRequest(Guid? ParentId, string Conteudo);
 
 public sealed record CreateListingRequest(
     string Kind,

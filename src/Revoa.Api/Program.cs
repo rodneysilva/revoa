@@ -71,6 +71,9 @@ if (string.IsNullOrWhiteSpace(jwtKey))
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Não remapear claims JWT (sub→nameidentifier etc.) — os controllers leem FindFirst("sub"/"name"/"avatar").
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -204,6 +207,12 @@ static async Task EnsureIndexesAsync(WebApplication app)
         {
             await categoriesRepo.EnsureIndexesAsync();
             await categoriesRepo.EnsureSeedAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.ICommentRepository>()
+            is CommentsRepository commentsRepo)
+        {
+            await commentsRepo.EnsureIndexesAsync();
         }
 
         // Community: índices de Communities/Memberships (único Usuario+Comunidade)/Posts/ChatMessages (TTL 90d).

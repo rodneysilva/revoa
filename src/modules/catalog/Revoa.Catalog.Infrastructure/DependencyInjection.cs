@@ -33,9 +33,10 @@ public static class DependencyInjection
         services.TryAddSingleton<IMongoClient>(_ => new MongoClient(conn));
         services.TryAddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
 
-        // Repositórios (coleções próprias: Listings, Categories).
+        // Repositórios (coleções próprias: Listings, Categories, Comments).
         services.AddScoped<IListingRepository, ListingsRepository>();
         services.AddScoped<ICategoryRepository, CategoriesRepository>();
+        services.AddScoped<ICommentRepository, CommentsRepository>();
 
         // ViaCEP (geolocalização por CEP).
         services.AddHttpClient<ViaCepService>();
