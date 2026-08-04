@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Revoa.Abstractions;
+using Revoa.Account.Infrastructure;
+using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Api.Hubs;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
+using Revoa.Token.Infrastructure;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +22,12 @@ builder.Services.AddScoped<IIntegrationEventBus, InProcessIntegrationEventBus>()
 
 // Identity module: Mongo, repo, UoW, e-mail (MailKit), SMS (Zenvia), MediatR+ValidationBehavior, validators
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
+
+// Account module: carteira EOA por usuário (MVP dev) + handler de UserRegisteredEvent.
+builder.Services.AddAccountInfrastructure(builder.Configuration);
+
+// Token module: faucet RVM (R$20) via Nethereum + handler de WalletCreatedEvent.
+builder.Services.AddTokenInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -89,26 +98,33 @@ app.MapHub<CommunityHub>("/hubs/community");
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", ts = DateTime.UtcNow }));
 
-// Cria índices únicos (Email, Telefone) no MongoDB — anti-sybil em nível de banco (idempotente).
-await EnsureIdentityIndexesAsync(app);
+// Cria índices únicos (Email, Telefone no Identity; UserId no Account) — anti-sybil em nível de banco (idempotente).
+await EnsureIndexesAsync(app);
 
 app.Run();
 return;
 
-static async Task EnsureIdentityIndexesAsync(WebApplication app)
+static async Task EnsureIndexesAsync(WebApplication app)
 {
     try
     {
         using var scope = app.Services.CreateScope();
+
         if (scope.ServiceProvider.GetRequiredService<Revoa.Identity.Domain.Repositories.IUserRepository>()
-            is UsersRepository concrete)
+            is UsersRepository usersRepo)
         {
-            await concrete.EnsureIndexesAsync();
+            await usersRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Account.Domain.Repositories.IAccountRepository>()
+            is AccountsRepository accountsRepo)
+        {
+            await accountsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)
     {
         // Não derrubar o startup se o Mongo estiver indisponível em dev; loga e segue.
-        app.Logger.LogWarning(ex, "Não foi possível criar índices do Identity no MongoDB (Mongo indisponível?).");
+        app.Logger.LogWarning(ex, "Não foi possível criar índices no MongoDB (Mongo indisponível?).");
     }
 }

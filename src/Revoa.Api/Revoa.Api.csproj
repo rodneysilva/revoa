@@ -14,6 +14,8 @@
   <ItemGroup>
     <ProjectReference Include="..\modules\identity\Revoa.Identity.Application\Revoa.Identity.Application.csproj" />
     <ProjectReference Include="..\modules\identity\Revoa.Identity.Infrastructure\Revoa.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\account\Revoa.Account.Infrastructure\Revoa.Account.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\token\Revoa.Token.Infrastructure\Revoa.Token.Infrastructure.csproj" />
     <ProjectReference Include="..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>
 
