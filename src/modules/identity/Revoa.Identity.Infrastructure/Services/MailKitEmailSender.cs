@@ -43,7 +43,18 @@ public class MailKitEmailSender : IEmailSender
         catch (Exception ex)
         {
             _logger.LogError(ex, "Falha ao enviar e-mail para {Email} via {Host}:{Port}", toEmail, _options.Host, _options.Port);
+            // DEV: mesmo com falha no SMTP, registra o token p/ o fluxo de verificação não travar.
+            if (_options.LogVerificationTokenInDev)
+            {
+                _logger.LogWarning("[MailKit DEV] Token de e-mail {Token} -> {Email} (link: {Link})", token, toEmail, link);
+            }
             throw;
+        }
+
+        // DEV: SMTP ok, mas em dev o Postfix local não entrega em caixa real — loga o token.
+        if (_options.LogVerificationTokenInDev)
+        {
+            _logger.LogWarning("[MailKit DEV] Token de e-mail {Token} -> {Email} (link: {Link})", token, toEmail, link);
         }
     }
 }

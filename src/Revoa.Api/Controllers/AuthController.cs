@@ -94,6 +94,36 @@ public class AuthController : ControllerBase
         return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
     }
 
+    // DEV-ONLY: verifica e-mail + telefone e ativa o usuário automaticamente (Status=Active).
+    // Em dev o Postfix/Zenvia não entregam em caixa real — este atalho destrava o cadastro sem
+    // precisar do token/OTP reais. Em produção retorna 404. Não valida o token (confia no e-mail).
+    [HttpPost("dev-verify")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResult>> DevVerify([FromBody] LoginRequest request, CancellationToken ct)
+    {
+        if (!_env.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { error = "E-mail é obrigatório." });
+        }
+
+        var user = await _users.GetByEmailAsync(request.Email.Trim(), ct);
+        if (user is null)
+        {
+            return BadRequest(new { error = "Usuário não encontrado. Cadastre-se primeiro." });
+        }
+
+        user.DevActivate();
+        await _users.UpdateAsync(user, ct);
+
+        var token = IssueDevJwt(user);
+        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
+    }
+
     // JWT dev com as claims que a policy "Verified" exige (email_verified + phone_verified).
     private string IssueDevJwt(User user)
     {
