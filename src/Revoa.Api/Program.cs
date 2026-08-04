@@ -7,6 +7,8 @@ using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Api.Hubs;
 using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
+using Revoa.Community.Infrastructure;
+using Revoa.Community.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
@@ -33,6 +35,9 @@ builder.Services.AddTokenInfrastructure(builder.Configuration);
 
 // Catalog module: anúncios (Listings/Categories), ViaCEP, ProductNFT mint-to-escrow.
 builder.Services.AddCatalogInfrastructure(builder.Configuration);
+
+// Community module: comunidades, memberships, posts recursivos, chat SignalR (100% off-chain).
+builder.Services.AddCommunityInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -64,6 +69,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             NameClaimType = "sub"
+        };
+
+        // JWT via query string para SignalR (WebSocket não envia header Authorization).
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var accessToken = ctx.Request.Query["access_token"];
+                var path = ctx.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    ctx.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -138,6 +158,31 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is CategoriesRepository categoriesRepo)
         {
             await categoriesRepo.EnsureIndexesAsync();
+        }
+
+        // Community: índices de Communities/Memberships (único Usuario+Comunidade)/Posts/ChatMessages (TTL 90d).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.ICommunityRepository>()
+            is CommunitiesRepository communitiesRepo)
+        {
+            await communitiesRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IMembershipRepository>()
+            is MembershipsRepository membershipsRepo)
+        {
+            await membershipsRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IPostRepository>()
+            is PostsRepository postsRepo)
+        {
+            await postsRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IChatMessageRepository>()
+            is ChatMessageRepository chatRepo)
+        {
+            await chatRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)
