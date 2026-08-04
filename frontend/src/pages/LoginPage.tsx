@@ -37,6 +37,23 @@ export function LoginPage() {
     }
   }
 
+  // DEV: entra direto pelo e-mail (atalho dev-only; em prod o /login direto retorna 404).
+  // Existe porque, em desenvolvimento, o Postfix local não entrega e-mail em caixa real.
+  async function directLogin() {
+    if (!email.trim()) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await api.login(email.trim());
+      login(res.Token);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Falha no login.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Etapa 2: valida o código e entra.
   async function confirm(e: FormEvent) {
     e.preventDefault();
@@ -81,6 +98,22 @@ export function LoginPage() {
           >
             {loading ? "Enviando…" : "Receber código"}
           </button>
+
+          {import.meta.env.DEV && (
+            <div className="pt-2 border-t border-smoke">
+              <p className="text-xs text-silver mb-2 text-center">
+                Em desenvolvimento o SMTP não entrega o e-mail. Entre direto (dev-only):
+              </p>
+              <button
+                type="button"
+                disabled={loading || !email.trim()}
+                onClick={directLogin}
+                className="w-full bg-help text-ink font-semibold px-6 py-2.5 rounded-xl disabled:opacity-60"
+              >
+                Entrar direto (dev)
+              </button>
+            </div>
+          )}
         </form>
       ) : (
         <form onSubmit={confirm} className="space-y-4">
