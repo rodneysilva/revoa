@@ -131,7 +131,7 @@ export function TradeTrackerPage() {
 
   if (!user)
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
+      <div className="mx-auto max-w-md py-16 text-center">
         <h1 className="text-2xl font-bold text-cream mb-2">Suas trocas</h1>
         <p className="text-silver mb-4">Entre para acompanhar suas trocas e doações.</p>
         <Link to="/login" className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl">
@@ -145,7 +145,7 @@ export function TradeTrackerPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-4xl py-8">
       <h1 className="text-2xl font-bold text-cream mb-6">Suas trocas</h1>
       {error && (
         <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">

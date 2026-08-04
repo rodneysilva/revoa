@@ -1,6 +1,6 @@
 export function NotificationsPage() {
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16 text-center">
+    <div className="mx-auto max-w-2xl py-16 text-center">
       <div className="text-5xl mb-4" aria-hidden>
         🔔
       </div>

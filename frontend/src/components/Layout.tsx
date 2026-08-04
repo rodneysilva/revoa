@@ -18,7 +18,7 @@ export function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 bg-ink/85 backdrop-blur border-b border-smoke">
-        <div className="mx-auto max-w-6xl px-4 h-16 flex items-center gap-4">
+        <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
           <Link to="/" className="wordmark text-2xl shrink-0" aria-label="revoa.me início">
             revoa.me
           </Link>
@@ -58,7 +58,7 @@ export function Layout() {
           </div>
         </div>
         {/* Nav mobile */}
-        <nav className="sm:hidden flex items-center gap-1 px-4 pb-2">
+        <nav className="sm:hidden flex items-center gap-1 px-4 sm:px-6 lg:px-8 pb-2 overflow-x-auto">
           {navItems.map((n) => (
             <NavLink
               key={n.to}
@@ -75,11 +75,11 @@ export function Layout() {
         </nav>
       </header>
 
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
         <Outlet />
       </main>
 
-      <footer className="border-t border-smoke py-6 text-center text-xs text-silver">
+      <footer className="mt-auto border-t border-smoke py-6 text-center text-xs text-silver">
         revoa.me · Economia circular · sem fins lucrativos
       </footer>
     </div>

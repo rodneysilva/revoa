@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ListingCard } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
-import type { FeedItem, Kind } from "../api/types";
+import type { Category, FeedItem, Kind } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 
 type Filter = "Todos" | Kind;
@@ -17,21 +17,35 @@ const FILTER_LABEL: Record<Filter, string> = {
 export function FeedPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<FeedItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("Todos");
+  const [categoriaId, setCategoriaId] = useState<string>("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // Recarrega quando o filtro muda.
+  useEffect(() => {
+    api
+      .categories()
+      .then(setCategories)
+      .catch(() => {
+        /* categorias opcionais para o filtro */
+      });
+  }, []);
+
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError(null);
     api
-      .feed({ page: 1, kind: filter === "Todos" ? undefined : filter })
+      .feed({
+        page: 1,
+        kind: filter === "Todos" ? undefined : filter,
+        categoriaId: categoriaId || undefined,
+      })
       .then((data) => {
         if (!active) return;
         setItems(data);
@@ -48,7 +62,7 @@ export function FeedPage() {
     return () => {
       active = false;
     };
-  }, [filter]);
+  }, [filter, categoriaId]);
 
   const q = query.trim().toLowerCase();
   const visible = q
@@ -63,6 +77,7 @@ export function FeedPage() {
       const data = await api.feed({
         page: next,
         kind: filter === "Todos" ? undefined : filter,
+        categoriaId: categoriaId || undefined,
       });
       setItems((prev) => [...prev, ...data]);
       setPage(next);
@@ -75,37 +90,65 @@ export function FeedPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-cream">Feed</h1>
+    <div className="py-8">
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-cream">Feed</h1>
+          {user?.verified && (
+            <Link
+              to="/listings/new"
+              className="sm:ml-auto bg-brand text-ink font-semibold px-4 py-2 rounded-lg text-sm text-center"
+            >
+              + Anunciar
+            </Link>
+          )}
+        </div>
+
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por título…"
-          className="sm:ml-4 flex-1 bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2 outline-none"
+          className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none"
         />
-        <div className="flex gap-1 bg-charcoal rounded-lg border border-smoke p-1">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
-                filter === f ? "bg-brand text-ink" : "text-silver hover:text-cream"
-              }`}
-            >
-              {FILTER_LABEL[f]}
-            </button>
-          ))}
-        </div>
-        {user?.verified && (
-          <Link
-            to="/listings/new"
-            className="bg-brand text-ink font-semibold px-4 py-2 rounded-lg text-sm"
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div
+            role="group"
+            aria-label="Filtrar por tipo"
+            className="flex gap-1 bg-charcoal rounded-lg border border-smoke p-1 w-full sm:w-auto"
           >
-            + Anunciar
-          </Link>
-        )}
+            {FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  filter === f ? "bg-brand text-ink" : "text-silver hover:text-cream"
+                }`}
+              >
+                {FILTER_LABEL[f]}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex-1 sm:max-w-xs">
+            <label className="block">
+              <span className="sr-only">Filtrar por categoria</span>
+              <select
+                value={categoriaId}
+                onChange={(e) => setCategoriaId(e.target.value)}
+                className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none"
+              >
+                <option value="">Todas as categorias</option>
+                {categories.map((c) => (
+                  <option key={c.Id} value={c.Id}>
+                    {c.Nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -115,18 +158,28 @@ export function FeedPage() {
       )}
 
       {loading ? (
-        <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="aspect-[3/4] bg-smoke rounded-xl animate-pulse" />
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <p className="text-silver">
-          {q ? "Nenhum resultado para a busca." : "Nenhum anúncio por aqui ainda."}
-        </p>
+        <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
+          <p className="text-silver">
+            {q ? "Nenhum resultado para a busca." : "Nenhum anúncio por aqui ainda."}
+          </p>
+          {!q && user?.verified && (
+            <Link
+              to="/listings/new"
+              className="mt-4 inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+            >
+              Criar o primeiro anúncio
+            </Link>
+          )}
+        </div>
       ) : (
         <>
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {visible.map((it) => (
               <ListingCard key={it.Id} item={it} />
             ))}

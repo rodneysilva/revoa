@@ -7,7 +7,7 @@ export function ProfilePage() {
 
   if (!user)
     return (
-      <div className="mx-auto max-w-md px-4 py-16 text-center">
+      <div className="mx-auto max-w-md py-16 text-center">
         <h1 className="text-2xl font-bold text-cream mb-2">Perfil</h1>
         <p className="text-silver mb-4">Entre para ver seu perfil.</p>
         <Link to="/login" className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl">
@@ -17,7 +17,7 @@ export function ProfilePage() {
     );
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <div className="mx-auto max-w-2xl py-8">
       <h1 className="text-2xl font-bold text-cream mb-6">Perfil</h1>
       <div className="bg-charcoal rounded-2xl border border-smoke p-6 space-y-3">
         <Row label="Nome" value={user.nome || "—"} />

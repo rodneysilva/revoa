@@ -21,36 +21,49 @@ export function Hero() {
 
   const verified = !!user?.verified;
   const primaryTo = verified ? "/listings/new" : "/register";
-  const primaryLabel = verified ? "Ofereça o que você tem" : "Participe da comunidade";
 
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-brand opacity-10" aria-hidden />
-      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-28 text-center">
-        <h1 className="wordmark text-5xl sm:text-7xl mb-6">revoa.me</h1>
+    <section className="relative overflow-hidden rounded-3xl border border-smoke mt-6">
+      <div className="absolute inset-0 bg-brand opacity-[0.12]" aria-hidden />
+      <div className="absolute inset-0 bg-help opacity-[0.08]" aria-hidden />
+      <div
+        className="absolute -top-24 -left-16 w-72 h-72 rounded-full bg-esmeralda/20 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="absolute -bottom-24 -right-16 w-80 h-80 rounded-full bg-sky/20 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="relative px-6 sm:px-10 py-16 sm:py-24 lg:py-28 text-center">
+        <h1 className="wordmark text-5xl sm:text-6xl lg:text-7xl xl:text-8xl tracking-tight">
+          revoa.me
+        </h1>
         <p
-          className={`text-2xl sm:text-3xl font-semibold text-cream transition-opacity duration-300 ${
+          className={`mt-6 text-2xl sm:text-3xl lg:text-4xl font-semibold text-cream transition-opacity duration-300 ${
             fade ? "opacity-100" : "opacity-0"
           }`}
+          aria-live="polite"
         >
           {SLOGANS[idx]}
         </p>
-        <p className="mt-4 text-silver max-w-2xl mx-auto">
-          A moeda da comunidade RVM conecta quem tem o que oferecer a quem precisa —
-          troque, doe e cuide, de vizinho para vizinho.
+        <p className="mt-5 text-base sm:text-lg text-silver max-w-2xl mx-auto">
+          Economia circular e ajuda mútua, sem fins lucrativos, com a moeda
+          social RVM. Você oferece o que sabe fazer ou o que não usa mais —
+          troca, doa e cuida, de vizinho para vizinho.
         </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             to={primaryTo}
-            className="bg-brand text-ink font-semibold px-6 py-3 rounded-xl hover:opacity-90 transition"
+            className="bg-brand text-ink font-semibold px-7 py-3.5 rounded-xl hover:opacity-90 transition shadow-lg shadow-black/30"
           >
-            {primaryLabel}
+            Ofereça o que você tem
           </Link>
           <Link
             to="/feed"
-            className="border border-smoke text-cream font-semibold px-6 py-3 rounded-xl hover:border-esmeralda transition"
+            className="border border-smoke bg-charcoal/40 text-cream font-semibold px-7 py-3.5 rounded-xl hover:border-esmeralda transition"
           >
-            Ver o feed
+            Explorar o feed
           </Link>
         </div>
       </div>

@@ -64,3 +64,14 @@ body {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* Accordion nativo (details) — remove o marcador padrão e gira o "+". */
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+details[open] .faq-plus {
+  transform: rotate(45deg);
+}

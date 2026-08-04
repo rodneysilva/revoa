@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
+    <div className="mx-auto max-w-md py-24 text-center">
       <div className="text-6xl mb-4" aria-hidden>
         🧭
       </div>
