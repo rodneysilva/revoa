@@ -83,7 +83,7 @@ public class CatalogController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
     }
 
-    // Feed anônimo (UF-01).
+    // Feed anônimo (UF-01). Filtros NxN (todos opcionais) via query string.
     [HttpGet("feed")]
     [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<FeedItemDto>>> Feed(
@@ -94,9 +94,18 @@ public class CatalogController : ControllerBase
         [FromQuery] Guid? categoriaId,
         [FromQuery] Guid? comunidadeId,
         [FromQuery] int page = 1,
+        [FromQuery] string? modo = null,
+        [FromQuery] long? precoMin = null,
+        [FromQuery] long? precoMax = null,
+        [FromQuery] bool? doarApenas = null,
+        [FromQuery] string? sort = null,
+        [FromQuery] string? q = null,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page), ct);
+        var result = await _mediator.Send(
+            new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page,
+                modo, precoMin, precoMax, doarApenas, sort, q),
+            ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
 

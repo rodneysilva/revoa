@@ -31,6 +31,10 @@ export interface FeedItem {
   Bairro?: string;
   CategoriaId: string;
   DistanciaKm?: number;
+  Condition?: string;
+  UnitType?: string;
+  Duration?: number;
+  CreatedAt?: string;
 }
 
 export interface ProductDetails {
@@ -138,6 +142,12 @@ export interface FeedParams {
   categoriaId?: string;
   comunidadeId?: string;
   page?: number;
+  modo?: Modo;
+  precoMin?: number;
+  precoMax?: number;
+  doarApenas?: boolean;
+  sort?: string;
+  q?: string;
 }
 
 export interface TradesParams {

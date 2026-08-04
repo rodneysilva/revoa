@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LandingPage } from "./pages/LandingPage";
 import { FeedPage } from "./pages/FeedPage";
+import { ExplorePage } from "./pages/ExplorePage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -23,6 +24,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/feed" element={<FeedPage />} />
+          <Route path="/explore" element={<ExplorePage />} />
           <Route path="/listings/:id" element={<ListingDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />

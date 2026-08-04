@@ -2,12 +2,22 @@ using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
 
 namespace Revoa.Catalog.Domain.Repositories;
 
-// Filtro de feed aplicado no MongoDB (antes do Haversine em memória, na camada de aplicação).
+// Filtro NxN de feed aplicado no MongoDB (AND). RadiusMode=true pula a paginação
+// no banco (Haversine é feita em memória no handler) e usa CandidateCap.
 public record FeedFilter(
     ListingKind? Kind,
     Guid? CategoriaId,
     Guid? ComunidadeId,
-    int Limit);
+    ListingModo? Modo,
+    long? PrecoMin,
+    long? PrecoMax,
+    bool? DoarApenas,
+    string? Q,
+    string? Sort,
+    int Page,
+    int PageSize,
+    bool RadiusMode,
+    int CandidateCap);
 
 public interface IListingRepository
 {

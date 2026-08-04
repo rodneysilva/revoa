@@ -9,7 +9,7 @@ namespace Revoa.Catalog.Application.Queries;
 
 public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnlyList<FeedItemDto>>>
 {
-    private const int PageSize = 20;
+    private const int PageSize = 24;
     private const int CandidateCap = 200;
 
     private readonly IListingRepository _listings;
@@ -32,39 +32,68 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
             kind = k;
         }
 
-        var filter = new FeedFilter(kind, request.CategoriaId, request.ComunidadeId, CandidateCap);
-        var candidates = await _listings.GetFeedAsync(filter, ct);
-
-        // Filtro por raio (Haversine) quando lat+lng+raio informados.
-        var useRadius = request.Raio is > 0 && request.Lat is not null && request.Lng is not null;
-
-        IEnumerable<Listing> stream = candidates;
-        if (useRadius)
+        ListingModo? modo = null;
+        if (!string.IsNullOrWhiteSpace(request.Modo))
         {
-            var lat = request.Lat!.Value;
-            var lng = request.Lng!.Value;
-            var raio = request.Raio!.Value;
+            if (!Enum.TryParse<ListingModo>(request.Modo, ignoreCase: true, out var m))
+            {
+                return Result<IReadOnlyList<FeedItemDto>>.Fail("Modo inválido (Trocar|Repassar|Doar|Voluntariar).");
+            }
 
-            stream = candidates
-                .Where(l => l.Localizacao.Lat is not null && l.Localizacao.Lng is not null)
-                .Select(l => new
-                {
-                    Listing = l,
-                    Dist = GeoHelper.HaversineKm(lat, lng, l.Localizacao.Lat!.Value, l.Localizacao.Lng!.Value)
-                })
-                .Where(x => x.Dist <= raio)
-                .OrderBy(x => x.Dist)
-                .Select(x => x.Listing);
+            modo = m;
         }
 
+        // Filtro por raio (Haversine) exige lat+lng+raio. Nesse caso a paginação é feita em memória
+        // (distância é computada no handler), então o banco devolve só candidatos (cap).
+        var useRadius = request.Raio is > 0 && request.Lat is not null && request.Lng is not null;
+
         var page = request.Page <= 0 ? 1 : request.Page;
-        var paged = stream
-            .Skip((page - 1) * PageSize)
-            .Take(PageSize)
+
+        var filter = new FeedFilter(
+            kind,
+            request.CategoriaId,
+            request.ComunidadeId,
+            modo,
+            request.PrecoMin,
+            request.PrecoMax,
+            request.DoarApenas,
+            request.Q,
+            request.Sort,
+            page,
+            PageSize,
+            useRadius,
+            CandidateCap);
+
+        var candidates = await _listings.GetFeedAsync(filter, ct);
+
+        if (!useRadius)
+        {
+            IReadOnlyList<FeedItemDto> direct = candidates.Select(Map).ToList();
+            return Result<IReadOnlyList<FeedItemDto>>.Ok(direct);
+        }
+
+        var lat = request.Lat!.Value;
+        var lng = request.Lng!.Value;
+        var raio = request.Raio!.Value;
+
+        var withinRadius = candidates
+            .Where(l => l.Localizacao.Lat is not null && l.Localizacao.Lng is not null)
+            .Select(l => new
+            {
+                Listing = l,
+                Dist = GeoHelper.HaversineKm(lat, lng, l.Localizacao.Lat!.Value, l.Localizacao.Lng!.Value)
+            })
+            .Where(x => x.Dist <= raio)
+            .OrderBy(x => x.Dist)
             .ToList();
 
-        IReadOnlyList<FeedItemDto> result = paged.Select(Map).ToList();
-        return Result<IReadOnlyList<FeedItemDto>>.Ok(result);
+        var paged = withinRadius
+            .Skip((page - 1) * PageSize)
+            .Take(PageSize)
+            .Select(x => Map(x.Listing))
+            .ToList();
+
+        return Result<IReadOnlyList<FeedItemDto>>.Ok(paged);
     }
 
     private static FeedItemDto Map(Listing l) => new(
@@ -79,5 +108,9 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
         l.Localizacao.Cidade,
         l.Localizacao.Bairro,
         l.CategoriaId,
-        DistanciaKm: null);
+        DistanciaKm: null,
+        Condition: l.ProductDetails?.Condition.ToString(),
+        UnitType: l.ServiceDetails?.UnitType.ToString(),
+        Duration: l.ServiceDetails?.Duration,
+        CreatedAt: l.CreatedAt);
 }

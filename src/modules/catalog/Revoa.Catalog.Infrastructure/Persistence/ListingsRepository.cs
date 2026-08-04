@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Revoa.Abstractions;
 using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
@@ -47,16 +49,58 @@ public class ListingsRepository : IListingRepository
             query &= fb.Eq(l => l.Kind, filter.Kind);
         }
 
+        if (filter.Modo is not null)
+        {
+            query &= fb.Eq(l => l.Modo, filter.Modo);
+        }
+
         if (filter.CategoriaId is not null)
         {
             query &= fb.Eq(l => l.CategoriaId, filter.CategoriaId);
         }
 
-        var limit = filter.Limit > 0 ? filter.Limit : 100;
+        if (filter.PrecoMin is not null)
+        {
+            query &= fb.Gte(l => l.PrecoRvm, filter.PrecoMin.Value);
+        }
 
-        return await _listings.Find(query)
-            .SortByDescending(l => l.Version)
-            .Limit(limit)
+        if (filter.PrecoMax is not null)
+        {
+            query &= fb.Lte(l => l.PrecoRvm, filter.PrecoMax.Value);
+        }
+
+        if (filter.DoarApenas is true)
+        {
+            query &= fb.Eq(l => l.PrecoRvm, 0L);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Q))
+        {
+            var rx = new BsonRegularExpression(Regex.Escape(filter.Q.Trim()), "i");
+            query &= fb.Regex(l => l.Titulo, rx) | fb.Regex(l => l.Descricao, rx);
+        }
+
+        var sort = filter.Sort switch
+        {
+            "preco-asc" => Builders<Listing>.Sort.Ascending(l => l.PrecoRvm),
+            "preco-desc" => Builders<Listing>.Sort.Descending(l => l.PrecoRvm),
+            _ => Builders<Listing>.Sort.Descending(l => l.CreatedAt)
+        };
+
+        var find = _listings.Find(query).Sort(sort);
+
+        if (filter.RadiusMode)
+        {
+            var cap = filter.CandidateCap > 0 ? filter.CandidateCap : 200;
+            return await find.Limit(cap).ToListAsync(ct);
+        }
+
+        var page = filter.Page <= 0 ? 1 : filter.Page;
+        var pageSize = filter.PageSize > 0 ? filter.PageSize : 24;
+
+        return await find
+            .Skip((page - 1) * pageSize)
+            .Limit(pageSize)
             .ToListAsync(ct);
     }
 
@@ -84,7 +128,7 @@ public class ListingsRepository : IListingRepository
     }
 
     /// <summary>
-    /// Cria índices do feed (Status+Visibilidade, CategoriaId, ComunidadeId, Lat/Lng). Idempotente.
+    /// Cria índices do feed (Status+Visibilidade, CategoriaId, ComunidadeId, Lat/Lng, CreatedAt). Idempotente.
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
@@ -105,7 +149,13 @@ public class ListingsRepository : IListingRepository
                 Builders<Listing>.IndexKeys
                     .Ascending("Localizacao.Lat")
                     .Ascending("Localizacao.Lng"),
-                new CreateIndexOptions { Name = "ix_Localizacao_Lat_Lng", Sparse = true })
+                new CreateIndexOptions { Name = "ix_Localizacao_Lat_Lng", Sparse = true }),
+            new CreateIndexModel<Listing>(
+                Builders<Listing>.IndexKeys.Descending(l => l.CreatedAt),
+                new CreateIndexOptions { Name = "ix_CreatedAt_Desc" }),
+            new CreateIndexModel<Listing>(
+                Builders<Listing>.IndexKeys.Ascending(l => l.PrecoRvm),
+                new CreateIndexOptions { Name = "ix_PrecoRvm" })
         }, ct);
     }
 }

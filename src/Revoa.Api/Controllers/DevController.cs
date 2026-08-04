@@ -61,10 +61,11 @@ public class DevController : ControllerBase
             }
         }
 
-        // 2) Remove mocks antigos (Descricao prefixada "[Demo]").
+        // 2) Remove mocks antigos (Descricao prefixada "[Demo]"). Regex.Escape obrigatório: sem ele,
+        // "[Demo]" vira classe de caracteres (D/e/m/o) e não casa o prefixo literal -> acumulava.
         var collection = _db.GetCollection<Listing>("Listings");
         var demoFilter = Builders<Listing>.Filter.Regex(
-            l => l.Descricao, new BsonRegularExpression("^" + DemoPrefix));
+            l => l.Descricao, new BsonRegularExpression("^" + System.Text.RegularExpressions.Regex.Escape(DemoPrefix)));
         await collection.DeleteManyAsync(demoFilter, ct);
 
         // 3) Gera e insere listings.

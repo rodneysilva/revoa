@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 
 const navItems = [
   { to: "/feed", label: "Feed" },
+  { to: "/explore", label: "Explorar" },
   { to: "/community", label: "Comunidade" },
   { to: "/listings/new", label: "Anunciar" },
 ];
@@ -140,6 +141,9 @@ export function Layout() {
           <div className="flex items-center gap-3">
             <Link to="/feed" className="hover:text-cream">
               Feed
+            </Link>
+            <Link to="/explore" className="hover:text-cream">
+              Explorar
             </Link>
             <Link to="/community" className="hover:text-cream">
               Comunidade

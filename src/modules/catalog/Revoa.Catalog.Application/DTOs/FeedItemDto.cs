@@ -13,4 +13,8 @@ public sealed record FeedItemDto(
     string? Cidade,
     string? Bairro,
     Guid CategoriaId,
-    double? DistanciaKm);
+    double? DistanciaKm,
+    string? Condition,
+    string? UnitType,
+    int? Duration,
+    DateTime CreatedAt);

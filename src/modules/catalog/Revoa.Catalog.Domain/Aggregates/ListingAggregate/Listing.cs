@@ -66,6 +66,8 @@ public class Listing : AggregateRoot
 
     public ListingStatus Status { get; private set; }
 
+    public DateTime CreatedAt { get; private set; }
+
     // VOs tipados por kind (só um é não-null conforme o Kind).
     public ProductDetails? ProductDetails { get; private set; }
     public ServiceDetails? ServiceDetails { get; private set; }
@@ -108,6 +110,7 @@ public class Listing : AggregateRoot
             ComunidadeId = comunidadeId,
             Visibilidade = visibilidade,
             Status = ListingStatus.Ativo,
+            CreatedAt = DateTime.UtcNow,
             Version = 1
         };
     }

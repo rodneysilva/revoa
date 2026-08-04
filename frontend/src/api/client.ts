@@ -134,6 +134,12 @@ export const api = {
         categoriaId: p.categoriaId,
         comunidadeId: p.comunidadeId,
         page: p.page,
+        modo: p.modo,
+        precoMin: p.precoMin,
+        precoMax: p.precoMax,
+        doarApenas: p.doarApenas ? "true" : undefined,
+        sort: p.sort,
+        q: p.q,
       })}`
     ),
   listing: (id: string): Promise<Listing> =>

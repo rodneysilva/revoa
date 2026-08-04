@@ -94,6 +94,12 @@ export function FeedPage() {
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold text-cream">Feed</h1>
+          <Link
+            to="/explore"
+            className="text-sm text-esmeralda hover:underline sm:ml-2"
+          >
+            Explorar tudo com filtros →
+          </Link>
           {user?.verified && (
             <Link
               to="/listings/new"
