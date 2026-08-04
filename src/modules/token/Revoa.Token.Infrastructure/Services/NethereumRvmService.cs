@@ -46,8 +46,24 @@ public class NethereumRvmService : IRvmService
     public async Task<string> MintAsync(string to, BigInteger amount, CancellationToken ct = default)
     {
         var fn = _rvm.GetFunction("mint");
+
+        // Estimativa de gas espelha o 'cast send'; além disso, EstimateGasAsync LANÇA se a tx for
+        // reverter — útil para diagnosticar (nonce/gas são gerenciados pelo TransactionManager).
+        var gas = await fn.EstimateGasAsync(_account.Address, null, null, to, amount);
+        _logger.LogInformation("Mint: to={To} amount={Amount} gas={Gas}", to, amount, gas);
+
         var receipt = await fn.SendTransactionAndWaitForReceiptAsync(
-            _account.Address, null, null, ct, to, amount);
+            _account.Address, gas, null, ct, to, amount);
+
+        if (receipt.Status.Value == 0)
+        {
+            _logger.LogError("Mint REVERTIDO (status 0) tx={Tx}", receipt.TransactionHash);
+        }
+        else
+        {
+            _logger.LogInformation("Mint OK tx={Tx} block={Block}", receipt.TransactionHash, receipt.BlockNumber);
+        }
+
         return receipt.TransactionHash;
     }
 
@@ -61,8 +77,9 @@ public class NethereumRvmService : IRvmService
         }
 
         var grantRole = _rvm.GetFunction("grantRole");
+        var gas = await grantRole.EstimateGasAsync(_account.Address, null, null, MinterRole, _account.Address);
         await grantRole.SendTransactionAndWaitForReceiptAsync(
-            _account.Address, null, null, ct, MinterRole, _account.Address);
+            _account.Address, gas, null, ct, MinterRole, _account.Address);
 
         _logger.LogInformation("MINTER_ROLE concedida à faucet {Address}", _account.Address);
     }
