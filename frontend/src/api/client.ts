@@ -21,6 +21,7 @@ import type {
   LoginResult,
   Membership,
   Post,
+  PriceReference,
   RegisterBody,
   RegisterResult,
   Report,
@@ -319,6 +320,7 @@ export const api = {
   refreshPricing: (): Promise<{ updated: number }> =>
     apiPost<{ updated: number }>(`/api/pricing/refresh`),
   brlRate: (): Promise<BrlRate> => apiGet<BrlRate>(`/api/pricing/rate`),
+  pricing: (): Promise<PriceReference[]> => apiGet<PriceReference[]>(`/api/pricing`),
   demurragePreview: (): Promise<DemurragePreview> =>
     apiPost<DemurragePreview>(`/api/demurrage/preview`),
   demurrageRun: (): Promise<DemurrageRun> => apiPost<DemurrageRun>(`/api/demurrage/run`),

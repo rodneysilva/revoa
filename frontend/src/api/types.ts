@@ -369,3 +369,19 @@ export interface BrlRate {
   currency: "BRL";
   disclaimer: string;
 }
+
+// Referência de preço justo por categoria (PricingIntelligence — GET /api/pricing, leitura anônima).
+// PascalCase como os demais DTOs. Mediana comunitária + semente BRL + IPCA + Ollama.
+export interface PriceReference {
+  CategoriaId: string;
+  CategoriaSlug?: string;
+  RvmMedian: number;
+  SampleCount: number;
+  BrlRate: number;
+  BrlReference?: number;
+  FairSuggestionRvm: number;
+  LastIpcRate?: number;
+  LastIpcMonth?: string;
+  SourcesUsed: string;
+  UpdatedAt: string;
+}

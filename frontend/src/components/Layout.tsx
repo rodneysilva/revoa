@@ -172,6 +172,9 @@ export function Layout() {
             <Link to="/community" className="hover:text-cream">
               Comunidade
             </Link>
+            <Link to="/transparency" className="hover:text-cream">
+              Transparência
+            </Link>
             <Link to="/login" className="hover:text-cream">
               Entrar
             </Link>
