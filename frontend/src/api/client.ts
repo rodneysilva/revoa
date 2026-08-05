@@ -2,6 +2,7 @@
 // Authorization: Bearer. Usa paths relativos (proxy do Vite resolve CORS).
 
 import type {
+  AdminParameter,
   Category,
   Comment,
   Community,
@@ -10,6 +11,8 @@ import type {
   CreateCommunityBody,
   CreateCouponBody,
   CreateListingBody,
+  DemurragePreview,
+  DemurrageRun,
   FeedItem,
   FeedParams,
   HelpRequest,
@@ -25,6 +28,7 @@ import type {
   ReportTarget,
   ResolutionAction,
   Review,
+  SeedCatalogResult,
   Trade,
   TradesParams,
 } from "./types";
@@ -132,6 +136,8 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 export const apiGet = <T>(path: string): Promise<T> => request<T>("GET", path);
 export const apiPost = <T>(path: string, body?: unknown): Promise<T> =>
   request<T>("POST", path, body);
+export const apiPut = <T>(path: string, body?: unknown): Promise<T> =>
+  request<T>("PUT", path, body);
 
 export const api = {
   feed: (p: FeedParams): Promise<FeedItem[]> =>
@@ -303,4 +309,19 @@ export const api = {
     apiPost<void>(`/api/coupons/${encodeURIComponent(id)}/revoke`),
   redeemCoupon: (code: string): Promise<void> =>
     apiPost<void>(`/api/coupons/redeem`, { Code: code }),
+
+  // Admin unificado (UF-30): parâmetros runtime + atalhos para as demais áreas admin.
+  adminParameters: (): Promise<AdminParameter[]> =>
+    apiGet<AdminParameter[]>(`/api/admin/parameters`),
+  setAdminParameter: (key: string, value: number | boolean | string): Promise<void> =>
+    apiPut<void>(`/api/admin/parameters/${encodeURIComponent(key)}`, { Value: value }),
+  refreshPricing: (): Promise<{ updated: number }> =>
+    apiPost<{ updated: number }>(`/api/pricing/refresh`),
+  demurragePreview: (): Promise<DemurragePreview> =>
+    apiPost<DemurragePreview>(`/api/demurrage/preview`),
+  demurrageRun: (): Promise<DemurrageRun> => apiPost<DemurrageRun>(`/api/demurrage/run`),
+  demurrageRuns: (limit = 20): Promise<DemurrageRun[]> =>
+    apiGet<DemurrageRun[]>(`/api/demurrage/runs${qs({ limit })}`),
+  seedCatalog: (): Promise<SeedCatalogResult> =>
+    apiPost<SeedCatalogResult>(`/api/dev/seed-catalog`),
 };

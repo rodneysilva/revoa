@@ -8,6 +8,7 @@ using Revoa.Demurrage.Application.Options;
 using Revoa.Demurrage.Domain.Aggregates.DemurrageRunAggregate;
 using Revoa.Demurrage.Domain.Repositories;
 using Revoa.IntegrationContracts.Accounts;
+using Revoa.IntegrationContracts.Admin;
 using Revoa.Token.Application.Services;
 using Revoa.Token.Domain;
 
@@ -16,6 +17,10 @@ namespace Revoa.Demurrage.Application.Commands;
 // Execução real do demurrage (Admin): queima RateBps% do saldo de cada carteira acima do piso,
 // on-chain (faucet BURNER_ROLE). Resiliente: falha em 1 carteira (ex.: saldo mudou entre leitura e
 // queima) é logada e CONTINUA — não derruba o run inteiro. Persiste o resultado em DemurrageRuns.
+//
+// Os parâmetros (RateBps/Floor/Enabled) vêm do IParameterStore (runtime, UF-30) com fallback para
+// os defaults do DemurrageOptions. Se Enabled=false (store) o run falha com mensagem clara — o
+// admin precisa reativar o módulo antes de executar queimas reais.
 //
 // Importante: as txs on-chain (BurnAsync) usam CancellationToken.None p/ não serem canceladas por
 // um timeout/disconexão do request HTTP (igual ao faucet). A gravação do histórico (AddAsync) idem.
@@ -30,6 +35,7 @@ public class RunDemurrageCommandHandler
     private readonly IWalletAddressReader _wallets;
     private readonly IDemurrageRunRepository _repo;
     private readonly DemurrageOptions _options;
+    private readonly IParameterStore _parameters;
     private readonly ILogger<RunDemurrageCommandHandler> _logger;
 
     public RunDemurrageCommandHandler(
@@ -37,20 +43,28 @@ public class RunDemurrageCommandHandler
         IWalletAddressReader wallets,
         IDemurrageRunRepository repo,
         IOptions<DemurrageOptions> options,
+        IParameterStore parameters,
         ILogger<RunDemurrageCommandHandler> logger)
     {
         _rvm = rvm;
         _wallets = wallets;
         _repo = repo;
         _options = options.Value;
+        _parameters = parameters;
         _logger = logger;
     }
 
     public async Task<Result<DemurrageRunDto>> Handle(RunDemurrageCommand request, CancellationToken ct)
     {
-        if (!_options.Enabled)
+        // Parâmetros runtime com fallback para os defaults do IOptions. GetAsync<T> (T sem
+        // constraint) colapsa T? para o próprio tipo em value types -> valor sempre concreto.
+        var monthlyRateBps = await _parameters.GetAsync("Demurrage.MonthlyRateBps", _options.MonthlyRateBps, ct);
+        var floorRvm = await _parameters.GetAsync("Demurrage.FloorRvm", _options.FloorRvm, ct);
+        var enabled = await _parameters.GetAsync("Demurrage.Enabled", _options.Enabled, ct);
+
+        if (!enabled)
         {
-            return Result<DemurrageRunDto>.Fail("Demurrage está desativado (Demurrage:Enabled=false).");
+            return Result<DemurrageRunDto>.Fail("Demurrage desativado.");
         }
 
         if (string.IsNullOrWhiteSpace(request.ExecutedBy))
@@ -87,13 +101,13 @@ public class RunDemurrageCommandHandler
                 continue;
             }
 
-            if (balance / Unit <= _options.FloorRvm)
+            if (balance / Unit <= floorRvm)
             {
                 skipped++;
                 continue;
             }
 
-            var burnRaw = balance * _options.MonthlyRateBps / 10000;
+            var burnRaw = balance * monthlyRateBps / 10000;
             if (burnRaw <= 0)
             {
                 continue;
@@ -118,8 +132,8 @@ public class RunDemurrageCommandHandler
         }
 
         var run = DemurrageRun.Create(
-            _options.MonthlyRateBps,
-            _options.FloorRvm,
+            monthlyRateBps,
+            floorRvm,
             affected,
             totalBurnRaw,
             skipped,

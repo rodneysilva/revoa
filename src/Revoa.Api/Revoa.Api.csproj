@@ -34,6 +34,8 @@
     <ProjectReference Include="..\modules\pricing\Revoa.Pricing.Infrastructure\Revoa.Pricing.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\demurrage\Revoa.Demurrage.Application\Revoa.Demurrage.Application.csproj" />
     <ProjectReference Include="..\modules\demurrage\Revoa.Demurrage.Infrastructure\Revoa.Demurrage.Infrastructure.csproj" />
+    <ProjectReference Include="..\modules\admin\Revoa.Admin.Application\Revoa.Admin.Application.csproj" />
+    <ProjectReference Include="..\modules\admin\Revoa.Admin.Infrastructure\Revoa.Admin.Infrastructure.csproj" />
     <ProjectReference Include="..\modules\token\Revoa.Token.Infrastructure\Revoa.Token.Infrastructure.csproj" />
     <ProjectReference Include="..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>

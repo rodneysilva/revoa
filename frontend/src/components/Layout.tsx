@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { isAdminEmail } from "../lib/admin";
 
 const navItems = [
   { to: "/feed", label: "Feed" },
@@ -19,6 +20,7 @@ export function Layout() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const admin = isAdminEmail(user?.email);
 
   useEffect(() => {
     setOpen(false);
@@ -46,6 +48,14 @@ export function Layout() {
                 {n.label}
               </NavLink>
             ))}
+            {admin && (
+              <NavLink
+                to="/admin"
+                className={({ isActive }) => navClass(isActive)}
+              >
+                Admin
+              </NavLink>
+            )}
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
@@ -110,6 +120,20 @@ export function Layout() {
                   {n.label}
                 </NavLink>
               ))}
+              {admin && (
+                <NavLink
+                  to="/admin"
+                  className={({ isActive }) =>
+                    `px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? "text-esmeralda bg-smoke/60"
+                        : "text-silver hover:text-cream"
+                    }`
+                  }
+                >
+                  Admin
+                </NavLink>
+              )}
               {!user && (
                 <div className="mt-1 pt-2 border-t border-smoke flex flex-col gap-1">
                   <Link

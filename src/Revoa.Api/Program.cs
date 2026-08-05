@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using Revoa.Abstractions;
 using Revoa.Account.Infrastructure;
 using Revoa.Account.Infrastructure.Persistence;
+using Revoa.Admin.Infrastructure;
+using Revoa.Admin.Infrastructure.Persistence;
 using Revoa.Api.Hubs;
 using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
@@ -40,6 +42,11 @@ builder.Services.AddOpenApi();
 
 // Event bus de integração in-process (MVP)
 builder.Services.AddScoped<IIntegrationEventBus, InProcessIntegrationEventBus>();
+
+// Admin module (UF-30): store de parâmetros runtime (IParameterStore) + painel admin. Registrado
+// cedo — a porta IParameterStore é consumida pelos módulos Reputation/Demurrage/Pricing (resolução
+// por-request/Scoped; a ordem de registro não afeta a resolução).
+builder.Services.AddAdminInfrastructure(builder.Configuration);
 
 // Identity module: Mongo, repo, UoW, e-mail (MailKit), SMS (Zenvia), MediatR+ValidationBehavior, validators
 builder.Services.AddIdentityInfrastructure(builder.Configuration);
@@ -352,6 +359,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is DemurrageRunsRepository demurrageRunsRepo)
         {
             await demurrageRunsRepo.EnsureIndexesAsync();
+        }
+
+        // Admin: índice único por Key dos parâmetros de sistema (runtime, UF-30).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Admin.Domain.Repositories.ISystemParameterRepository>()
+            is SystemParametersRepository systemParametersRepo)
+        {
+            await systemParametersRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

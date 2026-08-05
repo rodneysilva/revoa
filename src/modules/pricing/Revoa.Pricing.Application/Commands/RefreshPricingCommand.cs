@@ -6,6 +6,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Revoa.Abstractions;
+using Revoa.IntegrationContracts.Admin;
 using Revoa.IntegrationContracts.Pricing;
 using Revoa.Pricing.Application.Options;
 using Revoa.Pricing.Domain.Aggregates.PriceReferenceAggregate;
@@ -17,6 +18,10 @@ namespace Revoa.Pricing.Application.Commands;
 // comunitária RVM por categoria, combina com BRL admin-seed + IPCA IBGE, e refina a sugestão
 // justa via Ollama (opcional, fallback mediana). Resiliente: falhas de IBGE/Ollama são logadas
 // e seguem (SourcesUsed reflete o que deu certo). Retorna o número de categorias atualizadas.
+//
+// BrlRate e UseOllama vêm do IParameterStore (runtime, UF-30) com fallback para os defaults do
+// PricingOptions — store vazio => comportamento atual. Os demais parâmetros (BrlReferences,
+// OllamaUrl/Model, IbgeUrl) seguem do IOptions.
 public sealed record RefreshPricingCommand : IRequest<Result<int>>;
 
 public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingCommand, Result<int>>
@@ -24,6 +29,7 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
     private readonly IListingPriceReader _reader;
     private readonly IPriceReferenceRepository _repo;
     private readonly PricingOptions _options;
+    private readonly IParameterStore _parameters;
     private readonly HttpClient _http;
     private readonly ILogger<RefreshPricingCommandHandler> _logger;
 
@@ -31,12 +37,14 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
         IListingPriceReader reader,
         IPriceReferenceRepository repo,
         IOptions<PricingOptions> options,
+        IParameterStore parameters,
         HttpClient http,
         ILogger<RefreshPricingCommandHandler> logger)
     {
         _reader = reader;
         _repo = repo;
         _options = options.Value;
+        _parameters = parameters;
         _http = http;
         _logger = logger;
     }
@@ -49,6 +57,11 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
             _logger.LogInformation("Pricing refresh: nenhum anúncio ativo com preço — 0 categorias.");
             return Result<int>.Ok(0);
         }
+
+        // Parâmetros runtime (BrlRate/UseOllama) com fallback para os defaults do IOptions.
+        // GetAsync<T> (T sem constraint) colapsa T? para o próprio tipo em value types.
+        var brlRate = await _parameters.GetAsync("Pricing.BrlRate", _options.BrlRate, ct);
+        var useOllama = await _parameters.GetAsync("Pricing.UseOllama", _options.UseOllama, ct);
 
         // IPCA é buscado UMA vez por refresh (cache local).
         var (ipcRate, ipcMonth) = await FetchIpcAsync(ct);
@@ -75,7 +88,6 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
             var median = Median(prices);
 
             // BRL: rate global efetiva; referência absoluta por slug (se houver seed).
-            var brlRate = _options.BrlRate;
             long? brlReference = null;
             if (_options.BrlReferences is not null
                 && !string.IsNullOrWhiteSpace(slug)
@@ -92,7 +104,7 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
 
             // Sugestão justa: default = mediana (robusto). Ollama refina se responder um número válido.
             var fair = median;
-            if (_options.UseOllama)
+            if (useOllama)
             {
                 var aiFair = await AskFairAsync(slug ?? categoriaId.ToString(), median, brlRate, ipcRate, ct);
                 if (aiFair is { } ai && ai > 0)

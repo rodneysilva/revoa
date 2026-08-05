@@ -14,6 +14,7 @@ import { CommunityPage } from "./pages/CommunityPage";
 import { CommunityDetailPage } from "./pages/CommunityDetailPage";
 import { AdminReportsPage } from "./pages/AdminReportsPage";
 import { AdminCouponsPage } from "./pages/AdminCouponsPage";
+import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { WalletPage } from "./pages/WalletPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/community/:id" element={<CommunityDetailPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
           <Route path="/admin/coupons" element={<AdminCouponsPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
           {/* Ações exigem login + verificação */}
           <Route element={<ProtectedRoute />}>
             <Route path="/listings/new" element={<CreateListingPage />} />

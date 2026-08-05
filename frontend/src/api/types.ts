@@ -317,3 +317,48 @@ export interface CreateCouponBody {
   Expiry?: string;
   Code?: string;
 }
+
+// Admin — parâmetros runtime (UF-30).
+
+export type ParameterType = "long" | "int" | "decimal" | "bool";
+
+export interface AdminParameter {
+  Key: string;
+  Label: string;
+  Type: ParameterType;
+  Value: number | boolean | string;
+}
+
+// Admin — demurrage (preview/run/histórico).
+
+export interface DemurragePreview {
+  RateBps: number;
+  FloorRvm: number;
+  AccountsAffected: number;
+  Skipped: number;
+  TotalBurnedRaw: string;
+  TotalBurnedRvm: number;
+}
+
+export interface DemurrageRun {
+  Id: string;
+  RunAt: string;
+  RateBps: number;
+  FloorRvm: number;
+  AccountsAffected: number;
+  TotalBurnedRaw: string;
+  TotalBurnedRvm: number;
+  Skipped: number;
+  ExecutedBy: string;
+  Preview: boolean;
+}
+
+// Admin — seed do catálogo demo.
+
+export interface SeedCatalogResult {
+  categorias: number;
+  produtos: number;
+  servicos: number;
+  total: number;
+  erros: number;
+}
