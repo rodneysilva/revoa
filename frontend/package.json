@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@microsoft/signalr": "^8.0.7",
@@ -17,6 +19,7 @@
     "react-router-dom": "^7.1.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.0",
     "@tailwindcss/vite": "^4.1.11",
     "@types/node": "^26.1.2",
     "@types/react": "^19.1.0",
