@@ -1,4 +1,4 @@
-using Revoa.Abstractions;
+﻿using Revoa.Abstractions;
 
 namespace Revoa.Community.Domain.Aggregates.PostAggregate;
 
@@ -8,8 +8,8 @@ public enum PostStatus
     Oculto
 }
 
-// Post recursivo (OOUX objeto 19). Materialized path (depth ≤ 6). Ex.: Path "/{rootId}/{replyId}/{thisId}/".
-// Cascade de ocultação via prefix regex no Path. AutorNome/AvatarUrl embed anti-N+1.
+// Post recursivo (OOUX objeto 19). Materialized path (depth â‰¤ 6). Ex.: Path "/{rootId}/{replyId}/{thisId}/".
+// Cascade de ocultaÃ§Ã£o via prefix regex no Path. AutorNome/AvatarUrl embed anti-N+1.
 public class Post : AggregateRoot
 {
     public const int MaxDepth = 6;
@@ -45,7 +45,7 @@ public class Post : AggregateRoot
             Id = id,
             ComunidadeId = comunidadeId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
+            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
             Conteudo = conteudo.Trim(),
             ParentId = null,
@@ -66,12 +66,12 @@ public class Post : AggregateRoot
     {
         if (parent is null)
         {
-            throw new DomainException("Post pai é obrigatório.");
+            throw new DomainException("Post pai Ã© obrigatÃ³rio.");
         }
 
         if (parent.Depth >= MaxDepth)
         {
-            throw new DomainException($"Profundidade máxima ({MaxDepth}) excedida — inicie uma nova conversa.");
+            throw new DomainException($"Profundidade mÃ¡xima ({MaxDepth}) excedida â€” inicie uma nova conversa.");
         }
 
         ValidateInvariants(parent.ComunidadeId, autorId, conteudo);
@@ -82,7 +82,7 @@ public class Post : AggregateRoot
             Id = id,
             ComunidadeId = parent.ComunidadeId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
+            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
             Conteudo = conteudo.Trim(),
             ParentId = parent.Id,
@@ -98,29 +98,28 @@ public class Post : AggregateRoot
     {
         if (Status == PostStatus.Oculto)
         {
-            throw new DomainException("Post já está oculto.");
+            throw new DomainException("Post jÃ¡ estÃ¡ oculto.");
         }
 
         Status = PostStatus.Oculto;
         OcultadoPor = string.IsNullOrWhiteSpace(ocultadoPor) ? "moderador" : ocultadoPor;
-        IncrementVersion();
     }
 
     private static void ValidateInvariants(Guid comunidadeId, Guid autorId, string conteudo)
     {
         if (comunidadeId == Guid.Empty)
         {
-            throw new DomainException("Comunidade é obrigatória.");
+            throw new DomainException("Comunidade Ã© obrigatÃ³ria.");
         }
 
         if (autorId == Guid.Empty)
         {
-            throw new DomainException("Autor é obrigatório.");
+            throw new DomainException("Autor Ã© obrigatÃ³rio.");
         }
 
         if (string.IsNullOrWhiteSpace(conteudo))
         {
-            throw new DomainException("Conteúdo do post é obrigatório.");
+            throw new DomainException("ConteÃºdo do post Ã© obrigatÃ³rio.");
         }
     }
 }

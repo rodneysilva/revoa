@@ -1,4 +1,4 @@
-using Revoa.Abstractions;
+﻿using Revoa.Abstractions;
 
 namespace Revoa.Catalog.Domain.Aggregates.ListingAggregate;
 
@@ -32,9 +32,9 @@ public enum ListingStatus
     Cancelado
 }
 
-// Aggregate "Anúncio" (OOUX objeto 7). kind (product|service) + modo + visibilidade.
-// Vendedor é embed (Nome/AvatarUrl) para evitar N+1 no feed. NftTokenId é preenchido ao mintar
-// produto (mint-to-escrow, UF-07..09). Serviço NÃO tem NFT até a compra (UF-13 mint-on-purchase).
+// Aggregate "AnÃºncio" (OOUX objeto 7). kind (product|service) + modo + visibilidade.
+// Vendedor Ã© embed (Nome/AvatarUrl) para evitar N+1 no feed. NftTokenId Ã© preenchido ao mintar
+// produto (mint-to-escrow, UF-07..09). ServiÃ§o NÃƒO tem NFT atÃ© a compra (UF-13 mint-on-purchase).
 public class Listing : AggregateRoot
 {
     public ListingKind Kind { get; private set; }
@@ -56,7 +56,7 @@ public class Listing : AggregateRoot
 
     public Guid CategoriaId { get; private set; }
 
-    // YAGNI: ComunidadeId nullable (módulo Community ainda não existe).
+    // YAGNI: ComunidadeId nullable (mÃ³dulo Community ainda nÃ£o existe).
     public Guid? ComunidadeId { get; private set; }
 
     public ListingVisibilidade Visibilidade { get; private set; }
@@ -68,7 +68,7 @@ public class Listing : AggregateRoot
 
     public DateTime CreatedAt { get; private set; }
 
-    // VOs tipados por kind (só um é não-null conforme o Kind).
+    // VOs tipados por kind (sÃ³ um Ã© nÃ£o-null conforme o Kind).
     public ProductDetails? ProductDetails { get; private set; }
     public ServiceDetails? ServiceDetails { get; private set; }
 
@@ -103,7 +103,7 @@ public class Listing : AggregateRoot
             Imagens = imagens ?? new List<string>(),
             PrecoRvm = precoRvm,
             VendedorId = vendedorId,
-            VendedorNome = string.IsNullOrWhiteSpace(vendedorNome) ? "Usuário" : vendedorNome,
+            VendedorNome = string.IsNullOrWhiteSpace(vendedorNome) ? "UsuÃ¡rio" : vendedorNome,
             VendedorAvatarUrl = vendedorAvatarUrl,
             Localizacao = localizacao ?? Location.Create(null, null, null, null, null),
             CategoriaId = categoriaId,
@@ -115,38 +115,35 @@ public class Listing : AggregateRoot
         };
     }
 
-    // Preenche o NftTokenId após mint-to-escrow (somente produtos).
+    // Preenche o NftTokenId apÃ³s mint-to-escrow (somente produtos).
     public void SetNftTokenId(long tokenId)
     {
         if (Kind != ListingKind.Product)
         {
-            throw new DomainException("Apenas anúncios do tipo produto recebem NFT.");
+            throw new DomainException("Apenas anÃºncios do tipo produto recebem NFT.");
         }
 
         NftTokenId = tokenId;
-        IncrementVersion();
     }
 
     public void MarcarConcluido()
     {
         if (Status is ListingStatus.Concluido or ListingStatus.Cancelado)
         {
-            throw new DomainException("Anúncio já está concluído ou cancelado.");
+            throw new DomainException("AnÃºncio jÃ¡ estÃ¡ concluÃ­do ou cancelado.");
         }
 
         Status = ListingStatus.Concluido;
-        IncrementVersion();
     }
 
     public void MarcarCancelado()
     {
         if (Status is ListingStatus.Concluido or ListingStatus.Cancelado)
         {
-            throw new DomainException("Anúncio já está concluído ou cancelado.");
+            throw new DomainException("AnÃºncio jÃ¡ estÃ¡ concluÃ­do ou cancelado.");
         }
 
         Status = ListingStatus.Cancelado;
-        IncrementVersion();
     }
 
     private static void ValidateInvariants(
@@ -158,56 +155,56 @@ public class Listing : AggregateRoot
         ProductDetails? productDetails,
         ServiceDetails? serviceDetails)
     {
-        // Modo × Kind (BUSINESS_RULES §1.2):
-        //   Trocar     → product | service
-        //   Repassar   → product
-        //   Doar       → product
-        //   Voluntariar→ service
+        // Modo Ã— Kind (BUSINESS_RULES Â§1.2):
+        //   Trocar     â†’ product | service
+        //   Repassar   â†’ product
+        //   Doar       â†’ product
+        //   Voluntariarâ†’ service
         if (modo == ListingModo.Repassar && kind != ListingKind.Product)
         {
-            throw new DomainException("Repassar é exclusivo de produtos.");
+            throw new DomainException("Repassar Ã© exclusivo de produtos.");
         }
 
         if (modo == ListingModo.Doar && kind != ListingKind.Product)
         {
-            throw new DomainException("Doar é exclusivo de produtos.");
+            throw new DomainException("Doar Ã© exclusivo de produtos.");
         }
 
         if (modo == ListingModo.Voluntariar && kind != ListingKind.Service)
         {
-            throw new DomainException("Voluntariar é exclusivo de serviços.");
+            throw new DomainException("Voluntariar Ã© exclusivo de serviÃ§os.");
         }
 
-        // Preço: doar/voluntariar = 0 RVM; demais ≥ 0.
+        // PreÃ§o: doar/voluntariar = 0 RVM; demais â‰¥ 0.
         if (precoRvm < 0)
         {
-            throw new DomainException("Preço RVM não pode ser negativo.");
+            throw new DomainException("PreÃ§o RVM nÃ£o pode ser negativo.");
         }
 
         if ((modo == ListingModo.Doar || modo == ListingModo.Voluntariar) && precoRvm != 0)
         {
-            throw new DomainException("Doar/voluntariar deve ter preço 0 RVM.");
+            throw new DomainException("Doar/voluntariar deve ter preÃ§o 0 RVM.");
         }
 
         // VO por kind.
         if (kind == ListingKind.Product && productDetails is null)
         {
-            throw new DomainException("Detalhes do produto são obrigatórios para kind=Product.");
+            throw new DomainException("Detalhes do produto sÃ£o obrigatÃ³rios para kind=Product.");
         }
 
         if (kind == ListingKind.Service && serviceDetails is null)
         {
-            throw new DomainException("Detalhes do serviço são obrigatórios para kind=Service.");
+            throw new DomainException("Detalhes do serviÃ§o sÃ£o obrigatÃ³rios para kind=Service.");
         }
 
         if (kind != ListingKind.Product && productDetails is not null)
         {
-            throw new DomainException("Detalhes de produto não aplicam a kind=Service.");
+            throw new DomainException("Detalhes de produto nÃ£o aplicam a kind=Service.");
         }
 
         if (kind != ListingKind.Service && serviceDetails is not null)
         {
-            throw new DomainException("Detalhes de serviço não aplicam a kind=Product.");
+            throw new DomainException("Detalhes de serviÃ§o nÃ£o aplicam a kind=Product.");
         }
 
         // Visibilidade Comunidade exige ComunidadeId.

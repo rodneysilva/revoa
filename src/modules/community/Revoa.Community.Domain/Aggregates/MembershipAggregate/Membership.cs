@@ -1,4 +1,4 @@
-using Revoa.Abstractions;
+﻿using Revoa.Abstractions;
 
 namespace Revoa.Community.Domain.Aggregates.MembershipAggregate;
 
@@ -15,8 +15,8 @@ public enum MembershipStatus
     Bloqueada
 }
 
-// Vínculo usuário↔comunidade (OOUX objeto 18). UsuarioNome/AvatarUrl embed anti-N+1.
-// Papel Criador é imutável (não pode ser rebaixado/bloqueado). Índice único (UsuarioId, ComunidadeId).
+// VÃ­nculo usuÃ¡rioâ†”comunidade (OOUX objeto 18). UsuarioNome/AvatarUrl embed anti-N+1.
+// Papel Criador Ã© imutÃ¡vel (nÃ£o pode ser rebaixado/bloqueado). Ãndice Ãºnico (UsuarioId, ComunidadeId).
 public class Membership : AggregateRoot
 {
     public Guid UsuarioId { get; private set; }
@@ -39,19 +39,19 @@ public class Membership : AggregateRoot
     {
         if (usuarioId == Guid.Empty)
         {
-            throw new DomainException("Usuário é obrigatório.");
+            throw new DomainException("UsuÃ¡rio Ã© obrigatÃ³rio.");
         }
 
         if (comunidadeId == Guid.Empty)
         {
-            throw new DomainException("Comunidade é obrigatória.");
+            throw new DomainException("Comunidade Ã© obrigatÃ³ria.");
         }
 
         return new Membership
         {
             Id = Guid.NewGuid(),
             UsuarioId = usuarioId,
-            UsuarioNome = string.IsNullOrWhiteSpace(usuarioNome) ? "Usuário" : usuarioNome,
+            UsuarioNome = string.IsNullOrWhiteSpace(usuarioNome) ? "UsuÃ¡rio" : usuarioNome,
             UsuarioAvatarUrl = usuarioAvatarUrl,
             ComunidadeId = comunidadeId,
             Papel = papel,
@@ -65,19 +65,18 @@ public class Membership : AggregateRoot
     {
         if (Status != MembershipStatus.Ativa)
         {
-            throw new DomainException("Membro bloqueado não pode ser promovido.");
+            throw new DomainException("Membro bloqueado nÃ£o pode ser promovido.");
         }
 
         if (Papel == MembershipPapel.Criador)
         {
-            throw new DomainException("Criador já é o papel máximo.");
+            throw new DomainException("Criador jÃ¡ Ã© o papel mÃ¡ximo.");
         }
 
         Papel = MembershipPapel.Moderador;
-        IncrementVersion();
     }
 
-    // Apenas Moderador → Membro.
+    // Apenas Moderador â†’ Membro.
     public void RebaixarMembro()
     {
         if (Papel != MembershipPapel.Moderador)
@@ -86,33 +85,30 @@ public class Membership : AggregateRoot
         }
 
         Papel = MembershipPapel.Membro;
-        IncrementVersion();
     }
 
     public void Bloquear()
     {
         if (Papel == MembershipPapel.Criador)
         {
-            throw new DomainException("Criador não pode ser bloqueado.");
+            throw new DomainException("Criador nÃ£o pode ser bloqueado.");
         }
 
         if (Status == MembershipStatus.Bloqueada)
         {
-            throw new DomainException("Membro já está bloqueado.");
+            throw new DomainException("Membro jÃ¡ estÃ¡ bloqueado.");
         }
 
         Status = MembershipStatus.Bloqueada;
-        IncrementVersion();
     }
 
     public void Desbloquear()
     {
         if (Status != MembershipStatus.Bloqueada)
         {
-            throw new DomainException("Membro não está bloqueado.");
+            throw new DomainException("Membro nÃ£o estÃ¡ bloqueado.");
         }
 
         Status = MembershipStatus.Ativa;
-        IncrementVersion();
     }
 }

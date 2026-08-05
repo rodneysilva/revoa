@@ -1,8 +1,8 @@
-using Revoa.Abstractions;
+﻿using Revoa.Abstractions;
 
 namespace Revoa.Exchange.Domain.Aggregates.HelpRequestAggregate;
 
-// Fila de doação/voluntariado (OOUX 13). Autor pede ajuda; doador cura selecionando o receptor.
+// Fila de doaÃ§Ã£o/voluntariado (OOUX 13). Autor pede ajuda; doador cura selecionando o receptor.
 public enum HelpRequestState
 {
     Open,
@@ -11,8 +11,8 @@ public enum HelpRequestState
     Closed
 }
 
-// Aggregate "Pedido de Ajuda" (OOUX 13) — fila de receptor de anúncios doar/voluntariar.
-// Autor é embed (Nome/Avatar) anti-N+1. SelectedTradeId liga à Trade criada na curadoria.
+// Aggregate "Pedido de Ajuda" (OOUX 13) â€” fila de receptor de anÃºncios doar/voluntariar.
+// Autor Ã© embed (Nome/Avatar) anti-N+1. SelectedTradeId liga Ã  Trade criada na curadoria.
 public class HelpRequest : AggregateRoot
 {
     public Guid ListingId { get; private set; }
@@ -40,22 +40,22 @@ public class HelpRequest : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(mensagem))
         {
-            throw new DomainException("Mensagem do pedido de ajuda é obrigatória.");
+            throw new DomainException("Mensagem do pedido de ajuda Ã© obrigatÃ³ria.");
         }
 
         if (mensagem.Length > 500)
         {
-            throw new DomainException("Mensagem deve ter no máximo 500 caracteres.");
+            throw new DomainException("Mensagem deve ter no mÃ¡ximo 500 caracteres.");
         }
 
         if (listingId == Guid.Empty)
         {
-            throw new DomainException("ListingId é obrigatório.");
+            throw new DomainException("ListingId Ã© obrigatÃ³rio.");
         }
 
         if (authorId == Guid.Empty)
         {
-            throw new DomainException("Autor é obrigatório.");
+            throw new DomainException("Autor Ã© obrigatÃ³rio.");
         }
 
         return new HelpRequest
@@ -63,7 +63,7 @@ public class HelpRequest : AggregateRoot
             Id = Guid.NewGuid(),
             ListingId = listingId,
             AuthorId = authorId,
-            AuthorNome = string.IsNullOrWhiteSpace(authorNome) ? "Usuário" : authorNome,
+            AuthorNome = string.IsNullOrWhiteSpace(authorNome) ? "UsuÃ¡rio" : authorNome,
             AuthorAvatarUrl = authorAvatarUrl,
             Mensagem = mensagem,
             State = HelpRequestState.Open,
@@ -72,7 +72,7 @@ public class HelpRequest : AggregateRoot
         };
     }
 
-    // Doador seleciona o receptor; SelectedTradeId liga à Trade criada (total 0).
+    // Doador seleciona o receptor; SelectedTradeId liga Ã  Trade criada (total 0).
     public void Select(Guid tradeId)
     {
         if (State != HelpRequestState.Open)
@@ -82,12 +82,11 @@ public class HelpRequest : AggregateRoot
 
         if (tradeId == Guid.Empty)
         {
-            throw new DomainException("TradeId é obrigatório.");
+            throw new DomainException("TradeId Ã© obrigatÃ³rio.");
         }
 
         SelectedTradeId = tradeId;
         State = HelpRequestState.Selected;
-        IncrementVersion();
     }
 
     public void Withdraw()
@@ -98,7 +97,6 @@ public class HelpRequest : AggregateRoot
         }
 
         State = HelpRequestState.Withdrawn;
-        IncrementVersion();
     }
 
     public void Close()
@@ -109,6 +107,5 @@ public class HelpRequest : AggregateRoot
         }
 
         State = HelpRequestState.Closed;
-        IncrementVersion();
     }
 }

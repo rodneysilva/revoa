@@ -1,4 +1,4 @@
-using Revoa.Abstractions;
+﻿using Revoa.Abstractions;
 
 namespace Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
 
@@ -22,12 +22,12 @@ public class Category : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
-            throw new DomainException("Nome da categoria é obrigatório.");
+            throw new DomainException("Nome da categoria Ã© obrigatÃ³rio.");
         }
 
         if (string.IsNullOrWhiteSpace(slug))
         {
-            throw new DomainException("Slug da categoria é obrigatório.");
+            throw new DomainException("Slug da categoria Ã© obrigatÃ³rio.");
         }
 
         return new Category
@@ -44,6 +44,5 @@ public class Category : AggregateRoot
     public void Deactivate()
     {
         Status = CategoryStatus.Inactive;
-        IncrementVersion();
     }
 }
