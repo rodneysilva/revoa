@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Revoa.Abstractions;
 using Revoa.Exchange.Application.Services;
 using Revoa.Exchange.Domain.Aggregates.TradeAggregate;

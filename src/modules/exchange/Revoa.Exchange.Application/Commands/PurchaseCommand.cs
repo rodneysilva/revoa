@@ -133,7 +133,7 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
         }
         catch (Exception ex)
         {
-            return Result<string>.Fail("falha on-chain: " + ex.Message);
+            return Result<string>.Fail(ChainError.Friendly(ex));
         }
 
         var trade = Trade.Create(

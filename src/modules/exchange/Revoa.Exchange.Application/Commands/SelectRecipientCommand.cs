@@ -1,4 +1,4 @@
-using MediatR;
+﻿using MediatR;
 using Revoa.Abstractions;
 using Revoa.Exchange.Application.Services;
 using Revoa.Exchange.Domain.Aggregates.TradeAggregate;
@@ -128,7 +128,7 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
         }
         catch (Exception ex)
         {
-            return Result<string>.Fail("falha on-chain: " + ex.Message);
+            return Result<string>.Fail(ChainError.Friendly(ex));
         }
 
         var trade = Trade.Create(
