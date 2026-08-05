@@ -71,7 +71,11 @@ try
 
 
 builder.Services.AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; // PascalCase (bate com os tipos do FE)
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // enums como string legível ("Ativo","Product")
+    });
 builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
@@ -495,3 +499,7 @@ static async Task EnsureIndexesAsync(WebApplication app)
         app.Logger.LogWarning(ex, "Não foi possível criar índices no MongoDB (Mongo indisponível?).");
     }
 }
+
+// Expõe o entry point minimal para WebApplicationFactory<Program> (testes de integração).
+// Partial: o gerador de top-level statements cria a outra metade; nada funcional muda em runtime.
+public partial class Program { }
