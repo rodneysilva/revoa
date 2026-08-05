@@ -66,6 +66,14 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
             return Result<string>.Fail("Apenas anúncios de doação/voluntariado aceitam seleção.");
         }
 
+        // Guarda anti-doação-dupla: o NFT/voucher é único. Rejeita se já existe troca ativa/concluída
+        // para este listing (evita revert on-chain ao tentar doar o mesmo item duas vezes).
+        var existing = await _tradeRepo.GetByListingAsync(help.ListingId, ct);
+        if (existing.Any(t => t.State != TradeState.Cancelada))
+        {
+            return Result<string>.Fail("Este anúncio já foi doado ou está em doação.");
+        }
+
         var sellerWallet = await _walletProvider.GetByUserIdAsync(request.SellerId, ct);
         var buyerWallet = await _walletProvider.GetByUserIdAsync(help.AuthorId, ct);
         if (sellerWallet is null || buyerWallet is null)

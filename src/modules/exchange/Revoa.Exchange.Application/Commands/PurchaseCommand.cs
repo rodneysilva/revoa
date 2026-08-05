@@ -64,6 +64,15 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
             return Result<string>.Fail("Kind do anúncio inválido.");
         }
 
+        // Guarda anti-compra-dupla: um listing tem um único NFT/voucher em escrow. Uma 2ª compra
+        // reverte on-chain ("Smart contract error") porque o ativo já foi consumido pela 1ª troca.
+        // Rejeita se já existe troca ativa/concluída (só Cancelada libera o listing de novo).
+        var existing = await _tradeRepo.GetByListingAsync(request.ListingId, ct);
+        if (existing.Any(t => t.State != TradeState.Cancelada))
+        {
+            return Result<string>.Fail("Este anúncio já está em uma troca ou já foi concluído.");
+        }
+
         var sellerWallet = await _walletProvider.GetByUserIdAsync(listing.VendedorId, ct);
         var buyerWallet = await _walletProvider.GetByUserIdAsync(request.BuyerId, ct);
         if (sellerWallet is null || buyerWallet is null)
