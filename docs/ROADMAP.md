@@ -130,11 +130,12 @@ UF-23, UF-24, UF-25, UF-27, UF-28, UF-29, UF-30.
 
 ---
 
-## Fase 4 — Qualidade + Deploy privado (parcial)
-> **Status: EM ANDAMENTO.** ✅ Observabilidade (Serilog estruturado + OpenTelemetry tracing),
-> ✅ Testes de integração E2E (Testcontainers Mongo, 13 off-chain verdes + 3 on-chain skip-graceful).
-> ⏳ Pendente: Playwright (frontend E2E), CI pipeline, cutover revoa.me/revoa.org (produção),
-> PWA instalável verificado, formalização OSC/parecer jurídico.
+## Fase 4 — Qualidade + Deploy privado (quase completa)
+> **Status: QUASE COMPLETA.** ✅ Observabilidade (Serilog + OTel), ✅ E2E backend (Testcontainers,
+> 13 off-chain verdes), ✅ Estimativa BRL simbólica nos anúncios + redesign landing (feed após hero),
+> ✅ Página Transparência (/transparency), ✅ CI (GitHub Actions), ✅ PWA instalável verificado,
+> ✅ Playwright E2E frontend (7 smoke tests), ✅ Formalização (GO_PUBLIC.md). ⏳ Único pendente:
+> **cutover público** `revoa.me`/`revoa.org` (expõe o MVP — requer OK explícito do dono).
 
 ### Entregáveis
 **Testes E2E (Testcontainers Mongo+anvil + Playwright):** cadastro (sem/com cupom)→faucet→saldo; mint NFT→comprar→atomic swap→release (−2%); P2P; voucher→redeem; voucher expira→reembolso; **doação (fila→curadoria→recompensa)**; voluntariado; disputa→árbitro; comunidade (post recursivo + chat ao vivo); cupom on-chain→mint; demurrage; comparativo; recuperação admin+timelock; **navegação anônima + gate**.
