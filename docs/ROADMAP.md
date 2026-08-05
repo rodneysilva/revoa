@@ -12,9 +12,9 @@
 | Fase | Nome | Foco principal | Marco | Status |
 |------|------|----------------|-------|--------|
 | **0** | Direção + Pesquisa + OOUX | Documentação viva, identidade, ADRs | Memória + mapa OOUX + 6 logos comunidade | ✅ Concluída |
-| **1** | Infra de chain + Foundation | Contratos base + módulos fundacionais | Usuário cadastra, ganha RVM, tem Safe/saldo | ⏳ Próxima |
-| **2** | Trocas + Doação + Comunidades | Núcleo transacional + ajuda mútua | MVP usável: troca, doação/voluntariado, comunidade | ⏳ |
-| **3** | Inteligência + Confiança | Pricing, demurrage, cupom on-chain, reputação, moderação | Economia saudável + confiança | ⏳ |
+| **1** | Infra de chain + Foundation | Contratos base + módulos fundacionais | Usuário cadastra, ganha RVM, tem Safe/saldo | ✅ Concluída (EOA MVP; AA/Safe adiados ADR-0002) |
+| **2** | Trocas + Doação + Comunidades | Núcleo transacional + ajuda mútua | MVP usável: troca, doação/voluntariado, comunidade | ✅ Concluída (e2e on-chain + frontend) |
+| **3** | Inteligência + Confiança | Pricing, demurrage, cupom on-chain, reputação, moderação | Economia saudável + confiança | ⏳ Próxima |
 | **4** | Qualidade + Deploy privado | E2E, observabilidade, cutover revoa.me | App em produção privada + revoa.org | ⏳ |
 
 ---
@@ -34,9 +34,10 @@
 
 ---
 
-## Fase 1 — Infra de chain + Foundation
-> **Objetivo:** usuário consegue se cadastrar (com/sem cupom), ganhar RVM (faucet), ter uma Safe com saldo
-> (auto-custódia), e o Indexer projeta o estado on-chain. Tudo em rede local (anvil/Subnet privada).
+## Fase 1 — Infra de chain + Foundation ✅
+> **Status: CONCLUÍDA.** Usuário cadastra (verificação dupla e-mail+telefone), ganha RVM (faucet) +
+> ETH (gas, dev) numa carteira EOA (MVP). AA/Safe+4337+webauthn adiados (ADR-0002). Login social
+> Google/Apple e Indexer dedicado pendentes. Revisão de segurança corrigiu 6 críticos + 13 avisos.
 
 ### Entregáveis
 **Infra (`docker-compose.yml`, profile `chain`):**
@@ -68,9 +69,10 @@ UF-01 (navegação anônima), UF-02/03 (cadastro sem/com cupom), UF-04 (login), 
 
 ---
 
-## Fase 2 — Trocas + Doação + Comunidades (MVP usável)
-> **Objetivo:** MVP usável — o usuário anuncia (5 combinações), troca (atomic swap), **doa/voluntaria**
-> (recompensa multi-eixo), participa de comunidades (posts recursivos + chat) — tudo no frontend React.
+## Fase 2 — Trocas + Doação + Comunidades (MVP usável) ✅
+> **Status: CONCLUÍDA.** MVP usável de ponta a ponta (e2e on-chain validado): anúncios (5 tipos),
+> troca (atomic swap, RVM+NFT movem, 2%→Fundo), doação/voluntariado (fila→curadoria→NFT transfere),
+> comunidades (posts recursivos + chat SignalR ao vivo), notificações, frontend React+TS+PWA.
 
 ### Entregáveis
 **Contratos:** `ProductNFT` (ERC-721, mintToEscrow) · `ServiceVoucher` (ERC-1155, mint-on-purchase, redeem, expiry 30d) · `EscrowVault` (atomic swap + role ARBITRATOR + janela 72h `block.timestamp` + claim pós-expira + 2%→Fundo Comunitário) · `Treasury` (Fundo Comunitário). `forge coverage` ≥90%.
