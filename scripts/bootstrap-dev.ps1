@@ -62,6 +62,9 @@ if (-not $anvil) {
 }
 if (Wait-Until { Test-Rpc } 30 'anvil respondendo') { Ok 'anvil no ar (127.0.0.1:8545)' } else { Err 'anvil nao respondeu'; exit 1 }
 
+# Garante o Postfix (revoa-mail) — sem ele o MailKit falha no envio do email de cadastro → 500.
+if (docker ps -a --filter "name=revoa-mail" -q 2>$null) { docker start revoa-mail 2>&1 | Out-Null; Ok 'Postfix (revoa-mail) no ar (:25)' }
+
 # ── 3) Contratos (deploy só se chain fresca) ────────────────────
 Step '3) Contratos'
 $code = & $foundry cast code $rvmAddr --rpc-url $rpcContainer 2>$null

@@ -9,6 +9,8 @@ using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Community.Infrastructure;
 using Revoa.Community.Infrastructure.Persistence;
+using Revoa.Coupon.Infrastructure;
+using Revoa.Coupon.Infrastructure.Persistence;
 using Revoa.Exchange.Infrastructure;
 using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
@@ -61,6 +63,9 @@ builder.Services.AddReputationInfrastructure(builder.Configuration);
 // Moderation module: denúncias + resolução admin (arquivar/avisar/banir). Ban de usuário via evento
 // (UserBanRequestedEvent → Identity), mantendo os módulos isolados.
 builder.Services.AddModerationInfrastructure(builder.Configuration);
+
+// Coupon module: cupom/convite on-chain (CouponRedeemer). Admin cria/revoga; usuário resgata (mint RVM).
+builder.Services.AddCouponInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -308,6 +313,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is ReportsRepository reportsRepo)
         {
             await reportsRepo.EnsureIndexesAsync();
+        }
+
+        // Coupon: índices de Coupons (code p/ correlação on/off-chain; status+createdAt p/ painel admin).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Coupon.Domain.Repositories.ICouponRepository>()
+            is CouponsRepository couponsRepo)
+        {
+            await couponsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

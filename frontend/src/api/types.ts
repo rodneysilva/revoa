@@ -295,3 +295,25 @@ export interface Report {
   ResolvedAt?: string;
   CreatedAt: string;
 }
+
+// Cupom on-chain (UF-29).
+
+export type CouponStatus = "Active" | "Revoked";
+
+export interface Coupon {
+  Id: string;
+  Code: string;
+  AmountRvm: number;
+  MaxUses: number;
+  Expiry?: string;
+  Status: CouponStatus;
+  CreatedBy: string;
+  CreatedAt: string;
+}
+
+export interface CreateCouponBody {
+  AmountRvm: number;
+  MaxUses: number;
+  Expiry?: string;
+  Code?: string;
+}

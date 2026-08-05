@@ -6,7 +6,9 @@ import type {
   Comment,
   Community,
   CommunityFeedParams,
+  Coupon,
   CreateCommunityBody,
+  CreateCouponBody,
   CreateListingBody,
   FeedItem,
   FeedParams,
@@ -291,4 +293,14 @@ export const api = {
       Action: action,
       Note: note,
     }),
+
+  // Cupom on-chain (UF-29)
+  coupons: (page = 1): Promise<Coupon[]> =>
+    apiGet<Coupon[]>(`/api/coupons${qs({ page })}`),
+  createCoupon: (body: CreateCouponBody): Promise<Coupon> =>
+    apiPost<Coupon>(`/api/coupons`, body),
+  revokeCoupon: (id: string): Promise<void> =>
+    apiPost<void>(`/api/coupons/${encodeURIComponent(id)}/revoke`),
+  redeemCoupon: (code: string): Promise<void> =>
+    apiPost<void>(`/api/coupons/redeem`, { Code: code }),
 };
