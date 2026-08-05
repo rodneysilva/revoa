@@ -21,6 +21,8 @@ using Revoa.Moderation.Infrastructure.Persistence;
 using Revoa.Notifications.Infrastructure;
 using Revoa.Notifications.Infrastructure.Hubs;
 using Revoa.Notifications.Infrastructure.Persistence;
+using Revoa.Pricing.Infrastructure;
+using Revoa.Pricing.Infrastructure.Persistence;
 using Revoa.Reputation.Infrastructure;
 using Revoa.Reputation.Infrastructure.Persistence;
 using Revoa.Token.Infrastructure;
@@ -66,6 +68,9 @@ builder.Services.AddModerationInfrastructure(builder.Configuration);
 
 // Coupon module: cupom/convite on-chain (CouponRedeemer). Admin cria/revoga; usuário resgata (mint RVM).
 builder.Services.AddCouponInfrastructure(builder.Configuration);
+
+// Pricing module: referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA IBGE + Ollama).
+builder.Services.AddPricingInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -320,6 +325,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is CouponsRepository couponsRepo)
         {
             await couponsRepo.EnsureIndexesAsync();
+        }
+
+        // Pricing: índice único por CategoriaId (uma referência de preço por categoria).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Pricing.Domain.Repositories.IPriceReferenceRepository>()
+            is PriceReferencesRepository priceRefsRepo)
+        {
+            await priceRefsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

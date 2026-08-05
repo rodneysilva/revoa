@@ -17,7 +17,9 @@ public sealed class Result
     public static Result Fail(string error) => new(false, error);
 }
 
-public sealed class Result<T> where T : class
+// Constraint removida para permitir também value types (ex.: Result<int>). Comportamento
+// idêntico para reference types (todos os usos existentes): Value continua T?, Fail usa default.
+public sealed class Result<T>
 {
     public bool IsSuccess { get; }
     public string? Error { get; }
@@ -33,5 +35,5 @@ public sealed class Result<T> where T : class
 
     public static Result<T> Ok(T value) => new(true, null, value);
 
-    public static Result<T> Fail(string error) => new(false, error, null);
+    public static Result<T> Fail(string error) => new(false, error, default);
 }

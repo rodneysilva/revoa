@@ -109,6 +109,14 @@ public class ListingsRepository : IListingRepository
         await _listings.InsertOneAsync(listing, cancellationToken: ct);
     }
 
+    // Todos os anúncios ativos (sem paginação/geo). Usado pelo adapter de Pricing (mediana comunitária).
+    public async Task<IReadOnlyList<Listing>> GetActiveAsync(CancellationToken ct)
+    {
+        return await _listings
+            .Find(l => l.Status == ListingStatus.Ativo)
+            .ToListAsync(ct);
+    }
+
     public async Task UpdateAsync(Listing listing, CancellationToken ct)
     {
         var expectedVersion = listing.Version;

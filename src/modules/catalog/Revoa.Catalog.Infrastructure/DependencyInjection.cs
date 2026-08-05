@@ -45,6 +45,9 @@ public static class DependencyInjection
         // Porta IListingSummaryProvider: expõe resumo do anúncio ao módulo Exchange (isolamento).
         services.AddScoped<Revoa.IntegrationContracts.Listings.IListingSummaryProvider, ListingSummaryProvider>();
 
+        // Porta IListingPriceReader: expõe amostras de preço (ativos + slug) ao módulo Pricing (isolamento).
+        services.AddScoped<Revoa.IntegrationContracts.Pricing.IListingPriceReader, ListingPriceReader>();
+
         // Chain (ProductNFT mint-to-escrow). Scoped: isola nonce por request.
         services.Configure<CatalogChainOptions>(configuration.GetSection(CatalogChainOptions.SectionName));
         services.AddScoped<IProductNftService, NethereumProductNftService>();

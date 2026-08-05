@@ -25,6 +25,9 @@ public interface IListingRepository
 
     Task<IReadOnlyList<Listing>> GetFeedAsync(FeedFilter filter, CancellationToken ct);
 
+    // Todos os anúncios ativos (sem paginação/geo). Usado pelo adapter de Pricing (mediana comunitária).
+    Task<IReadOnlyList<Listing>> GetActiveAsync(CancellationToken ct);
+
     Task AddAsync(Listing listing, CancellationToken ct);
 
     Task UpdateAsync(Listing listing, CancellationToken ct);
