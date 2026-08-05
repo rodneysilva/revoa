@@ -41,6 +41,9 @@ jobs:
   # ── Contratos: forge build + test ──
   contracts:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts
     steps:
       - uses: actions/checkout@v4
       - name: Install Foundry
@@ -49,9 +52,9 @@ jobs:
         run: |
           git config --global user.email "ci@revoa.me"
           git config --global user.name "revoa CI"
-          forge install foundry-rs/forge-std --root contracts
-          forge install OpenZeppelin/openzeppelin-contracts --root contracts
+          forge install foundry-rs/forge-std
+          forge install OpenZeppelin/openzeppelin-contracts
       - name: Build
-        run: forge build --root contracts
+        run: forge build
       - name: Test
-        run: forge test --root contracts
+        run: forge test
