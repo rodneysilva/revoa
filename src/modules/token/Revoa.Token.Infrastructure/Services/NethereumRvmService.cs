@@ -84,6 +84,25 @@ public class NethereumRvmService : IRvmService
         _logger.LogInformation("MINTER_ROLE concedida à faucet {Address}", _account.Address);
     }
 
+    public async Task<string> FundGasAsync(string toAddress, decimal etherAmount, CancellationToken ct = default)
+    {
+        // Envia ETH da faucet (account[0] em dev) para a nova carteira. Nethereum EtherTransferService.
+        var transfer = _web3.Eth.GetEtherTransferService();
+        var txHash = await transfer.TransferEtherAsync(toAddress, etherAmount);
+        _logger.LogInformation("Faucet gas: enviados {Ether} ETH para {Address} tx={Tx}", etherAmount, toAddress, txHash);
+        return txHash;
+    }
+
+    public Task FundGasIfEnabledAsync(string toAddress, CancellationToken ct = default)
+    {
+        if (!_options.FundWalletGasOnCreate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return FundGasAsync(toAddress, _options.FundWalletGasEther, ct);
+    }
+
     private static string LoadEmbeddedAbi()
     {
         var asm = typeof(NethereumRvmService).Assembly;

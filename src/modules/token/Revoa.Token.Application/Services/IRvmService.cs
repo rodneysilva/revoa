@@ -13,4 +13,11 @@ public interface IRvmService
     /// Garante (idempotente) que a faucet account tem MINTER_ROLE no RVM.
     /// </summary>
     Task EnsureFaucetMinterRoleAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Envia ETH (gas) da faucet para um endereço se a flag Chain:FundWalletGasOnCreate estiver
+    /// ativa (DEV/anvil — carteiras EOA precisam de gas; em produção o gas é do Paymaster/AA
+    /// relayer). No-op em produção. Resiliente (falhas só logam).
+    /// </summary>
+    Task FundGasIfEnabledAsync(string toAddress, CancellationToken ct = default);
 }

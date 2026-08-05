@@ -35,6 +35,17 @@ public class WalletCreatedEventHandler : INotificationHandler<WalletCreatedEvent
 
             var txHash = await _rvm.MintAsync(notification.WalletAddress, FaucetAmount, CancellationToken.None);
 
+            // DEV: financia a nova carteira com ETH (gas) — sem isso as txs do usuário falham
+            // ("insufficient gas"). No-op em produção (gas vem do Paymaster/AA relayer).
+            try
+            {
+                await _rvm.FundGasIfEnabledAsync(notification.WalletAddress, CancellationToken.None);
+            }
+            catch (Exception gasEx)
+            {
+                _logger.LogWarning(gasEx, "Faucet gas FALHOU para {Address} (mint OK).", notification.WalletAddress);
+            }
+
             _logger.LogInformation(
                 "Faucet: mintados {Units} RVM ({Raw} raw) para {Address} (UserId={UserId}) tx={TxHash}",
                 RvmConstants.FaucetUnits, FaucetAmount.ToString(), notification.WalletAddress,
