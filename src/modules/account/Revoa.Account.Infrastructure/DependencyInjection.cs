@@ -7,6 +7,7 @@ using Revoa.Account.Application.EventHandlers;
 using Revoa.Account.Domain.Repositories;
 using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Account.Infrastructure.Services;
+using Revoa.IntegrationContracts.Accounts;
 using Revoa.IntegrationContracts.UserWallets;
 
 namespace Revoa.Account.Infrastructure;
@@ -36,6 +37,9 @@ public static class DependencyInjection
         // Porta IUserWalletProvider: expõe as credenciais da carteira a outros módulos (Exchange)
         // sem quebrar o isolamento de coleções. Adapter lê o aggregate UserAccount.
         services.AddScoped<IUserWalletProvider, AccountWalletProvider>();
+
+        // Porta IWalletAddressReader: lista endereços (Demurrage) sem acessar a coleção Accounts.
+        services.AddScoped<IWalletAddressReader, WalletAddressReader>();
 
         // CQRS — registra o handler de UserRegisteredEvent no MediatR (compartilha o barramento).
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UserRegisteredEventHandler).Assembly));

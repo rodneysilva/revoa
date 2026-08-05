@@ -27,6 +27,10 @@ public class NethereumRvmService : IRvmService
     private static readonly byte[] MinterRole =
         Sha3Keccack.Current.CalculateHash(System.Text.Encoding.UTF8.GetBytes("MINTER_ROLE"));
 
+    // BURNER_ROLE = keccak256("BURNER_ROLE") — mesmo padrão (byte[] 32) do MinterRole. Demurrage.
+    private static readonly byte[] BurnerRole =
+        Sha3Keccack.Current.CalculateHash(System.Text.Encoding.UTF8.GetBytes("BURNER_ROLE"));
+
     public NethereumRvmService(IOptions<ChainOptions> options, ILogger<NethereumRvmService> logger)
     {
         _options = options.Value;
@@ -82,6 +86,51 @@ public class NethereumRvmService : IRvmService
             _account.Address, gas, null, ct, MinterRole, _account.Address);
 
         _logger.LogInformation("MINTER_ROLE concedida à faucet {Address}", _account.Address);
+    }
+
+    // Espelha EnsureFaucetMinterRoleAsync: garante (idempotente) que a faucet tem BURNER_ROLE.
+    // Demurrage/queima privilegiada. Idempotente (só granta se ainda não tiver).
+    public async Task EnsureFaucetBurnerRoleAsync(CancellationToken ct = default)
+    {
+        var hasRole = _rvm.GetFunction("hasRole");
+        var already = await hasRole.CallAsync<bool>(BurnerRole, _account.Address);
+        if (already)
+        {
+            return;
+        }
+
+        var grantRole = _rvm.GetFunction("grantRole");
+        var gas = await grantRole.EstimateGasAsync(_account.Address, null, null, BurnerRole, _account.Address);
+        await grantRole.SendTransactionAndWaitForReceiptAsync(
+            _account.Address, gas, null, ct, BurnerRole, _account.Address);
+
+        _logger.LogInformation("BURNER_ROLE concedida à faucet {Address}", _account.Address);
+    }
+
+    // Queima de qualquer carteira (burn(address,uint256), onlyRole(BURNER_ROLE)). Assinada pela
+    // faucet. Espelha MintAsync — porém lança em status 0 (demurrage precisa saber que a queima
+    // falhou p/ não contabilizá-la). Usada pelo Demurrage.
+    public async Task<string> BurnAsync(string fromAddress, BigInteger amount, CancellationToken ct = default)
+    {
+        var fn = _rvm.GetFunction("burn");
+
+        var gas = await fn.EstimateGasAsync(_account.Address, null, null, fromAddress, amount);
+        _logger.LogInformation("Burn: from={From} amount={Amount} gas={Gas}", fromAddress, amount, gas);
+
+        var receipt = await fn.SendTransactionAndWaitForReceiptAsync(
+            _account.Address, gas, null, ct, fromAddress, amount);
+
+        if (receipt.Status.Value == 0)
+        {
+            _logger.LogError("Burn REVERTIDO (status 0) tx={Tx} from={From}", receipt.TransactionHash, fromAddress);
+            throw new InvalidOperationException(
+                $"Burn revertido on-chain (status 0) de {fromAddress} tx={receipt.TransactionHash}");
+        }
+
+        _logger.LogInformation("Burn OK tx={Tx} block={Block} from={From}",
+            receipt.TransactionHash, receipt.BlockNumber, fromAddress);
+
+        return receipt.TransactionHash;
     }
 
     public async Task<string> FundGasAsync(string toAddress, decimal etherAmount, CancellationToken ct = default)

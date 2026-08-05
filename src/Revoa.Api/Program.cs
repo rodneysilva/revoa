@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.IdentityModel.Tokens;
 using Revoa.Abstractions;
 using Revoa.Account.Infrastructure;
@@ -11,6 +12,8 @@ using Revoa.Community.Infrastructure;
 using Revoa.Community.Infrastructure.Persistence;
 using Revoa.Coupon.Infrastructure;
 using Revoa.Coupon.Infrastructure.Persistence;
+using Revoa.Demurrage.Infrastructure;
+using Revoa.Demurrage.Infrastructure.Persistence;
 using Revoa.Exchange.Infrastructure;
 using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
@@ -71,6 +74,13 @@ builder.Services.AddCouponInfrastructure(builder.Configuration);
 
 // Pricing module: referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA IBGE + Ollama).
 builder.Services.AddPricingInfrastructure(builder.Configuration);
+
+// Demurrage module (UF-27): queima periódica de uma % do RVM ocioso (piso de isenção + taxa ajustável).
+// Consome IRvmService (porta on-chain do Token) e IWalletAddressReader (porta do Account).
+builder.Services.AddDemurrageInfrastructure(builder.Configuration);
+
+// Request timeouts p/ endpoints longos (ex.: demurrage preview/run — 1 balanceOf/tx por carteira).
+builder.Services.AddRequestTimeouts();
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -158,6 +168,9 @@ builder.WebHost.UseUrls("http://0.0.0.0:8000");
 var app = builder.Build();
 
 app.UseForwardedHeaders();
+
+// Middleware de timeouts (aplica-se apenas a endpoints com [RequestTimeout]). Após ForwardedHeaders.
+app.UseRequestTimeouts();
 
 // Tratamento global de exceções: erros de domínio/validação/concorrência viram HTTP limpo
 // (400/409) em vez de 500 genérico — UX consistente em todos os endpoints.
@@ -332,6 +345,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is PriceReferencesRepository priceRefsRepo)
         {
             await priceRefsRepo.EnsureIndexesAsync();
+        }
+
+        // Demurrage: índice por RunAt desc (histórico de execuções de queima).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Demurrage.Domain.Repositories.IDemurrageRunRepository>()
+            is DemurrageRunsRepository demurrageRunsRepo)
+        {
+            await demurrageRunsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

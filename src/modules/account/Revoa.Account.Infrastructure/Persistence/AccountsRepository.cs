@@ -18,6 +18,11 @@ public class AccountsRepository : IAccountRepository
         return await _accounts.Find(a => a.UserId == userId).FirstOrDefaultAsync(ct);
     }
 
+    public async Task<IReadOnlyList<UserAccount>> GetAllAsync(CancellationToken ct)
+    {
+        return await _accounts.Find(_ => true).ToListAsync(ct);
+    }
+
     public async Task AddAsync(UserAccount wallet, CancellationToken ct)
     {
         await _accounts.InsertOneAsync(wallet, cancellationToken: ct);
