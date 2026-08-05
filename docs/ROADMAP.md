@@ -15,7 +15,7 @@
 | **1** | Infra de chain + Foundation | Contratos base + módulos fundacionais | Usuário cadastra, ganha RVM, tem Safe/saldo | ✅ Concluída (EOA MVP; AA/Safe adiados ADR-0002) |
 | **2** | Trocas + Doação + Comunidades | Núcleo transacional + ajuda mútua | MVP usável: troca, doação/voluntariado, comunidade | ✅ Concluída (e2e on-chain + frontend) |
 | **3** | Inteligência + Confiança | Pricing, demurrage, cupom on-chain, reputação, moderação | Economia saudável + confiança | ✅ Concluída |
-| **4** | Qualidade + Deploy privado | E2E, observabilidade, cutover revoa.me | App em produção privada + revoa.org | ⏳ |
+| **4** | Qualidade + Deploy privado | E2E, observabilidade, cutover revoa.me | App em produção privada + revoa.org | ⏳ Parcial (Observabilidade + E2E ✅) |
 
 ---
 
@@ -130,8 +130,11 @@ UF-23, UF-24, UF-25, UF-27, UF-28, UF-29, UF-30.
 
 ---
 
-## Fase 4 — Qualidade + Deploy privado
-> **Objetivo:** produto testado ponta a ponta, observável, em produção privada (revoa.me + revoa.org), PWA instalável.
+## Fase 4 — Qualidade + Deploy privado (parcial)
+> **Status: EM ANDAMENTO.** ✅ Observabilidade (Serilog estruturado + OpenTelemetry tracing),
+> ✅ Testes de integração E2E (Testcontainers Mongo, 13 off-chain verdes + 3 on-chain skip-graceful).
+> ⏳ Pendente: Playwright (frontend E2E), CI pipeline, cutover revoa.me/revoa.org (produção),
+> PWA instalável verificado, formalização OSC/parecer jurídico.
 
 ### Entregáveis
 **Testes E2E (Testcontainers Mongo+anvil + Playwright):** cadastro (sem/com cupom)→faucet→saldo; mint NFT→comprar→atomic swap→release (−2%); P2P; voucher→redeem; voucher expira→reembolso; **doação (fila→curadoria→recompensa)**; voluntariado; disputa→árbitro; comunidade (post recursivo + chat ao vivo); cupom on-chain→mint; demurrage; comparativo; recuperação admin+timelock; **navegação anônima + gate**.
