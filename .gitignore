@@ -64,6 +64,9 @@ broadcast/
 *.7z
 *.iso
 
+# ── Logs Serilog (rotativos) ────────────────────────────────────
+logs/
+
 # ── Dados locais / volumes ──────────────────────────────────────
 data/
 mongo-data/

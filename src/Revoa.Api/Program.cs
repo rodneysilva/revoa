@@ -32,8 +32,43 @@ using Revoa.Reputation.Infrastructure;
 using Revoa.Reputation.Infrastructure.Persistence;
 using Revoa.Token.Infrastructure;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using MongoDB.Driver;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
+using Revoa.Api.Observability;
 
-var builder = WebApplication.CreateBuilder(args);
+// Logger Serilog bootstrap: ativo ANTES do host existir, captura erros de startup/configuração.
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.With<ActivityLogEnricher>()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    Log.Information("Iniciando host Revoa.Api...");
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Logger Serilog final: lê a seção "Serilog" do appsettings (+ env vars) e substitui o bootstrap.
+    builder.Services.AddSerilog((services, lc) => lc
+        .ReadFrom.Configuration(builder.Configuration)
+        .Enrich.With<ActivityLogEnricher>());
+
+    // OpenTelemetry tracing (AspNetCore + HttpClient + MongoDB); exporter via config (Otel:Exporter).
+    AddObservability(builder);
+
+    // IMongoClient único e instrumentado (tracing de comandos Mongo). Registrado ANTES dos módulos:
+    // todos usam TryAddSingleton, logo este prevalece — sem precisar tocar cada bounded context.
+    var mongoConn = builder.Configuration["Mongo:ConnectionString"] ?? "mongodb://localhost:27017";
+    builder.Services.TryAddSingleton<IMongoClient>(_ => CreateMongoClient(mongoConn));
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
@@ -176,6 +211,9 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// Log de request HTTP condensado pelo Serilog (1 evento por request, com método/path/status/duração).
+app.UseSerilogRequestLogging();
+
 // Middleware de timeouts (aplica-se apenas a endpoints com [RequestTimeout]). Após ForwardedHeaders.
 app.UseRequestTimeouts();
 
@@ -226,10 +264,93 @@ app.MapHub<NotificationsHub>("/hubs/notifications");
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", ts = DateTime.UtcNow }));
 
 // Cria índices únicos (Email, Telefone no Identity; UserId no Account) — anti-sybil em nível de banco (idempotente).
-await EnsureIndexesAsync(app);
+    await EnsureIndexesAsync(app);
 
-app.Run();
+    app.Run();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    // Falha fatal de startup/configuração: garante log + shutdown limpo.
+    Log.Fatal(ex, "Host Revoa.Api terminou inesperadamente.");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
+
 return;
+
+// Configura OpenTelemetry tracing (AspNetCore + HttpClient + MongoDB) + exporter por config.
+// Tudo em try/catch: falha de exporter/instrumentação NÃO derruba o app (logue e continue).
+static void AddObservability(WebApplicationBuilder builder)
+{
+    var serviceName = builder.Configuration["Otel:ServiceName"] ?? "revoa-api";
+    var exporter = (builder.Configuration["Otel:Exporter"] ?? "none").Trim().ToLowerInvariant();
+
+    try
+    {
+        builder.Services.AddOpenTelemetry()
+            .ConfigureResource(r => r.AddService(serviceName, serviceVersion: "1.0.0"))
+            .WithTracing(t =>
+            {
+                t.AddSource("Revoa")
+                 .AddAspNetCoreInstrumentation()
+                 .AddHttpClientInstrumentation();
+
+                // MongoDB driver (jbogard DiagnosticSources): nome do ActivitySource varia por versão do pacote.
+                // Assinar fonte inexistente é no-op, então cobrimos ambos (plural atual / singular legado).
+                t.AddSource("MongoDB.Driver.Core.Extensions.DiagnosticSources");
+                t.AddSource("MongoDB.Driver.Core.Extensions.DiagnosticSource");
+
+                switch (exporter)
+                {
+                    case "console":
+                        t.AddConsoleExporter();
+                        break;
+                    case "otlp":
+                    {
+                        var endpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
+                        if (string.IsNullOrWhiteSpace(endpoint))
+                        {
+                            Log.Warning("OTel: Exporter=otlp, mas OTEL_EXPORTER_OTLP_ENDPOINT ausente — usando default do exporter.");
+                        }
+                        t.AddOtlpExporter(o =>
+                        {
+                            if (!string.IsNullOrWhiteSpace(endpoint))
+                            {
+                                o.Endpoint = new Uri(endpoint);
+                            }
+                        });
+                        break;
+                    }
+                    default:
+                        // "none" (ou desconhecido): tracing sem exporter (spans não são exportados).
+                        break;
+                }
+            });
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Falha ao configurar OpenTelemetry; tracing desativado (app segue sem observabilidade de trace).");
+    }
+}
+
+// Cria IMongoClient com instrumentação de tracing (spans por comando/conn). Fallback resiliente:
+// se o bridge de instrumentação falhar, retorna um cliente plain (sem tracing) em vez de quebrar.
+static IMongoClient CreateMongoClient(string connectionString)
+{
+    var settings = MongoClientSettings.FromConnectionString(connectionString);
+    try
+    {
+        settings.ClusterConfigurator = cb => cb.Subscribe(
+            new MongoDB.Driver.Core.Extensions.DiagnosticSources.DiagnosticsActivityEventSubscriber());
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Não foi possível plugar instrumentação MongoDB; cliente sem tracing.");
+    }
+    return new MongoClient(settings);
+}
 
 static async Task EnsureIndexesAsync(WebApplication app)
 {
