@@ -2,6 +2,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Identity.Application.Commands;
 using Revoa.Identity.Application.Services;
@@ -28,8 +29,11 @@ public static class DependencyInjection
                      ?? configuration["Mongo:Database"]
                      ?? "revoa";
 
-        services.AddSingleton<IMongoClient>(_ => new MongoClient(conn));
-        services.AddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
+        // IMongoClient instrumentado (tracing de comandos) é registrado em Program.cs ANTES dos
+        // módulos. TryAdd evita sobrescrever o cliente compartilhado já registrado; funciona
+        // também quando o módulo é usado isoladamente (ex.: host de testes).
+        services.TryAddSingleton<IMongoClient>(_ => new MongoClient(conn));
+        services.TryAddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
 
         services.AddScoped<IUserRepository, UsersRepository>();
         services.AddScoped<IUnitOfWork, MongoDbUnitOfWork>();

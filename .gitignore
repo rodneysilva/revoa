@@ -49,7 +49,7 @@ contracts/cache/
 contracts/out/
 contracts/broadcast/
 contracts/.chainId
-lib/
+contracts/lib/
 cache/
 out/
 broadcast/
