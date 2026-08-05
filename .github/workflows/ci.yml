@@ -47,8 +47,10 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
       - name: Install dependencies
         run: |
-          forge install foundry-rs/forge-std --no-commit --root contracts
-          forge install OpenZeppelin/openzeppelin-contracts --no-commit --root contracts
+          git config --global user.email "ci@revoa.me"
+          git config --global user.name "revoa CI"
+          forge install foundry-rs/forge-std --root contracts
+          forge install OpenZeppelin/openzeppelin-contracts --root contracts
       - name: Build
         run: forge build --root contracts
       - name: Test
