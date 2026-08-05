@@ -6,7 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
 import { useAuth, type AuthUser } from "../auth/AuthContext";
-import type { Comment, HelpRequest, Listing, Review } from "../api/types";
+import type { Comment, HelpRequest, Listing, ReportReason, Review } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -219,6 +219,9 @@ export function ListingDetailPage() {
           <div className="mt-6">
             <ListingActions listing={listing} user={user} />
           </div>
+
+          {/* Denunciar anúncio (UF-24) */}
+          <ReportListing listingId={listing.Id} user={user} />
         </div>
       </div>
 
@@ -625,6 +628,99 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
       >
         {purchasing ? "Processando…" : buyLabel}
       </button>
+    </div>
+  );
+}
+
+// Denúncia de anúncio (UF-24). Só aparece para usuários verificados que não são o dono.
+// Motivo (Spam/Inadequado/Golpe/Outro) + detalhes opcional → api.createReport("Listing", ...).
+function ReportListing({ listingId, user }: { listingId: string; user: AuthUser | null }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<ReportReason>("Spam");
+  const [details, setDetails] = useState("");
+  const [sending, setSending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+
+  if (!user || !user.verified) return null;
+
+  async function submit() {
+    setSending(true);
+    setErr(null);
+    try {
+      await api.createReport("Listing", listingId, reason, details.trim() || undefined);
+      setSent(true);
+      setOpen(false);
+      setDetails("");
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Não foi possível enviar a denúncia.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <p className="mt-4 text-sm text-esmeralda">
+        ✓ Denúncia enviada — obrigado.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-4">
+      {err && <p className="text-rosa text-sm mb-2">{err}</p>}
+      {open ? (
+        <div className="border border-smoke rounded-xl p-4 space-y-3">
+          <label className="block text-sm text-silver">Motivo da denúncia</label>
+          <select
+            value={reason}
+            onChange={(e) => setReason(e.target.value as ReportReason)}
+            className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm"
+          >
+            <option value="Spam">Spam</option>
+            <option value="Inappropriate">Inadequado</option>
+            <option value="Scam">Golpe</option>
+            <option value="Other">Outro</option>
+          </select>
+          <textarea
+            value={details}
+            onChange={(e) => setDetails(e.target.value)}
+            rows={2}
+            placeholder="Detalhe o problema (opcional)…"
+            className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none text-sm"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={submit}
+              disabled={sending}
+              className="bg-rosa/90 text-ink text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
+            >
+              {sending ? "Enviando…" : "Enviar denúncia"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setDetails("");
+                setErr(null);
+              }}
+              className="text-silver text-sm px-3 py-2 hover:text-cream"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="text-sm text-silver hover:text-rosa underline underline-offset-4"
+        >
+          ⚑ Denunciar anúncio
+        </button>
+      )}
     </div>
   );
 }

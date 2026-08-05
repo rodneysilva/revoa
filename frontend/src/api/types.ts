@@ -272,3 +272,26 @@ export interface CommunityFeedParams {
   eixo?: EixoComunidade;
   page?: number;
 }
+
+// Moderação (UF-24/25).
+
+export type ReportTarget = "Listing" | "Post" | "User" | "Comment";
+export type ReportReason = "Spam" | "Inappropriate" | "Scam" | "Other";
+export type ReportStatus = "Open" | "Resolved";
+export type ResolutionAction = "Dismissed" | "Warned" | "Banned";
+
+export interface Report {
+  Id: string;
+  ReporterId: string;
+  ReporterNome: string;
+  TargetType: ReportTarget;
+  TargetId: string;
+  Reason: ReportReason;
+  Details?: string;
+  Status: ReportStatus;
+  Action?: ResolutionAction;
+  ResolvedBy?: string;
+  ResolutionNote?: string;
+  ResolvedAt?: string;
+  CreatedAt: string;
+}

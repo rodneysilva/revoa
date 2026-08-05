@@ -14,6 +14,8 @@ using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
+using Revoa.Moderation.Infrastructure;
+using Revoa.Moderation.Infrastructure.Persistence;
 using Revoa.Notifications.Infrastructure;
 using Revoa.Notifications.Infrastructure.Hubs;
 using Revoa.Notifications.Infrastructure.Persistence;
@@ -55,6 +57,10 @@ builder.Services.AddNotificationsInfrastructure(builder.Configuration);
 
 // Reputation module: score de reputação + recompensa multi-eixo de doação (reputação + pontos de ajuda + bônus RVM).
 builder.Services.AddReputationInfrastructure(builder.Configuration);
+
+// Moderation module: denúncias + resolução admin (arquivar/avisar/banir). Ban de usuário via evento
+// (UserBanRequestedEvent → Identity), mantendo os módulos isolados.
+builder.Services.AddModerationInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -113,6 +119,19 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Verified", policy => policy
         .RequireClaim("email_verified", "true")
         .RequireClaim("phone_verified", "true"));
+
+    // Policy "Admin": claim email em Admin:Emails (appsettings). Em dev, Rodney = admin.
+    // Em produção, migrar para role/contrato (TODO).
+    var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? Array.Empty<string>();
+    if (adminEmails.Length > 0)
+    {
+        options.AddPolicy("Admin", policy => policy.RequireClaim("email", adminEmails));
+    }
+    else
+    {
+        // Sem admins configurados: policy sempre nega (mais seguro que permitir tudo).
+        options.AddPolicy("Admin", policy => policy.RequireUserName("__no_admin_configured__"));
+    }
 });
 
 // Forwarded headers (por trás de Traefik + Cloudflared)
@@ -282,6 +301,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is ReviewsRepository reviewsRepo)
         {
             await reviewsRepo.EnsureIndexesAsync();
+        }
+
+        // Moderation: índices de Reports (status+createdAt p/ painel admin, reporterId, target).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Moderation.Domain.Repositories.IReportRepository>()
+            is ReportsRepository reportsRepo)
+        {
+            await reportsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

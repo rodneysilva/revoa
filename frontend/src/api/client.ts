@@ -17,6 +17,11 @@ import type {
   Post,
   RegisterBody,
   RegisterResult,
+  Report,
+  ReportReason,
+  ReportStatus,
+  ReportTarget,
+  ResolutionAction,
   Review,
   Trade,
   TradesParams,
@@ -259,4 +264,31 @@ export const api = {
     ),
   communityMembers: (id: string): Promise<Membership[]> =>
     apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
+
+  // Moderação (UF-24/25)
+  createReport: (
+    targetType: ReportTarget,
+    targetId: string,
+    reason: ReportReason,
+    details?: string
+  ): Promise<string> =>
+    apiPost<string>(`/api/reports`, {
+      TargetType: targetType,
+      TargetId: targetId,
+      Reason: reason,
+      Details: details,
+    }),
+  reports: (status?: ReportStatus, page = 1): Promise<Report[]> =>
+    apiGet<Report[]>(
+      `/api/reports${qs({ status, page })}`
+    ),
+  resolveReport: (
+    id: string,
+    action: ResolutionAction,
+    note?: string
+  ): Promise<void> =>
+    apiPost<void>(`/api/reports/${encodeURIComponent(id)}/resolve`, {
+      Action: action,
+      Note: note,
+    }),
 };

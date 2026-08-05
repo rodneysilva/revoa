@@ -12,6 +12,7 @@ import { CreateListingPage } from "./pages/CreateListingPage";
 import { TradeTrackerPage } from "./pages/TradeTrackerPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { CommunityDetailPage } from "./pages/CommunityDetailPage";
+import { AdminReportsPage } from "./pages/AdminReportsPage";
 import { WalletPage } from "./pages/WalletPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/trades" element={<TradeTrackerPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/:id" element={<CommunityDetailPage />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
           {/* Ações exigem login + verificação */}
           <Route element={<ProtectedRoute />}>
             <Route path="/listings/new" element={<CreateListingPage />} />
