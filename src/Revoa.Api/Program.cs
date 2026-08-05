@@ -17,6 +17,8 @@ using Revoa.Infrastructure;
 using Revoa.Notifications.Infrastructure;
 using Revoa.Notifications.Infrastructure.Hubs;
 using Revoa.Notifications.Infrastructure.Persistence;
+using Revoa.Reputation.Infrastructure;
+using Revoa.Reputation.Infrastructure.Persistence;
 using Revoa.Token.Infrastructure;
 using System.Text;
 
@@ -50,6 +52,9 @@ builder.Services.AddExchangeInfrastructure(builder.Configuration);
 
 // Notifications module: in-app SignalR + Web Push (escrow/oferta/transfer/post/chat/doação/preço).
 builder.Services.AddNotificationsInfrastructure(builder.Configuration);
+
+// Reputation module: score de reputação + recompensa multi-eixo de doação (reputação + pontos de ajuda + bônus RVM).
+builder.Services.AddReputationInfrastructure(builder.Configuration);
 
 // JWT bearer (esquema; claim sub -> NameIdentifier). Em PRODUÇÃO a chave é obrigatória (fail-fast);
 // em Development aceita um default de dev. Nunca versionar a chave de produção.
@@ -264,6 +269,13 @@ static async Task EnsureIndexesAsync(WebApplication app)
             is PushSubscriptionsRepository pushRepo)
         {
             await pushRepo.EnsureIndexesAsync();
+        }
+
+        // Reputation: índice único por UserId (um score por usuário).
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Reputation.Domain.Repositories.IReputationRepository>()
+            is ReputationsRepository reputationsRepo)
+        {
+            await reputationsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)
