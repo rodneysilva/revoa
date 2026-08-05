@@ -17,6 +17,7 @@ import type {
   Post,
   RegisterBody,
   RegisterResult,
+  Review,
   Trade,
   TradesParams,
 } from "./types";
@@ -190,6 +191,19 @@ export const api = {
     ),
   selectRecipient: (helpRequestId: string): Promise<string> =>
     apiPost<string>(`/api/help/${encodeURIComponent(helpRequestId)}/select`),
+  createReview: (
+    tradeId: string,
+    rating: number,
+    comment?: string
+  ): Promise<string> =>
+    apiPost<string>(`/api/trades/${encodeURIComponent(tradeId)}/reviews`, {
+      Rating: rating,
+      Comment: comment,
+    }),
+  userReviews: (userId: string, limit = 20): Promise<Review[]> =>
+    apiGet<Review[]>(
+      `/api/users/${encodeURIComponent(userId)}/reviews${qs({ limit })}`
+    ),
   register: (body: RegisterBody): Promise<RegisterResult> =>
     apiPost<RegisterResult>(`/api/auth/register`, body),
   verifyEmail: (uid: string, token: string): Promise<void> =>

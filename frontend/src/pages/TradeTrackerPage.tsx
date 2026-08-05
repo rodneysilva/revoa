@@ -86,6 +86,97 @@ function Stepper({ trade }: { trade: Trade }) {
   );
 }
 
+// Box de avaliação pós-troca (UF-23). Mostra só p/ trade Liberada onde o usuário é parte.
+// Simplificação (spec): tenta criar; se voltar "já avaliou", marca como concluído.
+function ReviewBox({ trade, counterNome }: { trade: Trade; counterNome: string }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [already, setAlready] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit() {
+    if (rating < 1 || rating > 5) {
+      setErr("Selecione de 1 a 5 estrelas.");
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      await api.createReview(trade.Id, rating, comment.trim() || undefined);
+      setDone(true);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "falha ao enviar.";
+      if (/já avaliou/i.test(msg)) {
+        setAlready(true);
+      } else {
+        setErr(msg);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <p className="mt-3 text-xs font-semibold text-esmeralda">
+        ⭐ Avaliação enviada — obrigado!
+      </p>
+    );
+  }
+
+  if (already) {
+    return <p className="mt-3 text-xs font-semibold text-silver">Avaliado ✓</p>;
+  }
+
+  const active = hover || rating;
+
+  return (
+    <div className="mt-3 border border-smoke rounded-lg p-3 bg-charcoal">
+      <div className="text-xs text-cream mb-2">
+        Avaliar {counterNome || "a contraparte"}
+      </div>
+      <div className="flex gap-1 mb-2" role="group" aria-label="Nota em estrelas">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button
+            key={n}
+            type="button"
+            disabled={busy}
+            onClick={() => setRating(n)}
+            onMouseEnter={() => setHover(n)}
+            onMouseLeave={() => setHover(0)}
+            aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
+            className={`text-2xl leading-none transition-colors ${
+              n <= active ? "text-amber" : "text-smoke hover:text-silver"
+            }`}
+          >
+            ★
+          </button>
+        ))}
+      </div>
+      <textarea
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        disabled={busy}
+        rows={2}
+        placeholder="Comentário (opcional)"
+        className="w-full bg-ink text-cream text-xs rounded-md border border-smoke px-2 py-1.5 mb-2 resize-none focus:outline-none focus:border-brand"
+      />
+      {err && <p className="text-rosa text-xs mb-2">{err}</p>}
+      <button
+        type="button"
+        disabled={busy}
+        onClick={submit}
+        className="bg-brand text-ink text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-60"
+      >
+        {busy ? "Enviando…" : "Enviar avaliação"}
+      </button>
+    </div>
+  );
+}
+
 function TradeCard({
   trade,
   userId,
@@ -155,6 +246,10 @@ function TradeCard({
       <div className="pt-3 border-t border-smoke">
         <Stepper trade={trade} />
       </div>
+
+      {trade.State === "Liberada" && (
+        <ReviewBox trade={trade} counterNome={counterNome} />
+      )}
 
       {err && <p className="text-rosa text-xs mt-2">{err}</p>}
 

@@ -106,6 +106,17 @@ export interface HelpRequest {
   SelectedTradeId?: string;
 }
 
+// Avaliação pós-troca recebida por um usuário (UF-23).
+export interface Review {
+  Id: string;
+  TradeId: string;
+  ReviewerId: string;
+  ReviewerNome: string;
+  Rating: number;
+  Comment?: string;
+  CreatedAt: string;
+}
+
 export interface RegisterResult {
   UserId: string;
   NeedsEmailVerification: boolean;

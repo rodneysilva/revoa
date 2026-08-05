@@ -6,7 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
 import { useAuth, type AuthUser } from "../auth/AuthContext";
-import type { Comment, HelpRequest, Listing } from "../api/types";
+import type { Comment, HelpRequest, Listing, Review } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -207,6 +207,9 @@ export function ListingDetailPage() {
             </div>
           </div>
 
+          {/* Avaliações do vendedor (recebidas em trocas concluídas — UF-23) */}
+          <SellerReviews vendedorId={listing.VendedorId} />
+
           {/* Comparativo de preço — placeholder Fase 3 */}
           <div className="mt-6 border border-dashed border-smoke rounded-xl p-4 text-sm text-silver">
             <span className="text-amber">⌖</span> Comparativo de preços em breve (Fase 3).
@@ -292,6 +295,70 @@ function VerifyHint({ action }: { action: string }) {
   return (
     <div className="bg-charcoal border border-smoke rounded-xl p-4 text-sm text-silver text-center">
       Confirme seu e-mail e telefone para {action}.
+    </div>
+  );
+}
+
+// Renderiza n/5 estrelas (somente leitura).
+function Stars({ n }: { n: number }) {
+  return (
+    <span className="text-amber text-sm tracking-tight" aria-label={`${n} de 5 estrelas`}>
+      {"★".repeat(Math.max(0, Math.min(5, n)))}
+      <span className="text-smoke">{"★".repeat(Math.max(0, 5 - Math.max(0, Math.min(5, n))))}</span>
+    </span>
+  );
+}
+
+// Avaliações recebidas pelo vendedor (trocas concluídas). Leitura pública (UF-23).
+function SellerReviews({ vendedorId }: { vendedorId: string }) {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api
+      .userReviews(vendedorId, 5)
+      .then((r) => {
+        if (active) setReviews(r);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [vendedorId]);
+
+  if (loading) return null;
+  if (reviews.length === 0) return null;
+
+  const avg =
+    reviews.reduce((s, r) => s + r.Rating, 0) / reviews.length;
+
+  return (
+    <div className="mt-6 border border-smoke rounded-xl p-4">
+      <h3 className="text-cream font-semibold mb-1 flex items-center gap-2">
+        Avaliações do vendedor
+        <span className="text-xs text-silver font-normal">
+          · média <Stars n={Math.round(avg)} /> ({reviews.length})
+        </span>
+      </h3>
+      <ul className="mt-3 space-y-3">
+        {reviews.map((r) => (
+          <li key={r.Id} className="text-sm">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-cream font-medium">{r.ReviewerNome}</span>
+              <Stars n={r.Rating} />
+              <span className="text-xs text-silver ml-auto">{timeAgo(r.CreatedAt)}</span>
+            </div>
+            {r.Comment && (
+              <p className="text-cream/80 whitespace-pre-wrap">{r.Comment}</p>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

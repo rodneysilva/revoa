@@ -23,8 +23,9 @@ public static class DependencyInjection
         services.TryAddSingleton<IMongoClient>(_ => new MongoClient(conn));
         services.TryAddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
 
-        // Repositório (coleção própria: Reputations).
+        // Repositórios (coleções próprias: Reputations, Reviews).
         services.AddScoped<IReputationRepository, ReputationsRepository>();
+        services.AddScoped<IReviewRepository, ReviewsRepository>();
 
         // Parâmetros admin-configuráveis da recompensa de doação.
         services.Configure<DonationRewardOptions>(configuration.GetSection(DonationRewardOptions.SectionName));

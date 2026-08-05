@@ -271,11 +271,17 @@ static async Task EnsureIndexesAsync(WebApplication app)
             await pushRepo.EnsureIndexesAsync();
         }
 
-        // Reputation: índice único por UserId (um score por usuário).
+        // Reputation: índice único por UserId (um score por usuário) + índices de Reviews (UF-23).
         if (scope.ServiceProvider.GetRequiredService<Revoa.Reputation.Domain.Repositories.IReputationRepository>()
             is ReputationsRepository reputationsRepo)
         {
             await reputationsRepo.EnsureIndexesAsync();
+        }
+
+        if (scope.ServiceProvider.GetRequiredService<Revoa.Reputation.Domain.Repositories.IReviewRepository>()
+            is ReviewsRepository reviewsRepo)
+        {
+            await reviewsRepo.EnsureIndexesAsync();
         }
     }
     catch (Exception ex)

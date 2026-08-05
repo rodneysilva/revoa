@@ -37,6 +37,10 @@ public static class DependencyInjection
         services.AddScoped<ITradeRepository, TradesRepository>();
         services.AddScoped<IHelpRequestRepository, HelpRequestsRepository>();
 
+        // Porta ITradeInfoProvider: expõe contexto da troca (estado + partes) p/ o módulo
+        // Reputation avaliar pós-troca (UF-23) sem acessar a coleção Trades (isolamento).
+        services.AddScoped<Revoa.IntegrationContracts.Trades.ITradeInfoProvider, TradeInfoProvider>();
+
         // Chain (EscrowVault + ServiceVoucher + RVM approve). Orquestração on-chain do escrow.
         services.Configure<ExchangeChainOptions>(configuration.GetSection(ExchangeChainOptions.SectionName));
         services.AddScoped<IExchangeEscrowService, NethereumExchangeEscrowService>();
