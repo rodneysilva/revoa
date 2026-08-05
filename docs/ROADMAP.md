@@ -14,7 +14,7 @@
 | **0** | Direção + Pesquisa + OOUX | Documentação viva, identidade, ADRs | Memória + mapa OOUX + 6 logos comunidade | ✅ Concluída |
 | **1** | Infra de chain + Foundation | Contratos base + módulos fundacionais | Usuário cadastra, ganha RVM, tem Safe/saldo | ✅ Concluída (EOA MVP; AA/Safe adiados ADR-0002) |
 | **2** | Trocas + Doação + Comunidades | Núcleo transacional + ajuda mútua | MVP usável: troca, doação/voluntariado, comunidade | ✅ Concluída (e2e on-chain + frontend) |
-| **3** | Inteligência + Confiança | Pricing, demurrage, cupom on-chain, reputação, moderação | Economia saudável + confiança | ⏳ Parcial (Reputation/Reviews/Moderation ✅) |
+| **3** | Inteligência + Confiança | Pricing, demurrage, cupom on-chain, reputação, moderação | Economia saudável + confiança | ✅ Concluída |
 | **4** | Qualidade + Deploy privado | E2E, observabilidade, cutover revoa.me | App em produção privada + revoa.org | ⏳ |
 
 ---
@@ -105,10 +105,12 @@ UF-07 a UF-15, UF-18 a UF-22, UF-32. (Doação = produto de primeira classe.)
 
 ---
 
-## Fase 3 — Inteligência + Econômico + Confiança (parcial)
-> **Status: EM ANDAMENTO.** ✅ Reputation + recompensa de doação (UF-23), ✅ Avaliações pós-troca
-> (UF-23 completa), ✅ Moderation — denúncias + árbitro + ban (UF-24/25). ⏳ Pendente: Pricing (UF-28),
-> demurrage (UF-27), cupom on-chain CRUD (UF-29), admin params UI (UF-30).
+## Fase 3 — Inteligência + Econômico + Confiança ✅
+> **Status: CONCLUÍDA.** Reputation + recompensa de doação (UF-23), Avaliações pós-troca (UF-23),
+> Moderation — denúncias + árbitro + ban (UF-24/25), Cupom on-chain (UF-29), PricingIntelligence
+> — mediana comunitária + IPCA + Ollama (UF-28), Demurrage — queima periódica (UF-27),
+> Admin completo — parâmetros runtime + dashboard (UF-30). Pendentes (on-chain imutáveis/fora escopo):
+> taxa 2% on-chain, ML market prices, Quartz scheduling, reajuste IPCA-trimestral automático.
 
 ### Entregáveis
 **Módulos:** **PricingIntelligence** (UF-28: Quartz semanal → API ML + admin seed + comunidade + IPCA/IBGE trimestral → Ollama Qwen 7B → ref BRL por categoria, mediana RVM, sugestão justa; página de transparência) · **Token** (UF-27: **demurrage execution** keeper IPCA-trimestral + preview/run admin; UF-29: **cupom/convite on-chain** CRUD admin + resgate + rate-limit; UF-30: **parâmetros admin** — `DonationReward:BonusRvm`, taxa, demurrage, faucet) · **Reputation** (UF-23: reviews 1–5, níveis/badges, selos 🎁/🤝, pontos de ajuda) · **Moderation** (UF-24/25: árbitro de disputas, moderadores de comunidade, denúncias/bans/auditoria).
