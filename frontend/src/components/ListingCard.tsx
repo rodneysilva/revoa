@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Badge } from "./Badge";
 import { timeAgo } from "../lib/time";
+import { brlEstimate } from "../lib/format";
+import { useBrlRate } from "../lib/useBrlRate";
 import type { FeedItem } from "../api/types";
 
 const CONDITION_LABEL: Record<string, string> = {
@@ -22,6 +24,8 @@ export function ListingCard({ item }: { item: FeedItem }) {
     : null;
   const duration = serviceDurationLabel(item);
   const when = item.CreatedAt ? timeAgo(item.CreatedAt) : null;
+  const { rate } = useBrlRate();
+  const brl = !gratis ? brlEstimate(item.PrecoRvm, rate ?? 0) : null;
 
   return (
     <Link
@@ -67,9 +71,14 @@ export function ListingCard({ item }: { item: FeedItem }) {
           {gratis ? (
             <span className="rms text-lima">Grátis</span>
           ) : (
-            <span className="rms text-cream">
-              RM$ {item.PrecoRvm.toLocaleString("pt-BR")}
-            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="rms text-cream">
+                RM$ {item.PrecoRvm.toLocaleString("pt-BR")}
+              </span>
+              {brl && (
+                <span className="text-xs text-silver">≈ {brl}</span>
+              )}
+            </div>
           )}
         </div>
 

@@ -162,6 +162,7 @@ parâmetros** trimestralmente (faucet/cupom + base demurrage + **bônus de doaç
 - **Taxa 2% → Fundo Comunitário** (custeia infra/servidores; **sem lucro**, transparente, auditável no `revoa.org`). Do vendedor.
 - **Bônus de doação:** creditado ao doador/voluntário, **configurável admin**.
 - **Comparativo (sempre visível):** BRL (ML+seed+comunidade) ↔ mediana RVM + sugestão justa (Ollama Qwen 7B).
+- **Estimativa BRL em todos os anúncios (valor simbólico):** cada anúncio mostra `≈ R$X` ao lado do preço em RVM — **estimativa simbólica**, não um preço real nem um "câmbio". Serviço: dar **noção de valor** (alinhada à inflação do país) e **evitar engano**, sem transformar o RVM em ativo financeiro. A essência é **trocar** (o RVM é meio, não fim); o valor em BRL é referência discreta. Doações/voluntariado (0 RVM) mostram "Grátis". Taxa pela `Pricing:BrlRate` (admin-configurável, com IPCA).
 
 > **Sem fins lucrativos = sem acionistas, sem distribuição de lucros.** Toda a "receita" (taxa 2%)
 > reinverte-se na operação; o `revoa.org` publica a prestação de contas. Detalhes em `TOKENOMICS.md`.

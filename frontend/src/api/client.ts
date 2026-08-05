@@ -3,6 +3,7 @@
 
 import type {
   AdminParameter,
+  BrlRate,
   Category,
   Comment,
   Community,
@@ -317,6 +318,7 @@ export const api = {
     apiPut<void>(`/api/admin/parameters/${encodeURIComponent(key)}`, { Value: value }),
   refreshPricing: (): Promise<{ updated: number }> =>
     apiPost<{ updated: number }>(`/api/pricing/refresh`),
+  brlRate: (): Promise<BrlRate> => apiGet<BrlRate>(`/api/pricing/rate`),
   demurragePreview: (): Promise<DemurragePreview> =>
     apiPost<DemurragePreview>(`/api/demurrage/preview`),
   demurrageRun: (): Promise<DemurrageRun> => apiPost<DemurrageRun>(`/api/demurrage/run`),

@@ -187,6 +187,77 @@ export function LandingPage() {
     <>
       <Hero />
 
+      {/* FEED em destaque — prova social imediata logo após a hero. */}
+      <section id="feed" className="scroll-mt-20">
+        <div className="app-container">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-8">
+            <div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
+                O que a comunidade está oferecendo
+              </h2>
+              <p className="mt-2 text-silver max-w-2xl">
+                Anúncios reais de quem já faz parte do revoa.me — troque, doe e
+                cuide com seus vizinhos.
+              </p>
+            </div>
+            <Link
+              to="/explore"
+              className="sm:ml-auto inline-flex items-center gap-1 text-sm font-semibold text-esmeralda hover:underline whitespace-nowrap"
+            >
+              Ver tudo →
+            </Link>
+          </div>
+
+          {offline && (
+            <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
+              Não foi possível carregar o feed — backend offline? Rode o servidor
+              .NET na porta 8000.
+            </div>
+          )}
+
+          {items === null ? (
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col bg-charcoal rounded-xl border border-smoke overflow-hidden"
+                >
+                  <div className="aspect-square bg-smoke animate-pulse" />
+                  <div className="p-4 space-y-2">
+                    <div className="h-3 w-16 bg-smoke rounded animate-pulse" />
+                    <div className="h-4 w-full bg-smoke rounded animate-pulse" />
+                    <div className="h-3 w-20 bg-smoke rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : items.length === 0 ? (
+            <div className="bg-charcoal rounded-2xl border border-smoke p-10 text-center">
+              <p className="text-cream font-medium">Ainda não há anúncios por aqui.</p>
+              <p className="mt-1 text-sm text-silver">
+                {offline
+                  ? "Volte em breve — a comunidade está chegando."
+                  : "Seja o primeiro a oferecer algo!"}
+              </p>
+              {!offline && (
+                <Link
+                  to={ctaTo}
+                  className="mt-5 inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                >
+                  Ofereça o que você tem
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+              {items.slice(0, 8).map((it, i) => (
+                <ListingCard key={it.Id ?? i} item={it} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       <section>
         <div className="app-container">
           <div className="text-center mb-8">
@@ -318,37 +389,6 @@ export function LandingPage() {
                 <p className="text-sm text-silver">{p.text}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-smoke">
-        <div className="app-container">
-          <div className="flex items-end justify-between gap-4 mb-6">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cream">
-              No feed agora
-            </h2>
-            <Link to="/feed" className="text-sm text-esmeralda hover:underline whitespace-nowrap">
-              Ver tudo →
-            </Link>
-          </div>
-          {offline && (
-            <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
-              Não foi possível carregar o feed — backend offline? Rode o servidor .NET na porta 8000.
-            </div>
-          )}
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-6">
-            {items === null ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="aspect-square bg-smoke rounded-xl animate-pulse" />
-              ))
-            ) : items.length === 0 ? (
-              <p className="text-silver col-span-full">
-                Ainda não há anúncios. {offline ? "" : "Seja o primeiro!"}
-              </p>
-            ) : (
-              items.slice(0, 6).map((it, i) => <ListingCard key={it.Id ?? i} item={it} />)
-            )}
           </div>
         </div>
       </section>

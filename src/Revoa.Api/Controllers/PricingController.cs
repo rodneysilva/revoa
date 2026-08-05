@@ -1,8 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Revoa.IntegrationContracts.Admin;
 using Revoa.Pricing.Application.Commands;
 using Revoa.Pricing.Application.DTOs;
+using Revoa.Pricing.Application.Options;
 using Revoa.Pricing.Application.Queries;
 
 namespace Revoa.Api.Controllers;
@@ -14,10 +17,29 @@ namespace Revoa.Api.Controllers;
 public class PricingController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IParameterStore _params;
+    private readonly PricingOptions _options;
 
-    public PricingController(IMediator mediator)
+    public PricingController(IMediator mediator, IParameterStore params_, IOptions<PricingOptions> options)
     {
         _mediator = mediator;
+        _params = params_;
+        _options = options.Value;
+    }
+
+    // Taxa BRL↔RVM atual (anônima). Estimativa SIMBÓLICA (RVM não é ativo financeiro) p/ dar noção
+    // de valor nas trocas — a economia é de ajuda mútua; o valor é referência, não preço real.
+    [HttpGet("rate")]
+    [AllowAnonymous]
+    public async Task<ActionResult> GetRate(CancellationToken ct)
+    {
+        var brlRate = await _params.GetAsync("Pricing.BrlRate", _options.BrlRate, ct);
+        return Ok(new
+        {
+            brlRate,
+            currency = "BRL",
+            disclaimer = "Estimativa simbólica para trocas — o RVM é crédito de troca da comunidade, não moeda/ativo financeiro.",
+        });
     }
 
     // Recalcula referências de preço (mediana comunitária + BRL seed + IPCA IBGE + Ollama).

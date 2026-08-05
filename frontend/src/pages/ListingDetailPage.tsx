@@ -5,12 +5,15 @@ import { Badge } from "../components/Badge";
 import { Avatar } from "../components/Avatar";
 import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
+import { brlEstimate } from "../lib/format";
+import { useBrlRate } from "../lib/useBrlRate";
 import { useAuth, type AuthUser } from "../auth/AuthContext";
 import type { Comment, HelpRequest, Listing, ReportReason, Review } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const { rate, disclaimer } = useBrlRate();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +82,8 @@ export function ListingDetailPage() {
     );
 
   const gratis = listing.PrecoRvm === 0;
+  const isDonationMode = listing.Modo === "Doar" || listing.Modo === "Voluntariar";
+  const brl = !gratis ? brlEstimate(listing.PrecoRvm, rate ?? 0) : null;
   const images = listing.Imagens?.length ? listing.Imagens : [];
 
   return (
@@ -132,17 +137,38 @@ export function ListingDetailPage() {
           </div>
 
           <h1 className="text-3xl font-bold text-cream">{listing.Titulo}</h1>
-          <div className="mt-3 text-2xl">
+          <div className="mt-3">
+            <div className="text-2xl">
+              {gratis ? (
+                <span className="rms text-lima">Grátis</span>
+              ) : (
+                <span className="rms text-cream">
+                  RM$ {listing.PrecoRvm.toLocaleString("pt-BR")}
+                </span>
+              )}
+            </div>
             {gratis ? (
-              <span className="rms text-lima">Grátis</span>
+              isDonationMode && (
+                <p className="mt-1 text-sm text-lima/80">Doação — grátis</p>
+              )
             ) : (
-              <span className="rms text-cream">
-                RM$ {listing.PrecoRvm.toLocaleString("pt-BR")}
-              </span>
+              brl && (
+                <p className="mt-1 text-sm text-silver">
+                  ≈ {brl}{" "}
+                  <span className="text-silver/70">(estimativa simbólica)</span>
+                </p>
+              )
             )}
           </div>
 
           <p className="mt-4 text-cream/90 whitespace-pre-wrap">{listing.Descricao}</p>
+
+          {!gratis && rate != null && (
+            <p className="mt-3 text-xs text-silver/80 leading-relaxed border-l-2 border-smoke pl-3">
+              {disclaimer ??
+                "O valor em R$ é apenas uma estimativa simbólica para trocas — o RVM é crédito de troca da comunidade, não moeda."}
+            </p>
+          )}
 
           <dl className="mt-6 space-y-2 text-sm">
             {listing.Kind === "Product" && listing.ProductDetails && (

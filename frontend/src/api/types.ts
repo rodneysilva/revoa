@@ -362,3 +362,10 @@ export interface SeedCatalogResult {
   total: number;
   erros: number;
 }
+
+// Taxa de estimativa BRL simbólica (PricingIntelligence) — camelCase como /api/pricing/*.
+export interface BrlRate {
+  brlRate: number;
+  currency: "BRL";
+  disclaimer: string;
+}
