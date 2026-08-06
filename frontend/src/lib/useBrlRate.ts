@@ -1,21 +1,28 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 
+const CACHE_TTL = 5 * 60 * 1000;
+
 interface CachedRate {
   rate: number;
   disclaimer: string;
+  ts: number;
 }
 
 let cached: CachedRate | null = null;
 let inflight: Promise<CachedRate | null> | null = null;
 
+function fresh(): boolean {
+  return !!cached && Date.now() - cached.ts < CACHE_TTL;
+}
+
 function loadRate(): Promise<CachedRate | null> {
-  if (cached) return Promise.resolve(cached);
+  if (fresh()) return Promise.resolve(cached);
   if (!inflight) {
     inflight = api
       .brlRate()
       .then((r) => {
-        cached = { rate: r.brlRate, disclaimer: r.disclaimer };
+        cached = { rate: r.brlRate, disclaimer: r.disclaimer, ts: Date.now() };
         return cached;
       })
       .catch(() => {
@@ -40,8 +47,8 @@ export function useBrlRate(): BrlRateState {
   );
 
   useEffect(() => {
-    if (cached) {
-      setState({ rate: cached.rate, disclaimer: cached.disclaimer, loading: false });
+    if (fresh()) {
+      setState({ rate: cached!.rate, disclaimer: cached!.disclaimer, loading: false });
       return;
     }
     let active = true;

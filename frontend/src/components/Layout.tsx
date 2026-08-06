@@ -62,6 +62,13 @@ export function Layout() {
             {user ? (
               <>
                 <Link
+                  to="/trades"
+                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
+                  title="Minhas trocas"
+                >
+                  🔄 Trocas
+                </Link>
+                <Link
                   to="/wallet"
                   className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
                   title="Carteira"

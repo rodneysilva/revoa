@@ -387,7 +387,14 @@ function SellerReviews({ vendedorId }: { vendedorId: string }) {
       <h3 className="text-cream font-semibold mb-1 flex items-center gap-2">
         Avaliações do vendedor
         <span className="text-xs text-silver font-normal">
-          · média <Stars n={Math.round(avg)} /> ({reviews.length})
+          · média <Stars n={Math.round(avg)} />{" "}
+          <span className="text-amber font-medium">
+            {avg.toLocaleString("pt-BR", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1,
+            })}
+          </span>{" "}
+          ({reviews.length})
         </span>
       </h3>
       <ul className="mt-3 space-y-3">

@@ -50,6 +50,18 @@ function tradeTimestamp(t: Trade): number {
   return Math.max(...candidates.map((d) => new Date(d).getTime()));
 }
 
+async function fetchTrades(userId: string): Promise<Trade[]> {
+  const [asBuyer, asSeller] = await Promise.all([
+    api.tradeHistory({ buyerId: userId }).catch(() => [] as Trade[]),
+    api.tradeHistory({ sellerId: userId }).catch(() => [] as Trade[]),
+  ]);
+  const map = new Map<string, Trade>();
+  [...asBuyer, ...asSeller].forEach((t) => map.set(t.Id, t));
+  return Array.from(map.values()).sort(
+    (a, b) => tradeTimestamp(b) - tradeTimestamp(a)
+  );
+}
+
 function Stepper({ trade }: { trade: Trade }) {
   const idx = happyIndex(trade.State, !!trade.FundedAt);
   const branch = BRANCH.includes(trade.State) ? trade.State : null;
@@ -380,18 +392,8 @@ export function TradeTrackerPage() {
     if (!user) return;
     setLoading(true);
     setError(null);
-    Promise.all([
-      api.tradeHistory({ buyerId: user.userId }).catch(() => [] as Trade[]),
-      api.tradeHistory({ sellerId: user.userId }).catch(() => [] as Trade[]),
-    ])
-      .then(([asBuyer, asSeller]) => {
-        const map = new Map<string, Trade>();
-        [...asBuyer, ...asSeller].forEach((t) => map.set(t.Id, t));
-        const merged = Array.from(map.values()).sort(
-          (a, b) => tradeTimestamp(b) - tradeTimestamp(a)
-        );
-        setTrades(merged);
-      })
+    fetchTrades(user.userId)
+      .then(setTrades)
       .catch((e) => {
         setError(
           e instanceof ApiError ? e.message : "Erro ao carregar trocas."
@@ -404,19 +406,9 @@ export function TradeTrackerPage() {
     let active = true;
     if (!user) return;
     setLoading(true);
-    Promise.all([
-      api.tradeHistory({ buyerId: user.userId }).catch(() => [] as Trade[]),
-      api.tradeHistory({ sellerId: user.userId }).catch(() => [] as Trade[]),
-    ])
-      .then(([asBuyer, asSeller]) => {
-        if (!active) return;
-        const map = new Map<string, Trade>();
-        [...asBuyer, ...asSeller].forEach((t) => map.set(t.Id, t));
-        setTrades(
-          Array.from(map.values()).sort(
-            (a, b) => tradeTimestamp(b) - tradeTimestamp(a)
-          )
-        );
+    fetchTrades(user.userId)
+      .then((t) => {
+        if (active) setTrades(t);
       })
       .catch((e) => {
         if (active)

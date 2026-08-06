@@ -40,6 +40,9 @@ export function ListingCard({ item }: { item: FeedItem }) {
             alt={item.Titulo}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
           />
         ) : (
           <span aria-hidden>{isService ? "🛠️" : "📦"}</span>
@@ -50,7 +53,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
           <Badge modo={item.Modo} />
           {isService ? (
             <span className="text-xs px-2 py-0.5 rounded-full bg-sky/15 text-sky font-medium">
-              serviço
+              Serviço
             </span>
           ) : condition ? (
             <span className="text-xs px-2 py-0.5 rounded-full bg-smoke text-silver font-medium">

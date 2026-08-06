@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
-import { KIND_LABELS, MODO_META, modosForKind } from "../lib/config";
+import { KIND_LABELS, MODO_META, ALL_MODOS, modosForKind } from "../lib/config";
 import { useAuth } from "../auth/AuthContext";
 import type {
   Category,
@@ -12,7 +12,6 @@ import type {
 } from "../api/types";
 
 const KINDS: Kind[] = ["Product", "Service"];
-const ALL_MODOS: Modo[] = ["Trocar", "Repassar", "Doar", "Voluntariar"];
 const VISIBILIDADES: Visibilidade[] = ["Global"];
 
 const inputCls =
@@ -26,7 +25,6 @@ export function CreateListingPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ok, setOk] = useState(false);
 
   const [kind, setKind] = useState<Kind>("Product");
   const [modo, setModo] = useState<Modo>("Trocar");
@@ -118,7 +116,6 @@ export function CreateListingPage() {
     setLoading(true);
     try {
       const id = await api.createListing(body);
-      setOk(true);
       if (id) navigate(`/listings/${id}`);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Falha ao criar anúncio.");
@@ -405,7 +402,7 @@ export function CreateListingPage() {
             disabled={loading}
             className="flex-1 bg-brand text-ink font-semibold px-6 py-3 rounded-xl disabled:opacity-60"
           >
-            {loading ? "Publicando…" : ok ? "Publicar outro" : "Publicar anúncio"}
+            {loading ? "Publicando…" : "Publicar anúncio"}
           </button>
         </div>
 

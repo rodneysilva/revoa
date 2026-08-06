@@ -7,7 +7,7 @@ export function WalletPage() {
       <h1 className="text-2xl font-bold text-cream mb-6">Carteira RVM</h1>
       <div className="bg-charcoal rounded-2xl border border-smoke p-8 text-center">
         <div className="text-5xl mb-3" aria-hidden>
-          🪪
+          👛
         </div>
         <p className="rms text-3xl text-cream mb-1">RM$ —</p>
         <p className="text-silver text-sm mb-6">

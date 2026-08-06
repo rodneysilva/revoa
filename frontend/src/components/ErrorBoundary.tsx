@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <p className="text-silver max-w-md">
             Algo deu errado ao renderizar esta tela. Tente recarregar.
           </p>
-          {this.state.message ? (
+          {import.meta.env.DEV && this.state.message ? (
             <pre className="text-xs text-left text-silver bg-charcoal rounded-lg p-3 max-w-md overflow-auto">
               {this.state.message}
             </pre>

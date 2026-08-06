@@ -16,6 +16,9 @@ export function Avatar({
       width={size}
       height={size}
       loading="lazy"
+      onError={(e) => {
+        (e.target as HTMLImageElement).style.display = "none";
+      }}
       className="rounded-full bg-charcoal border border-smoke object-cover shrink-0"
       style={{ width: size, height: size }}
     />

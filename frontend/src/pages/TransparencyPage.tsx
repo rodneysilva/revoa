@@ -530,5 +530,3 @@ function PriceRow({
     </div>
   );
 }
-
-export default TransparencyPage;
