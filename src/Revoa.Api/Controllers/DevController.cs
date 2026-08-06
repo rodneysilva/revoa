@@ -2,35 +2,46 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Nethereum.Signer;
 using Revoa.Abstractions;
+using Revoa.Account.Domain.Aggregates.AccountAggregate;
 using Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
 using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
 using Revoa.Catalog.Domain.Repositories;
+using Revoa.Community.Domain.Aggregates.CommunityAggregate;
+using Revoa.Community.Domain.Aggregates.MembershipAggregate;
+using Revoa.Community.Domain.Aggregates.PostAggregate;
+using Revoa.Identity.Domain.Aggregates.UserAggregate;
+using Revoa.Reputation.Domain.Aggregates.ReputationAggregate;
+using Revoa.Reputation.Domain.Aggregates.ReviewAggregate;
+
+// Aliases p/ desambiguar tipos de domínio que colidem: 'User' com a propriedade ControllerBase.User,
+// 'Reputation' com o namespace Revoa.Reputation. 'Account' é qualificado na chamada (Revoa.Account).
+using AppUser = Revoa.Identity.Domain.Aggregates.UserAggregate.User;
+using ReputationScore = Revoa.Reputation.Domain.Aggregates.ReputationAggregate.Reputation;
 
 namespace Revoa.Api.Controllers;
 
-// Endpoints DEV-ONLY (em produção retornam 404). Usados para popular o ambiente de
-// desenvolvimento com um catálogo de demonstração realista (economia circular + ajuda mútua).
+// Endpoints DEV-ONLY (em produção retornam 404). Populam o ambiente de desenvolvimento com um
+// ecossistema de demonstração VIVO e interconectado: usuários mock reais (com carteira), catálogo
+// vinculado a esses usuários, comunidades com membros/posts e interações (reviews + reputação).
 [ApiController]
 [Route("api/dev")]
 public class DevController : ControllerBase
 {
     private const string DemoPrefix = "[Demo]";
 
-    private readonly IListingRepository _listings;
     private readonly ICategoryRepository _categories;
     private readonly IMongoDatabase _db;
     private readonly IWebHostEnvironment _env;
     private readonly ILogger<DevController> _logger;
 
     public DevController(
-        IListingRepository listings,
         ICategoryRepository categories,
         IMongoDatabase db,
         IWebHostEnvironment env,
         ILogger<DevController> logger)
     {
-        _listings = listings;
         _categories = categories;
         _db = db;
         _env = env;
@@ -38,8 +49,9 @@ public class DevController : ControllerBase
     }
 
     /// <summary>
-    /// (Re)semeia o catálogo de demonstração: garante categorias, remove listings marcados
-    /// "[Demo]" e insere produtos + serviços de exemplo. Idempotente. Em produção retorna 404.
+    /// (Re)semeia o ambiente DEV completo: 10 usuários mock (+carteiras), catálogo vinculado aos
+    /// mocks, 5 comunidades com membros e posts, e ~22 reviews (+reputação acumulada). Idempotente
+    /// (limpa tudo por chaves determinísticas antes de re-inserir). Em produção retorna 404.
     /// </summary>
     [HttpPost("seed-catalog")]
     [AllowAnonymous]
@@ -50,7 +62,10 @@ public class DevController : ControllerBase
             return NotFound();
         }
 
-        // 1) Garante categorias (produto + serviço).
+        // Seed fixa → variedade temporal entre itens + dados reproduzíveis a cada execução do seed.
+        var rnd = new Random(20260806);
+
+        // 1) Garante categorias (produto + serviço) — idempotente.
         var categoriasCriadas = 0;
         foreach (var (nome, slug, descricao) in AllCategories())
         {
@@ -61,27 +76,141 @@ public class DevController : ControllerBase
             }
         }
 
-        // 2) Remove mocks antigos (Descricao prefixada "[Demo]"). Regex.Escape obrigatório: sem ele,
-        // "[Demo]" vira classe de caracteres (D/e/m/o) e não casa o prefixo literal -> acumulava.
-        var collection = _db.GetCollection<Listing>("Listings");
-        var demoFilter = Builders<Listing>.Filter.Regex(
-            l => l.Descricao, new BsonRegularExpression("^" + System.Text.RegularExpressions.Regex.Escape(DemoPrefix)));
-        await collection.DeleteManyAsync(demoFilter, ct);
+        // Mapeia slug → CategoriaId uma única vez (evita N queries no loop de listings).
+        var catBySlug = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in AllCategories())
+        {
+            var found = await _categories.GetBySlugAsync(c.Slug, ct);
+            if (found is not null)
+            {
+                catBySlug[c.Slug] = found.Id;
+            }
+        }
 
-        // 3) Gera e insere listings.
+        // 2) Limpa mocks antigos por chaves determinísticas (idempotência total).
+        var removidos = await CleanDemoDataAsync(ct);
+
+        // 3) Usuários mock (10) + carteiras (Accounts).
+        var mocks = MockUsers();
+        var usuarios = await SeedUsersAsync(mocks, ct);
+        var carteiras = await SeedAccountsAsync(mocks, ct);
+
+        // 4) Catálogo vinculado aos mocks (VendedorId rotaciona entre os 10 mocks).
+        var (produtos, servicos, erros) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
+
+        // 5) Comunidades (5) + memberships + posts.
+        var (comunidades, memberships, posts) = await SeedCommunitiesAsync(mocks, rnd, ct);
+
+        // 6) Reviews (~22) + reputações acumuladas por usuário.
+        var (reviews, reputacoes) = await SeedReviewsAndReputationAsync(mocks, rnd, ct);
+
+        return Ok(new
+        {
+            categorias = categoriasCriadas,
+            removidos,
+            usuarios,
+            carteiras,
+            produtos,
+            servicos,
+            listings = produtos + servicos,
+            comunidades,
+            memberships,
+            posts,
+            reviews,
+            reputacoes,
+            erros
+        });
+    }
+
+    // --- Limpeza idempotente: remove todos os mocks pelas chaves determinísticas (10 usuários +
+    //     5 comunidades). Listings continuam pelo prefixo literal "[Demo]" na Descrição.
+    //     BsonBinaryData explícito é obrigatório no GuidRepresentationMode V3 (BsonDocument sem
+    //     representação implícita de Guid quebraria o match do filtro).
+    private async Task<long> CleanDemoDataAsync(CancellationToken ct)
+    {
+        var userBin = DemoUserIds.Select(g => new BsonBinaryData(g, GuidRepresentation.Standard)).ToList();
+        var commBin = DemoCommunityIds.Select(g => new BsonBinaryData(g, GuidRepresentation.Standard)).ToList();
+        var bf = Builders<BsonDocument>.Filter;
+
+        var listings = _db.GetCollection<BsonDocument>("Listings");
+        var demoFilter = bf.Regex(
+            "Descricao", new BsonRegularExpression("^" + System.Text.RegularExpressions.Regex.Escape(DemoPrefix)));
+        var removed = (await listings.DeleteManyAsync(demoFilter, ct)).DeletedCount;
+
+        removed += await DeleteByAsync("Users", bf.In("_id", userBin));
+        removed += await DeleteByAsync("Accounts", bf.In("UserId", userBin));
+        removed += await DeleteByAsync("Communities", bf.In("_id", commBin));
+        removed += await DeleteByAsync("Memberships", bf.In("ComunidadeId", commBin));
+        removed += await DeleteByAsync("Posts", bf.In("ComunidadeId", commBin));
+        removed += await DeleteByAsync("Reviews", bf.In("ReviewerId", userBin));
+        removed += await DeleteByAsync("Reputations", bf.In("UserId", userBin));
+        return removed;
+
+        async Task<long> DeleteByAsync(string coll, FilterDefinition<BsonDocument> filter)
+        {
+            var r = await _db.GetCollection<BsonDocument>(coll).DeleteManyAsync(filter, ct);
+            return r.DeletedCount;
+        }
+    }
+
+    // --- Usuários mock: 10 docs em Users, Status=Active, e-mail+telefone verificados, _id
+    //     determinístico. Cria via factory + DevActivate (estrutura idêntica à dos repositórios),
+    //     serializa p/ BsonDocument e sobrescreve o _id pela chave determinística (idempotência).
+    private async Task<int> SeedUsersAsync(IReadOnlyList<MockUser> mocks, CancellationToken ct)
+    {
+        var docs = new List<BsonDocument>(mocks.Count);
+        foreach (var m in mocks)
+        {
+            var user = AppUser.Create(m.Nome, m.Email, m.Telefone, idadeOk: true);
+            // DEV only: bypassa a dupla verificação (e-mail + telefone) e ativa o usuário.
+            user.DevActivate();
+            var doc = user.ToBsonDocument();
+            doc["_id"] = new BsonBinaryData(m.Id, GuidRepresentation.Standard);
+            docs.Add(doc);
+        }
+
+        await _db.GetCollection<BsonDocument>("Users").InsertManyAsync(docs, cancellationToken: ct);
+        return docs.Count;
+    }
+
+    // --- Carteiras (Accounts): gera EOA Nethereum aleatória por usuário (off-chain, perfil DEV).
+    //     Random é OK — a Account é limpa por UserId antes de re-inserir (idempotente).
+    private async Task<int> SeedAccountsAsync(IReadOnlyList<MockUser> mocks, CancellationToken ct)
+    {
+        var docs = new List<BsonDocument>(mocks.Count);
+        foreach (var m in mocks)
+        {
+            var ecKey = EthECKey.GenerateKey();
+            var privateKey = ecKey.GetPrivateKey(); // já vem com prefixo 0x
+            var walletAddress = new Nethereum.Web3.Accounts.Account(privateKey).Address;
+
+            var account = UserAccount.Create(m.Id, walletAddress, privateKey);
+            docs.Add(account.ToBsonDocument());
+        }
+
+        await _db.GetCollection<BsonDocument>("Accounts").InsertManyAsync(docs, cancellationToken: ct);
+        return docs.Count;
+    }
+
+    // --- Catálogo (56 produtos + 57 serviços) vinculado aos mocks: VendedorId/Nome/AvatarUrl
+    //     rotacionam entre os 10 usuários. CreatedAt espalhado nos últimos 30 dias (feed variado).
+    private async Task<(int produtos, int servicos, int erros)> SeedListingsAsync(
+        IReadOnlyList<MockUser> mocks,
+        IReadOnlyDictionary<string, Guid> catBySlug,
+        Random rnd,
+        CancellationToken ct)
+    {
         var all = BuildProducts().Concat(BuildServices()).ToList();
-        var personas = Personas();
         var places = Places();
-
-        var produtosOk = 0;
-        var servicosOk = 0;
+        var docs = new List<BsonDocument>(all.Count);
+        var produtos = 0;
+        var servicos = 0;
         var erros = 0;
 
         for (var i = 0; i < all.Count; i++)
         {
             var seed = all[i];
-            var categoria = await _categories.GetBySlugAsync(seed.CategorySlug, ct);
-            if (categoria is null)
+            if (!catBySlug.TryGetValue(seed.CategorySlug, out var catId))
             {
                 erros++;
                 _logger.LogWarning("Seed pulou listing (categoria ausente): {Slug}", seed.CategorySlug);
@@ -90,7 +219,7 @@ public class DevController : ControllerBase
 
             try
             {
-                var persona = personas[i % personas.Count];
+                var seller = mocks[i % mocks.Count];
                 var place = places[i % places.Count];
                 var local = Location.Create(place.Lat, place.Lng, place.Bairro, place.Cidade, place.Cep);
 
@@ -106,25 +235,27 @@ public class DevController : ControllerBase
                     descricao: DemoPrefix + " " + seed.Descricao,
                     imagens: new List<string> { $"https://picsum.photos/seed/revoa-{i}/600/400" },
                     precoRvm: seed.PrecoRvm,
-                    vendedorId: persona.Id,
-                    vendedorNome: persona.Nome,
-                    vendedorAvatarUrl: $"https://api.dicebear.com/7.x/initials/svg?seed={Uri.EscapeDataString(persona.Nome)}",
+                    vendedorId: seller.Id,
+                    vendedorNome: seller.Nome,
+                    vendedorAvatarUrl: seller.AvatarUrl,
                     localizacao: local,
-                    categoriaId: categoria.Id,
+                    categoriaId: catId,
                     comunidadeId: null,
                     visibilidade: ListingVisibilidade.Global,
                     productDetails: pd,
                     serviceDetails: sd);
 
-                await _listings.AddAsync(listing, ct);
+                var doc = listing.ToBsonDocument();
+                doc["CreatedAt"] = new BsonDateTime(RandomRecent(rnd));
+                docs.Add(doc);
 
                 if (seed.Kind == ListingKind.Product)
                 {
-                    produtosOk++;
+                    produtos++;
                 }
                 else
                 {
-                    servicosOk++;
+                    servicos++;
                 }
             }
             catch (DomainException ex)
@@ -134,15 +265,187 @@ public class DevController : ControllerBase
             }
         }
 
-        return Ok(new
+        if (docs.Count > 0)
         {
-            categorias = categoriasCriadas,
-            produtos = produtosOk,
-            servicos = servicosOk,
-            total = produtosOk + servicosOk,
-            erros
-        });
+            await _db.GetCollection<BsonDocument>("Listings").InsertManyAsync(docs, cancellationToken: ct);
+        }
+
+        return (produtos, servicos, erros);
     }
+
+    // --- 5 comunidades (Tipo=User, Open) com memberships (Criador/Moderador/Membro) e posts.
+    //     ComunidadeId determinístico; memberships/posts limpos por ComunidadeId.
+    private async Task<(int comunidades, int memberships, int posts)> SeedCommunitiesAsync(
+        IReadOnlyList<MockUser> mocks, Random rnd, CancellationToken ct)
+    {
+        var specs = CommunitySpecs();
+        var contents = PostContents();
+        var commDocs = new List<BsonDocument>(specs.Count);
+        var memDocs = new List<BsonDocument>();
+        var postDocs = new List<BsonDocument>();
+
+        for (var i = 0; i < specs.Count; i++)
+        {
+            var sp = specs[i];
+            var commId = DemoCommunityIds[i];
+            var creator = mocks[sp.CriadorIndex];
+
+            var comm = CommunityGroup.Create(
+                nome: sp.Nome,
+                descricao: sp.Descricao,
+                tipo: CommunityTipo.User,
+                eixo: sp.Eixo,
+                visibilidade: CommunityVisibilidade.Open,
+                password: null,
+                lat: sp.Lat,
+                lng: sp.Lng,
+                bairro: sp.Bairro,
+                cidade: sp.Cidade,
+                estado: sp.Estado,
+                criadorId: creator.Id,
+                criadorNome: creator.Nome,
+                criadorAvatarUrl: creator.AvatarUrl);
+
+            var commDoc = comm.ToBsonDocument();
+            commDoc["_id"] = new BsonBinaryData(commId, GuidRepresentation.Standard);
+            commDocs.Add(commDoc);
+
+            // 3-5 membros: criador (Criador) sempre presente + outros do elenco; 1 Moderador.
+            var memberCount = rnd.Next(3, 6);
+            var memberIndices = Enumerable.Range(0, mocks.Count)
+                .OrderBy(_ => rnd.NextDouble())
+                .Take(memberCount)
+                .ToList();
+            if (!memberIndices.Contains(sp.CriadorIndex))
+            {
+                memberIndices.Add(sp.CriadorIndex);
+            }
+
+            var assignedModerador = false;
+            foreach (var idx in memberIndices)
+            {
+                var u = mocks[idx];
+                MembershipPapel papel;
+                if (idx == sp.CriadorIndex)
+                {
+                    papel = MembershipPapel.Criador;
+                }
+                else if (!assignedModerador)
+                {
+                    assignedModerador = true;
+                    papel = MembershipPapel.Moderador;
+                }
+                else
+                {
+                    papel = MembershipPapel.Membro;
+                }
+
+                var mem = Membership.Create(u.Id, u.Nome, u.AvatarUrl, commId, papel);
+                var memDoc = mem.ToBsonDocument();
+                memDoc["JoinedAt"] = new BsonDateTime(RandomRecent(rnd));
+                memDocs.Add(memDoc);
+            }
+
+            // 3-5 posts por comunidade; autor é sempre um dos membros.
+            var postCount = rnd.Next(3, 6);
+            for (var p = 0; p < postCount; p++)
+            {
+                var author = mocks[memberIndices[rnd.Next(memberIndices.Count)]];
+                var content = contents[rnd.Next(contents.Count)];
+                var post = Post.CreateRoot(commId, author.Id, author.Nome, author.AvatarUrl, content);
+                var postDoc = post.ToBsonDocument();
+                postDoc["CreatedAt"] = new BsonDateTime(RandomRecent(rnd));
+                postDocs.Add(postDoc);
+            }
+        }
+
+        await _db.GetCollection<BsonDocument>("Communities").InsertManyAsync(commDocs, cancellationToken: ct);
+        await _db.GetCollection<BsonDocument>("Memberships").InsertManyAsync(memDocs, cancellationToken: ct);
+        await _db.GetCollection<BsonDocument>("Posts").InsertManyAsync(postDocs, cancellationToken: ct);
+        return (commDocs.Count, memDocs.Count, postDocs.Count);
+    }
+
+    // --- ~22 reviews (reviewer e reviewee sempre mocks) + reputação acumulada por usuário.
+    //     Reviewee é o vendedor de um listing aleatório — como todo listing agora tem vendedor
+    //     mock, o reviewee sempre cai num mock. TradeId é mock (não há trade real off-chain).
+    private async Task<(int reviews, int reputacoes)> SeedReviewsAndReputationAsync(
+        IReadOnlyList<MockUser> mocks, Random rnd, CancellationToken ct)
+    {
+        var comments = ReviewComments();
+        var docs = new List<BsonDocument>(22);
+        var received = new Dictionary<Guid, List<int>>(); // ratings acumulados por reviewee
+
+        for (var n = 0; n < 22; n++)
+        {
+            var reviewer = mocks[rnd.Next(mocks.Count)];
+            MockUser reviewee;
+            do
+            {
+                reviewee = mocks[rnd.Next(mocks.Count)];
+            }
+            while (reviewee.Id == reviewer.Id);
+
+            // Rating ponderado: ~55% 5★, ~30% 4★, ~15% 3★.
+            var roll = rnd.NextDouble();
+            var rating = roll < 0.55 ? 5 : roll < 0.85 ? 4 : 3;
+            var comment = comments[rnd.Next(comments.Count)];
+
+            var review = Review.Create(
+                tradeId: Guid.NewGuid(),
+                reviewerId: reviewer.Id,
+                reviewerNome: reviewer.Nome,
+                revieweeId: reviewee.Id,
+                rating: rating,
+                comment: comment);
+
+            var doc = review.ToBsonDocument();
+            doc["CreatedAt"] = new BsonDateTime(RandomRecent(rnd));
+            docs.Add(doc);
+
+            if (!received.TryGetValue(reviewee.Id, out var list))
+            {
+                received[reviewee.Id] = list = new List<int>();
+            }
+            list.Add(rating);
+        }
+
+        // Reputação: 1 doc por usuário mock, acumulando reviews recebidas + doações/ajuda aleatórias.
+        // Level/AvgRating são propriedades computadas (getter-only) — não serializadas, derivadas na leitura.
+        var repDocs = new List<BsonDocument>(mocks.Count);
+        foreach (var u in mocks)
+        {
+            var rep = ReputationScore.Create(u.Id);
+            if (received.TryGetValue(u.Id, out var ratings))
+            {
+                foreach (var rt in ratings)
+                {
+                    rep.ApplyReview(rt);
+                }
+            }
+
+            // Doações/voluntariado aleatório p/ enriquecer perfis (DonationsCount/VolunteerCount 0-3, HelpPoints 1-5).
+            var doacoes = rnd.Next(0, 4);
+            for (var d = 0; d < doacoes; d++)
+            {
+                rep.ApplyDonationReward(reputationPoints: 15, helpPoints: rnd.Next(1, 6), isVolunteer: d % 2 == 0);
+            }
+
+            repDocs.Add(rep.ToBsonDocument());
+        }
+
+        await _db.GetCollection<BsonDocument>("Reviews").InsertManyAsync(docs, cancellationToken: ct);
+        await _db.GetCollection<BsonDocument>("Reputations").InsertManyAsync(repDocs, cancellationToken: ct);
+        return (docs.Count, repDocs.Count);
+    }
+
+    // Data/hora UTC nos últimos 30 dias (variedade temporal p/ o feed e timelines).
+    private static DateTime RandomRecent(Random rnd) =>
+        DateTime.SpecifyKind(
+            DateTime.UtcNow.Date
+                .AddDays(-rnd.Next(0, 30))
+                .AddHours(rnd.Next(8, 22))
+                .AddMinutes(rnd.Next(0, 60)),
+            DateTimeKind.Utc);
 
     private sealed record SeedCategory(string Nome, string Slug, string? Descricao);
     private sealed record SeedListing(
@@ -156,8 +459,56 @@ public class DevController : ControllerBase
         ServiceUnitType? UnitType,
         int Duration);
 
-    private sealed record Persona(string Nome, Guid Id);
+    // Usuário mock (não é o aggregate User — é o "elenco" com avatar embutido usado nos embeds).
+    private sealed record MockUser(
+        Guid Id,
+        string Nome,
+        string Email,
+        string Telefone,
+        string AvatarUrl,
+        string Cidade,
+        string Bairro);
+
+    private sealed record CommunitySpec(
+        string Nome,
+        string Descricao,
+        CommunityEixo Eixo,
+        string Cidade,
+        string Estado,
+        string Bairro,
+        double Lat,
+        double Lng,
+        int CriadorIndex);
+
     private sealed record Place(double Lat, double Lng, string Bairro, string Cidade, string Cep);
+
+    // 10 chaves determinísticas (idempotência: mesma seed → mesmos IDs).
+    private static readonly Guid[] DemoUserIds =
+    {
+        new("aabbccdd-0001-4000-8000-000000000001"),
+        new("aabbccdd-0002-4000-8000-000000000002"),
+        new("aabbccdd-0003-4000-8000-000000000003"),
+        new("aabbccdd-0004-4000-8000-000000000004"),
+        new("aabbccdd-0005-4000-8000-000000000005"),
+        new("aabbccdd-0006-4000-8000-000000000006"),
+        new("aabbccdd-0007-4000-8000-000000000007"),
+        new("aabbccdd-0008-4000-8000-000000000008"),
+        new("aabbccdd-0009-4000-8000-000000000009"),
+        new("aabbccdd-000a-4000-8000-00000000000a")
+    };
+
+    // 5 chaves determinísticas de comunidades (mesma idempotência).
+    private static readonly Guid[] DemoCommunityIds =
+    {
+        new("aabbccdd-1001-4000-8000-000000000001"),
+        new("aabbccdd-1002-4000-8000-000000000002"),
+        new("aabbccdd-1003-4000-8000-000000000003"),
+        new("aabbccdd-1004-4000-8000-000000000004"),
+        new("aabbccdd-1005-4000-8000-000000000005")
+    };
+
+    private static string AvatarFor(string nome) =>
+        $"https://api.dicebear.com/7.x/initials/svg?seed={Uri.EscapeDataString(nome)}";
 
     private static IReadOnlyList<SeedCategory> AllCategories()
     {
@@ -328,30 +679,88 @@ public class DevController : ControllerBase
         };
     }
 
-    private static IReadOnlyList<Persona> Personas()
+    // Elenco de 10 usuários mock determinísticos (mesmos IDs a cada seed). Avatar é usado nos
+    // embeds (VendedorAvatarUrl, CriadorAvatarUrl, etc.) — o aggregate User não tem AvatarUrl.
+    private static IReadOnlyList<MockUser> MockUsers()
     {
-        return new List<Persona>
+        var nomes = new[]
         {
-            new("Marina Costa", new Guid("a1b2c3d4-0001-4a00-9000-000000000001")),
-            new("João Pereira", new Guid("a1b2c3d4-0002-4a00-9000-000000000002")),
-            new("Ana Beatriz Rocha", new Guid("a1b2c3d4-0003-4a00-9000-000000000003")),
-            new("Carlos Eduardo Lima", new Guid("a1b2c3d4-0004-4a00-9000-000000000004")),
-            new("Fernanda Souza", new Guid("a1b2c3d4-0005-4a00-9000-000000000005")),
-            new("Rafael Mendes", new Guid("a1b2c3d4-0006-4a00-9000-000000000006")),
-            new("Juliana Almeida", new Guid("a1b2c3d4-0007-4a00-9000-000000000007")),
-            new("Bruno Carvalho", new Guid("a1b2c3d4-0008-4a00-9000-000000000008")),
-            new("Patrícia Gomes", new Guid("a1b2c3d4-0009-4a00-9000-000000000009")),
-            new("Lucas Ferreira", new Guid("a1b2c3d4-0010-4a00-9000-000000000010")),
-            new("Camila Ribeiro", new Guid("a1b2c3d4-0011-4a00-9000-000000000011")),
-            new("Diego Martins", new Guid("a1b2c3d4-0012-4a00-9000-000000000012")),
-            new("Larissa Santos", new Guid("a1b2c3d4-0013-4a00-9000-000000000013")),
-            new("Thiago Oliveira", new Guid("a1b2c3d4-0014-4a00-9000-000000000014")),
-            new("Beatriz Nunes", new Guid("a1b2c3d4-0015-4a00-9000-000000000015")),
-            new("Rodrigo Barbosa", new Guid("a1b2c3d4-0016-4a00-9000-000000000016")),
-            new("Aline Moreira", new Guid("a1b2c3d4-0017-4a00-9000-000000000017")),
-            new("Gustavo Pinto", new Guid("a1b2c3d4-0018-4a00-9000-000000000018")),
-            new("Vanessa Araújo", new Guid("a1b2c3d4-0019-4a00-9000-000000000019")),
-            new("Felipe Cardoso", new Guid("a1b2c3d4-0020-4a00-9000-000000000020"))
+            ("Marina Costa", "11", "São Paulo", "Pinheiros"),
+            ("João Pereira", "21", "Rio de Janeiro", "Tijuca"),
+            ("Ana Beatriz Rocha", "31", "Belo Horizonte", "Savassi"),
+            ("Carlos Eduardo Lima", "81", "Recife", "Boa Viagem"),
+            ("Fernanda Souza", "51", "Porto Alegre", "Moinhos de Vento"),
+            ("Rafael Mendes", "11", "São Paulo", "Vila Mariana"),
+            ("Juliana Almeida", "21", "Rio de Janeiro", "Copacabana"),
+            ("Bruno Carvalho", "31", "Belo Horizonte", "Pampulha"),
+            ("Patrícia Gomes", "71", "Salvador", "Barra"),
+            ("Lucas Ferreira", "41", "Curitiba", "Batel")
+        };
+
+        var list = new List<MockUser>(nomes.Length);
+        for (var i = 0; i < nomes.Length; i++)
+        {
+            var (nome, ddd, cidade, bairro) = nomes[i];
+            var n = i + 1;
+            list.Add(new MockUser(
+                Id: DemoUserIds[i],
+                Nome: nome,
+                Email: $"mock{n:00}@revoa.dev",
+                Telefone: $"+55{ddd}9{10000000 + n}",
+                AvatarUrl: AvatarFor(nome),
+                Cidade: cidade,
+                Bairro: bairro));
+        }
+
+        return list;
+    }
+
+    private static IReadOnlyList<CommunitySpec> CommunitySpecs()
+    {
+        return new List<CommunitySpec>
+        {
+            new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da cidade.",
+                CommunityEixo.Geo, "São Paulo", "SP", "Pinheiros", -23.5641, -46.6361, 0),
+            new("Doações Vila Mariana", "Solidariedade de quem mora na Vila Mariana e arredores.",
+                CommunityEixo.Geo, "São Paulo", "SP", "Vila Mariana", -23.5868, -46.6353, 4),
+            new("Reparos e Ajuda", "Conecta quem precisa de um reparo a quem sabe fazer.",
+                CommunityEixo.Interesse, "Rio de Janeiro", "RJ", "Tijuca", -22.9230, -43.2340, 1),
+            new("Mães da Comunidade", "Acolhimento, troca de roupinhas e dicas entre mães.",
+                CommunityEixo.Causa, "Belo Horizonte", "MG", "Savassi", -19.9386, -43.9362, 2),
+            new("Tech Solidário", "Voluntariado em tecnologia: informática, formatação e dicas.",
+                CommunityEixo.Interesse, "Porto Alegre", "RS", "Moinhos de Vento", -30.0277, -51.2058, 9)
+        };
+    }
+
+    private static IReadOnlyList<string> PostContents()
+    {
+        return new List<string>
+        {
+            "Alguém sabe onde descarto eletrônicos velhos aqui no bairro?",
+            "Tenho roupas infantis G3-G4 para doar, alguém indica quem precisa?",
+            "Ofereço aula de Excel aos sábados de manhã, é só chamar!",
+            "Achei um gatinho na rua, alguém pode abrigar? Não dá pra ficar com ele.",
+            "Mutirão de limpeza na praça sábado às 9h, quem topa?",
+            "Preciso de uma carona pro centro amanhã cedo, divido a gasolina.",
+            "Sobrou bastante comida da festa, alguém conhece uma instituição?",
+            "Reparo de eletrodoméstico de graça pra quem tá apertado, me chamem.",
+            "Troco livros de receita por HQs da Turma da Mônica!",
+            "Procuro costureira para ajustes rápidos, pago em RVM ou troco por algo."
+        };
+    }
+
+    private static IReadOnlyList<string> ReviewComments()
+    {
+        return new List<string>
+        {
+            "Ótimo vendedor, entregou rápido!",
+            "Produto conforme descrito, recomendo!",
+            "Pessoa muito atenciosa, troca super tranquila.",
+            "Combinamos tudo certinho, recomendo demais.",
+            "Demorou um pouquinho pra responder, mas fechou tudo ok.",
+            "Produto em estado melhor do que eu esperava!",
+            "Super prestativo, ajudou com a entrega.",
+            "Ótima experiência, voltarei a negociar."
         };
     }
 
