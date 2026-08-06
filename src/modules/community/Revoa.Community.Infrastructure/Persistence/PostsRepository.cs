@@ -50,6 +50,36 @@ public class PostsRepository : IPostRepository
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, int>> GetChildrenCountsAsync(
+        IReadOnlyCollection<Guid> parentIds, CancellationToken ct)
+    {
+        var dict = new Dictionary<Guid, int>();
+        if (parentIds.Count == 0)
+        {
+            return dict;
+        }
+
+        var fb = Builders<Post>.Filter;
+        var query = fb.In(p => p.ParentId, parentIds.Select(id => (Guid?)id))
+                    & fb.Eq(p => p.Status, PostStatus.Visivel);
+
+        var grouped = await _posts.Aggregate()
+            .Match(query)
+            .Group(new BsonDocument
+            {
+                { "_id", "$ParentId" },
+                { "Count", new BsonDocument("$sum", 1) }
+            })
+            .ToListAsync(ct);
+
+        foreach (var doc in grouped)
+        {
+            dict[doc["_id"].AsGuid] = doc["Count"].AsInt32;
+        }
+
+        return dict;
+    }
+
     public async Task AddAsync(Post post, CancellationToken ct)
     {
         await _posts.InsertOneAsync(post, cancellationToken: ct);

@@ -27,10 +27,16 @@ public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQu
         var paged = posts
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
-            .Select(PostDtoMapper.From)
             .ToList();
 
-        IReadOnlyList<PostDto> result = paged;
+        var counts = paged.Count > 0
+            ? await _posts.GetChildrenCountsAsync(paged.Select(p => p.Id).ToList(), ct)
+            : new Dictionary<Guid, int>();
+
+        IReadOnlyList<PostDto> result = paged
+            .Select(p => PostDtoMapper.From(p, counts.TryGetValue(p.Id, out var c) ? c : 0))
+            .ToList();
+
         return Result<IReadOnlyList<PostDto>>.Ok(result);
     }
 }

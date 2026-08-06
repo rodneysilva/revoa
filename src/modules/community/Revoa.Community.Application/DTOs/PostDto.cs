@@ -14,11 +14,12 @@ public sealed record PostDto(
     int Depth,
     PostStatus Status,
     string? OcultadoPor,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int ChildrenCount);
 
 public static class PostDtoMapper
 {
-    public static PostDto From(Post p) => new(
+    public static PostDto From(Post p, int childrenCount = 0) => new(
         p.Id,
         p.ComunidadeId,
         p.AutorId,
@@ -30,5 +31,6 @@ public static class PostDtoMapper
         p.Depth,
         p.Status,
         p.OcultadoPor,
-        p.CreatedAt);
+        p.CreatedAt,
+        childrenCount);
 }

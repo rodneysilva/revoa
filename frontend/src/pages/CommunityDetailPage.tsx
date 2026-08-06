@@ -3,11 +3,12 @@ import { Link, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
+import { ListingCard } from "../components/ListingCard";
 import { LiveChat } from "../components/LiveChat";
 import { PostThread } from "../components/PostThread";
 import { timeAgo } from "../lib/time";
 import { EIXO_EMOJI, EIXO_LABEL, PAPEL_META, VISIBILIDADE_LABEL } from "../lib/community";
-import type { Community, Membership, Post } from "../api/types";
+import type { Community, FeedItem, Membership, Post } from "../api/types";
 
 export function CommunityDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,8 @@ export function CommunityDetailPage() {
   const [newPost, setNewPost] = useState("");
   const [posting, setPosting] = useState(false);
   const [replyingId, setReplyingId] = useState<string | null>(null);
+  const [memberListings, setMemberListings] = useState<FeedItem[] | null>(null);
+  const [listingsError, setListingsError] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -56,6 +59,35 @@ export function CommunityDetailPage() {
   const activeMembers = members.filter((m) => m.Status === "Ativa");
   const isMember = !!(user && activeMembers.some((m) => m.UsuarioId === user.userId));
   const isPrivate = community?.Visibilidade === "Private";
+
+  useEffect(() => {
+    const ids = Array.from(
+      new Set(activeMembers.map((m) => m.UsuarioId).filter(Boolean))
+    );
+    if (ids.length === 0) {
+      setMemberListings([]);
+      setListingsError(false);
+      return;
+    }
+    let active = true;
+    setMemberListings(null);
+    setListingsError(false);
+    api
+      .feed({ vendedorIds: ids.join(","), page: 1 })
+      .then((items) => {
+        if (active) setMemberListings(items);
+      })
+      .catch(() => {
+        if (active) {
+          setListingsError(true);
+          setMemberListings([]);
+        }
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members]);
 
   async function join() {
     if (!id) return;
@@ -337,6 +369,33 @@ export function CommunityDetailPage() {
           </div>
         </aside>
       </div>
+
+      {activeMembers.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-bold text-cream mb-3">Anúncios dos membros</h2>
+          {listingsError ? (
+            <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
+              Não foi possível carregar os anúncios agora. Tente novamente mais tarde.
+            </div>
+          ) : memberListings === null ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-smoke rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : memberListings.length === 0 ? (
+            <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
+              Nenhum anúncio ainda.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {memberListings.slice(0, 8).map((item) => (
+                <ListingCard key={item.Id} item={item} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       <section className="mt-8">
         <h2 className="text-lg font-bold text-cream mb-3">Conversa ao vivo</h2>

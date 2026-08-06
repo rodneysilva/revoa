@@ -189,6 +189,7 @@ export interface FeedParams {
   doarApenas?: boolean;
   sort?: string;
   q?: string;
+  vendedorIds?: string;
 }
 
 export interface TradesParams {
@@ -236,6 +237,7 @@ export interface Post {
   Status: string;
   OcultadoPor?: string;
   CreatedAt: string;
+  ChildrenCount?: number;
 }
 
 // Comentário de anúncio = mesmo shape do Post (+ ListingId). Reaproveita o <PostThread> no detalhe.

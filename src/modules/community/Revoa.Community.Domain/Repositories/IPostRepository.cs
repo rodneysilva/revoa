@@ -12,6 +12,10 @@ public interface IPostRepository
     // Feed recente (raiz + respostas), só Visivel, ordenado por CreatedAt desc.
     Task<IReadOnlyList<Post>> GetByComunidadeRecentAsync(Guid comunidadeId, int limit, CancellationToken ct);
 
+    // Conta respostas diretas (Status Visivel) de cada parentId informado (batch, anti-N+1).
+    Task<IReadOnlyDictionary<Guid, int>> GetChildrenCountsAsync(
+        IReadOnlyCollection<Guid> parentIds, CancellationToken ct);
+
     Task AddAsync(Post post, CancellationToken ct);
 
     Task UpdateAsync(Post post, CancellationToken ct);

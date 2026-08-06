@@ -48,7 +48,14 @@ function PostItem({
 
   const canReply = canPost && post.Depth < MAX_DEPTH;
   const submitting = loadingId === post.Id;
-  const showRepliesToggle = open || children === null || children.length > 0;
+  const childCount = post.ChildrenCount ?? 0;
+  const knownZero = post.ChildrenCount === 0;
+  const showRepliesToggle =
+    !knownZero || open || (children != null && children.length > 0);
+  const repliesLabel =
+    childCount > 0
+      ? `💬 ${childCount} resposta${childCount === 1 ? "" : "s"}`
+      : "Ver respostas";
 
   async function toggleChildren() {
     if (open) {
@@ -114,7 +121,7 @@ function PostItem({
                 onClick={toggleChildren}
                 className="text-silver hover:text-cream"
               >
-                {open ? "Ocultar respostas" : "Ver respostas"}
+                {open ? "Ocultar respostas" : repliesLabel}
               </button>
             )}
           </div>

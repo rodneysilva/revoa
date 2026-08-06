@@ -80,6 +80,11 @@ public class ListingsRepository : IListingRepository
             query &= fb.Regex(l => l.Titulo, rx) | fb.Regex(l => l.Descricao, rx);
         }
 
+        if (filter.VendedorIds is { Count: > 0 })
+        {
+            query &= fb.In(l => l.VendedorId, filter.VendedorIds);
+        }
+
         var sort = filter.Sort switch
         {
             "preco-asc" => Builders<Listing>.Sort.Ascending(l => l.PrecoRvm),

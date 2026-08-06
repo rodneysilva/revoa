@@ -62,7 +62,8 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
             page,
             PageSize,
             useRadius,
-            CandidateCap);
+            CandidateCap,
+            request.VendedorIds);
 
         var candidates = await _listings.GetFeedAsync(filter, ct);
 

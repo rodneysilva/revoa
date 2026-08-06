@@ -21,4 +21,5 @@ public sealed record GetFeedQuery(
     long? PrecoMax,
     bool? DoarApenas,
     string? Sort,
-    string? Q) : IRequest<Result<IReadOnlyList<FeedItemDto>>>;
+    string? Q,
+    IReadOnlyList<Guid>? VendedorIds) : IRequest<Result<IReadOnlyList<FeedItemDto>>>;

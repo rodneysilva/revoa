@@ -159,6 +159,7 @@ export const api = {
         doarApenas: p.doarApenas ? "true" : undefined,
         sort: p.sort,
         q: p.q,
+        vendedorIds: p.vendedorIds,
       })}`
     ),
   listing: (id: string): Promise<Listing> =>
