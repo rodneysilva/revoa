@@ -8,7 +8,7 @@ import { KIND_LABELS, MODO_META } from "../lib/config";
 import { brlEstimate } from "../lib/format";
 import { useBrlRate } from "../lib/useBrlRate";
 import { useAuth, type AuthUser } from "../auth/AuthContext";
-import type { Comment, HelpRequest, Listing, ReportReason, Review } from "../api/types";
+import type { Comment, HelpRequest, Listing, PriceReference, ReportReason, Review } from "../api/types";
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +23,7 @@ export function ListingDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentBox, setCommentBox] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [priceRef, setPriceRef] = useState<PriceReference | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -35,6 +36,12 @@ export function ListingDetailPage() {
         if (active) {
           setListing(d);
           setActiveImg(0);
+          // Comparativo: busca a referencia de preco da categoria do anuncio.
+          if (d.CategoriaId) {
+            api.pricingByCategory(d.CategoriaId)
+              .then((ref) => { if (active) setPriceRef(ref); })
+              .catch(() => { if (active) setPriceRef(null); });
+          }
         }
       })
       .catch((e) => {
@@ -168,6 +175,39 @@ export function ListingDetailPage() {
               {disclaimer ??
                 "O valor em R$ é apenas uma estimativa simbólica para trocas — o RVM é crédito de troca da comunidade, não moeda."}
             </p>
+          )}
+
+          {/* Comparativo de preço justo (Pricing UF-28) */}
+          {priceRef && !gratis && (
+            <div className="mt-4 bg-charcoal/60 rounded-xl border border-smoke p-4">
+              <h3 className="text-sm font-bold text-amber mb-2 flex items-center gap-1.5">
+                Comparativo de preço justo
+              </h3>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <div>
+                  <span className="text-silver">Este anúncio: </span>
+                  <span className="font-bold text-cream">RM$ {listing.PrecoRvm.toLocaleString("pt-BR")}</span>
+                </div>
+                <div>
+                  <span className="text-silver">Mediana da categoria: </span>
+                  <span className="font-bold text-cream">RM$ {priceRef.RvmMedian.toLocaleString("pt-BR")}</span>
+                </div>
+                <div>
+                  <span className="text-silver">Sugestão justa: </span>
+                  <span className="font-bold text-esmeralda">RM$ {priceRef.FairSuggestionRvm.toLocaleString("pt-BR")}</span>
+                </div>
+              </div>
+              <p className="text-xs text-silver/70 mt-2">
+                Referência de {priceRef.SampleCount} anúncio(s) da categoria · fontes: {priceRef.SourcesUsed}
+                {priceRef.LastIpcRate != null ? ` · IPCA ${priceRef.LastIpcRate}%` : ""}
+              </p>
+              {(() => {
+                const diff = listing.PrecoRvm - priceRef.RvmMedian;
+                if (diff < -2) return <p className="text-xs text-lima mt-1">Abaixo da mediana — ótima oferta!</p>;
+                if (diff > 2) return <p className="text-xs text-rosa mt-1">Acima da mediana da categoria.</p>;
+                return <p className="text-xs text-sky mt-1">Na faixa da mediana da categoria.</p>;
+              })()}
+            </div>
           )}
 
           <dl className="mt-6 space-y-2 text-sm">

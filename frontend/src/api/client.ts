@@ -321,6 +321,8 @@ export const api = {
     apiPost<{ updated: number }>(`/api/pricing/refresh`),
   brlRate: (): Promise<BrlRate> => apiGet<BrlRate>(`/api/pricing/rate`),
   pricing: (): Promise<PriceReference[]> => apiGet<PriceReference[]>(`/api/pricing`),
+  pricingByCategory: (categoriaId: string): Promise<PriceReference> =>
+    apiGet<PriceReference>(`/api/pricing/categories/${encodeURIComponent(categoriaId)}`),
   demurragePreview: (): Promise<DemurragePreview> =>
     apiPost<DemurragePreview>(`/api/demurrage/preview`),
   demurrageRun: (): Promise<DemurrageRun> => apiPost<DemurrageRun>(`/api/demurrage/run`),
