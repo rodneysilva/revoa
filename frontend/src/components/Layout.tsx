@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { isAdminEmail } from "../lib/admin";
+import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
   { to: "/feed", label: "Feed" },
@@ -111,6 +112,8 @@ export function Layout() {
                 </Link>
               </>
             )}
+
+            <ThemeToggle />
 
             <button
               type="button"

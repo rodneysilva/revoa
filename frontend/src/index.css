@@ -24,9 +24,19 @@
   --breakpoint-3xl: 120rem;
 }
 
-/* Light theme. */
+/* Light theme (padrão). */
 :root {
   color-scheme: light;
+}
+
+/* Dark theme — ativado via classe .dark no <html>. Padrão = prefers-color-scheme. */
+.dark {
+  --color-ink: #0a0a0a;
+  --color-charcoal: #171717;
+  --color-smoke: #262626;
+  --color-silver: #737373;
+  --color-cream: #fefae0;
+  color-scheme: dark;
 }
 
 html,
