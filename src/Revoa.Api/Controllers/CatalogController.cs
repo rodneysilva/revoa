@@ -103,14 +103,20 @@ public class CatalogController : ControllerBase
         [FromQuery] string? vendedorIds = null,
         CancellationToken ct = default)
     {
-        IReadOnlyList<Guid>? vendedorGuids = null;
-        if (!string.IsNullOrWhiteSpace(vendedorIds))
-        {
-            vendedorGuids = vendedorIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(Guid.Parse)
-                .ToList();
-        }
+            IReadOnlyList<Guid>? vendedorGuids = null;
+            if (!string.IsNullOrWhiteSpace(vendedorIds))
+            {
+                // Endpoint público/anônimo: parse defensivo (ignora tokens inválidos em vez de
+                // lançar FormatException → 500) + cap anti-abuso da cláusula $in do MongoDB.
+                vendedorGuids = vendedorIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(t => Guid.TryParse(t, out var g) ? g : (Guid?)null)
+                    .Where(g => g.HasValue)
+                    .Select(g => g!.Value)
+                    .Distinct()
+                    .Take(100)
+                    .ToList();
+            }
 
         var result = await _mediator.Send(
             new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page,
