@@ -69,6 +69,7 @@ export interface Listing {
   Visibilidade: Visibilidade;
   NftTokenId?: string;
   Status: string;
+  CreatedAt?: string;
   ProductDetails?: ProductDetails;
   ServiceDetails?: ServiceDetails;
 }
@@ -115,6 +116,18 @@ export interface Review {
   Rating: number;
   Comment?: string;
   CreatedAt: string;
+}
+
+// Score de reputação público (GET /api/users/{id}/reputation — UF-23).
+export interface Reputation {
+  UserId: string;
+  Points: number;
+  Level: string;
+  HelpPoints: number;
+  DonationsCount: number;
+  VolunteerCount: number;
+  ReviewsCount: number;
+  AvgRating: number;
 }
 
 export interface RegisterResult {

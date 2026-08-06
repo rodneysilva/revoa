@@ -36,6 +36,15 @@ const MODO_CARDS: {
     hover: "hover:border-esmeralda/60",
   },
   {
+    modo: "Repassar",
+    emoji: "💜",
+    title: "Repassar",
+    desc: "Repassa por um valor baixo em RVM, acessível para mais gente.",
+    accent: "text-rosa",
+    iconBg: "bg-rosa/15",
+    hover: "hover:border-rosa/60",
+  },
+  {
     modo: "Doar",
     emoji: "🎁",
     title: "Doar",
@@ -268,7 +277,7 @@ export function LandingPage() {
               Escolha um modo e veja o passo a passo — simples, para todas as idades.
             </p>
           </div>
-          <div className="grid gap-4 sm:gap-6 sm:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {MODO_CARDS.map((c) => (
               <button
                 key={c.modo}

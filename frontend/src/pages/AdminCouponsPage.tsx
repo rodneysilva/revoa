@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { isAdminEmail } from "../lib/admin";
 import type { Coupon } from "../api/types";
+
+const COUPON_PAGE_SIZE = 50;
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";
@@ -17,11 +21,15 @@ function formatDate(iso?: string): string {
 }
 
 export function AdminCouponsPage() {
+  const { user } = useAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Form de criação.
   const [amount, setAmount] = useState("");
@@ -37,6 +45,8 @@ export function AdminCouponsPage() {
     try {
       const data = await api.coupons(1);
       setCoupons(data);
+      setPage(1);
+      setHasMore(data.length >= COUPON_PAGE_SIZE);
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
         setForbidden(true);
@@ -48,9 +58,29 @@ export function AdminCouponsPage() {
     }
   }, []);
 
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const next = page + 1;
+    try {
+      const data = await api.coupons(next);
+      setCoupons((prev) => [...prev, ...data]);
+      setPage(next);
+      setHasMore(data.length >= COUPON_PAGE_SIZE);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Falha ao carregar mais cupons.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isAdminEmail(user?.email)) load();
+    else {
+      setLoading(false);
+      setForbidden(true);
+    }
+  }, [load, user?.email]);
 
   async function create(ev: React.FormEvent) {
     ev.preventDefault();
@@ -80,8 +110,7 @@ export function AdminCouponsPage() {
       setMaxUses("100");
       setExpiry("");
       setCode("");
-      const data = await api.coupons(1);
-      setCoupons(data);
+      await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Não foi possível criar o cupom.");
     } finally {
@@ -95,8 +124,7 @@ export function AdminCouponsPage() {
     setError(null);
     try {
       await api.revokeCoupon(id);
-      const data = await api.coupons(1);
-      setCoupons(data);
+      await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Não foi possível revogar o cupom.");
     } finally {
@@ -236,6 +264,18 @@ export function AdminCouponsPage() {
             );
           })}
         </ul>
+      )}
+      {!loading && hasMore && (
+        <div className="text-center mt-6">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="border border-smoke text-cream font-semibold px-6 py-2.5 rounded-xl hover:border-esmeralda disabled:opacity-60"
+          >
+            {loadingMore ? "Carregando…" : "Carregar mais"}
+          </button>
+        </div>
       )}
     </div>
   );

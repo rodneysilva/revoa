@@ -7,6 +7,8 @@ import { useAuth } from "../auth/AuthContext";
 
 type Filter = "Todos" | Kind;
 
+const PAGE_SIZE = 24;
+
 const FILTERS: Filter[] = ["Todos", "Product", "Service"];
 const FILTER_LABEL: Record<Filter, string> = {
   Todos: "Todos",
@@ -23,7 +25,6 @@ export function FeedPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("Todos");
   const [categoriaId, setCategoriaId] = useState<string>("");
-  const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
@@ -50,7 +51,7 @@ export function FeedPage() {
         if (!active) return;
         setItems(data);
         setPage(1);
-        setHasMore(data.length > 0);
+        setHasMore(data.length >= PAGE_SIZE);
       })
       .catch((e) => {
         if (active)
@@ -64,13 +65,10 @@ export function FeedPage() {
     };
   }, [filter, categoriaId]);
 
-  const q = query.trim().toLowerCase();
-  const visible = q
-    ? items.filter((it) => it.Titulo.toLowerCase().includes(q))
-    : items;
+  const visible = items;
 
   async function loadMore() {
-    if (loadingMore || !hasMore || q) return;
+    if (loadingMore || !hasMore) return;
     setLoadingMore(true);
     const next = page + 1;
     try {
@@ -81,7 +79,7 @@ export function FeedPage() {
       });
       setItems((prev) => [...prev, ...data]);
       setPage(next);
-      setHasMore(data.length > 0);
+      setHasMore(data.length >= PAGE_SIZE);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao carregar mais.");
     } finally {
@@ -98,7 +96,7 @@ export function FeedPage() {
             to="/explore"
             className="text-sm text-esmeralda hover:underline sm:ml-2"
           >
-            Explorar tudo com filtros →
+            Buscar com filtros →
           </Link>
           {user?.verified && (
             <Link
@@ -109,14 +107,6 @@ export function FeedPage() {
             </Link>
           )}
         </div>
-
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar por título…"
-          className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none"
-        />
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div
@@ -172,9 +162,9 @@ export function FeedPage() {
       ) : visible.length === 0 ? (
         <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
           <p className="text-silver">
-            {q ? "Nenhum resultado para a busca." : "Nenhum anúncio por aqui ainda."}
+            Nenhum anúncio por aqui ainda.
           </p>
-          {!q && user?.verified && (
+          {user?.verified && (
             <Link
               to="/listings/new"
               className="mt-4 inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
@@ -190,7 +180,7 @@ export function FeedPage() {
               <ListingCard key={it.Id} item={it} />
             ))}
           </div>
-          {!q && hasMore && (
+          {hasMore && (
             <div className="text-center mt-8">
               <button
                 onClick={loadMore}

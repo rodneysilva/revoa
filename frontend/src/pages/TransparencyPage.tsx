@@ -48,7 +48,7 @@ const TOKENOMIA: TokenomiaCard[] = [
   },
   {
     icon: "♻️",
-    title: "Demurrage — o dinheiro que circula",
+    title: "Demurrage — o crédito que circula",
     desc:
       "Saldos parados perdem 0,5% ao mês, mas só sobre o que excede R$100 equivalentes (piso de isenção). " +
       "Não é lucro para ninguém: o RVM queimado é retirado de circulação. Incentiva a usar, não a acumular.",

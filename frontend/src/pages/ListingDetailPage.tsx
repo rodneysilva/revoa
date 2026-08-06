@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { PostThread } from "../components/PostThread";
 import { KIND_LABELS, MODO_META } from "../lib/config";
 import { brlEstimate } from "../lib/format";
+import { timeAgo } from "../lib/time";
 import { useBrlRate } from "../lib/useBrlRate";
 import { useAuth, type AuthUser } from "../auth/AuthContext";
 import type { Comment, HelpRequest, Listing, PriceReference, ReportReason, Review } from "../api/types";
@@ -110,7 +111,7 @@ export function ListingDetailPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span aria-hidden>📦</span>
+              <span aria-hidden>{listing.Kind === "Service" ? "🛠️" : "📦"}</span>
             )}
           </div>
           {images.length > 1 && (
@@ -137,7 +138,7 @@ export function ListingDetailPage() {
             <Badge modo={listing.Modo} size="md" />
             <span className="text-sm text-silver">{KIND_LABELS[listing.Kind]}</span>
             {listing.NftTokenId && (
-              <span className="text-xs text-silver border border-smoke rounded-full px-2 py-0.5">
+              <span className="text-xs text-silver/50">
                 NFT #{listing.NftTokenId}
               </span>
             )}
@@ -156,7 +157,7 @@ export function ListingDetailPage() {
             </div>
             {gratis ? (
               isDonationMode && (
-                <p className="mt-1 text-sm text-lima/80">Doação — grátis</p>
+                <p className="mt-1 text-sm text-silver/80">🎁 Doação</p>
               )
             ) : (
               brl && (
@@ -252,15 +253,11 @@ export function ListingDetailPage() {
 
           {/* Vendedor */}
           <div className="mt-6 flex items-center gap-3 bg-smoke rounded-xl p-3">
-            {listing.VendedorAvatarUrl ? (
-              <img
-                src={listing.VendedorAvatarUrl}
-                alt=""
-                className="w-10 h-10 rounded-full"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-charcoal border border-smoke" />
-            )}
+            <Avatar
+              name={listing.VendedorNome}
+              src={listing.VendedorAvatarUrl}
+              size={40}
+            />
             <div>
               <div className="text-cream font-medium">{listing.VendedorNome}</div>
               <div className="text-xs text-silver">
@@ -339,18 +336,6 @@ export function ListingDetailPage() {
   );
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  if (!Number.isFinite(diff) || diff < 0) return "agora";
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `${h} h`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? "1 dia" : `${d} dias`;
-}
-
 function VerifyHint({ action }: { action: string }) {
   return (
     <div className="bg-charcoal border border-smoke rounded-xl p-4 text-sm text-silver text-center">
@@ -378,7 +363,7 @@ function SellerReviews({ vendedorId }: { vendedorId: string }) {
     let active = true;
     setLoading(true);
     api
-      .userReviews(vendedorId, 5)
+      .userReviews(vendedorId, 20)
       .then((r) => {
         if (active) setReviews(r);
       })

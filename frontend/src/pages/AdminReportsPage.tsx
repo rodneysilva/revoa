@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
+import { isAdminEmail } from "../lib/admin";
 import type { Report, ReportStatus } from "../api/types";
+
+const REPORT_PAGE_SIZE = 50;
 
 const REASON_LABEL: Record<string, string> = {
   Spam: "Spam",
@@ -36,6 +40,7 @@ function timeAgo(iso: string): string {
 }
 
 export function AdminReportsPage() {
+  const { user } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +48,9 @@ export function AdminReportsPage() {
   const [filter, setFilter] = useState<ReportStatus | "">("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +59,8 @@ export function AdminReportsPage() {
     try {
       const data = await api.reports(filter || undefined, 1);
       setReports(data);
+      setPage(1);
+      setHasMore(data.length >= REPORT_PAGE_SIZE);
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
         setForbidden(true);
@@ -62,17 +72,36 @@ export function AdminReportsPage() {
     }
   }, [filter]);
 
+  async function loadMore() {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const next = page + 1;
+    try {
+      const data = await api.reports(filter || undefined, next);
+      setReports((prev) => [...prev, ...data]);
+      setPage(next);
+      setHasMore(data.length >= REPORT_PAGE_SIZE);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Falha ao carregar mais denúncias.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   useEffect(() => {
-    load();
-  }, [load]);
+    if (isAdminEmail(user?.email)) load();
+    else {
+      setLoading(false);
+      setForbidden(true);
+    }
+  }, [load, user?.email]);
 
   async function resolve(id: string, action: "Dismissed" | "Warned" | "Banned") {
     setBusy(`${id}:${action}`);
     setError(null);
     try {
       await api.resolveReport(id, action, notes[id]?.trim() || undefined);
-      const data = await api.reports(filter || undefined, 1);
-      setReports(data);
+      await load();
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Não foi possível resolver a denúncia.");
     } finally {
@@ -236,6 +265,18 @@ export function AdminReportsPage() {
             );
           })}
         </ul>
+      )}
+      {!loading && hasMore && (
+        <div className="text-center mt-6">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="border border-smoke text-cream font-semibold px-6 py-2.5 rounded-xl hover:border-esmeralda disabled:opacity-60"
+          >
+            {loadingMore ? "Carregando…" : "Carregar mais"}
+          </button>
+        </div>
       )}
     </div>
   );

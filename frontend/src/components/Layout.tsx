@@ -61,6 +61,21 @@ export function Layout() {
           <div className="ml-auto flex items-center gap-3">
             {user ? (
               <>
+                <Link
+                  to="/wallet"
+                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
+                  title="Carteira"
+                >
+                  💰 Carteira
+                </Link>
+                <Link
+                  to="/notifications"
+                  className="hidden sm:inline-flex items-center justify-center text-lg leading-none text-silver hover:text-cream"
+                  title="Notificações"
+                  aria-label="Notificações"
+                >
+                  🔔
+                </Link>
                 {user.verified && (
                   <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-esmeralda bg-esmeralda/10 px-2 py-1 rounded-full">
                     ✓ Verificado
@@ -157,6 +172,18 @@ export function Layout() {
                     className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
                   >
                     Perfil
+                  </Link>
+                  <Link
+                    to="/wallet"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    💰 Carteira
+                  </Link>
+                  <Link
+                    to="/notifications"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    🔔 Notificações
                   </Link>
                   <Link
                     to="/trades"

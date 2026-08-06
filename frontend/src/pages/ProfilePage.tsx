@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError, api } from "../api/client";
+import { Avatar } from "../components/Avatar";
+import type { Reputation, Review } from "../api/types";
 import type { ReactNode } from "react";
 
 export function ProfilePage() {
@@ -10,6 +12,31 @@ export function ProfilePage() {
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponMsg, setCouponMsg] = useState<string | null>(null);
   const [couponErr, setCouponErr] = useState<string | null>(null);
+
+  const [reputation, setReputation] = useState<Reputation | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [repLoading, setRepLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    setRepLoading(true);
+    Promise.all([
+      api.reputation(user.userId).catch(() => null),
+      api.userReviews(user.userId).catch(() => [] as Review[]),
+    ])
+      .then(([rep, revs]) => {
+        if (!active) return;
+        setReputation(rep);
+        setReviews(revs);
+      })
+      .finally(() => {
+        if (active) setRepLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   if (!user)
     return (
@@ -45,7 +72,10 @@ export function ProfilePage() {
   return (
     <div className="app-container">
       <div className="app-read">
-      <h1 className="text-2xl font-bold text-cream mb-6">Perfil</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Avatar name={user.nome || "?"} size={56} />
+        <h1 className="text-2xl font-bold text-cream">Perfil</h1>
+      </div>
       <div className="bg-charcoal rounded-2xl border border-smoke p-6 space-y-3">
         <Row label="Nome" value={user.nome || "—"} />
         <Row label="E-mail" value={user.email || "—"} />
@@ -64,6 +94,12 @@ export function ProfilePage() {
           value={<span className="text-silver">Em breve</span>}
         />
       </div>
+
+      <ReputationSummary
+        reputation={reputation}
+        reviews={reviews}
+        loading={repLoading}
+      />
 
       {/* Resgatar cupom (UF-29) — exige conta verificada (gate Verified no backend). */}
       {user.verified && (
@@ -120,6 +156,81 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
     <div className="flex items-center justify-between gap-4 border-b border-smoke pb-2 last:border-0">
       <span className="text-sm text-silver">{label}</span>
       <span className="text-cream text-right truncate">{value}</span>
+    </div>
+  );
+}
+
+function Stars({ n }: { n: number }) {
+  const v = Math.max(0, Math.min(5, n));
+  return (
+    <span className="text-amber text-sm tracking-tight" aria-label={`${v} de 5 estrelas`}>
+      {"★".repeat(v)}
+      <span className="text-smoke">{"★".repeat(5 - v)}</span>
+    </span>
+  );
+}
+
+function ReputationSummary({
+  reputation,
+  reviews,
+  loading,
+}: {
+  reputation: Reputation | null;
+  reviews: Review[];
+  loading: boolean;
+}) {
+  if (loading) return null;
+
+  const hasRep = reputation != null;
+  const reviewsAvg =
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.Rating, 0) / reviews.length
+      : hasRep
+      ? reputation!.AvgRating
+      : 0;
+  const reviewsCount = hasRep ? reputation!.ReviewsCount : reviews.length;
+
+  if (!hasRep && reviews.length === 0) {
+    return (
+      <p className="mt-4 text-sm text-silver/80">
+        Reputação e reconhecimento em breve — surgem conforme você troca, doa e ajuda.
+      </p>
+    );
+  }
+
+  return (
+    <div className="bg-charcoal rounded-2xl border border-smoke p-5 mt-6">
+      <h2 className="text-cream font-semibold mb-3">Reputação</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        {hasRep && (
+          <div>
+            <div className="text-xs text-silver">Nível</div>
+            <div className="text-esmeralda font-bold">{reputation!.Level}</div>
+            <div className="text-xs text-silver/70">{reputation!.Points} pts</div>
+          </div>
+        )}
+        <div>
+          <div className="text-xs text-silver">Avaliações</div>
+          <div className="flex items-center gap-1">
+            <Stars n={Math.round(reviewsAvg)} />
+          </div>
+          <div className="text-xs text-silver/70">
+            {reviewsCount > 0 ? `${reviewsCount} avaliaç${reviewsCount === 1 ? "ão" : "ões"}` : "—"}
+          </div>
+        </div>
+        {hasRep && (
+          <div>
+            <div className="text-xs text-silver">Doações</div>
+            <div className="text-terracota font-bold">{reputation!.DonationsCount}</div>
+          </div>
+        )}
+        {hasRep && reputation!.VolunteerCount > 0 && (
+          <div>
+            <div className="text-xs text-silver">Voluntariado</div>
+            <div className="text-lima font-bold">{reputation!.VolunteerCount}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

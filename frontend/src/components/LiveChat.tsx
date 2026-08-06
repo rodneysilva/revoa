@@ -29,6 +29,7 @@ export function LiveChat({
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!isMember) return;
     let active = true;
     const conn = buildCommunityHub(comunidadeId, getToken());
     connRef.current = conn;
@@ -64,7 +65,7 @@ export function LiveChat({
       conn.stop().catch(() => {});
       connRef.current = null;
     };
-  }, [comunidadeId]);
+  }, [comunidadeId, isMember]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,14 +100,18 @@ export function LiveChat({
   return (
     <div className="flex flex-col h-[26rem] bg-charcoal border border-smoke rounded-xl overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-smoke">
-        <span
-          className={`w-2 h-2 rounded-full ${dotCls} ${
-            state !== "online" && state !== "error" ? "animate-pulse" : ""
-          }`}
-        />
-        <span className="text-sm text-silver">{stateLabel}</span>
-        <span className="ml-auto text-xs text-silver">
-          {messages.length} nesta sessão
+        {isMember && (
+          <>
+            <span
+              className={`w-2 h-2 rounded-full ${dotCls} ${
+                state !== "online" && state !== "error" ? "animate-pulse" : ""
+              }`}
+            />
+            <span className="text-sm text-silver">{stateLabel}</span>
+          </>
+        )}
+        <span className={`text-sm text-cream font-semibold ${isMember ? "ml-auto text-xs text-silver font-normal" : ""}`}>
+          {isMember ? `${messages.length} nesta sessão` : "Conversa da comunidade"}
         </span>
       </div>
 

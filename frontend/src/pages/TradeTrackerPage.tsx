@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
 import { Badge } from "../components/Badge";
 import { KIND_LABELS } from "../lib/config";
+import { timeAgo } from "../lib/time";
 import type { Trade, TradeState } from "../api/types";
 
 const HAPPY: TradeState[] = ["Ofertada", "Financiada", "Liberada"];
@@ -247,6 +248,13 @@ function TradeCard({
         <Stepper trade={trade} />
       </div>
 
+      {(trade.FundedAt || trade.ReleasedAt) && (
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-silver/70">
+          {trade.FundedAt && <span>Financiada {timeAgo(trade.FundedAt)}</span>}
+          {trade.ReleasedAt && <span>Liberada {timeAgo(trade.ReleasedAt)}</span>}
+        </div>
+      )}
+
       {trade.State === "Liberada" && (
         <ReviewBox trade={trade} counterNome={counterNome} />
       )}
@@ -463,7 +471,7 @@ export function TradeTrackerPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
           {trades.map((t) => (
             <TradeCard
               key={t.Id}

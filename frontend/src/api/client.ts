@@ -24,6 +24,7 @@ import type {
   PriceReference,
   RegisterBody,
   RegisterResult,
+  Reputation,
   Report,
   ReportReason,
   ReportStatus,
@@ -219,6 +220,8 @@ export const api = {
     apiGet<Review[]>(
       `/api/users/${encodeURIComponent(userId)}/reviews${qs({ limit })}`
     ),
+  reputation: (userId: string): Promise<Reputation> =>
+    apiGet<Reputation>(`/api/users/${encodeURIComponent(userId)}/reputation`),
   register: (body: RegisterBody): Promise<RegisterResult> =>
     apiPost<RegisterResult>(`/api/auth/register`, body),
   verifyEmail: (uid: string, token: string): Promise<void> =>
