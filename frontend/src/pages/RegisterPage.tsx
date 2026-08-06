@@ -119,14 +119,18 @@ export function RegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.login(email.trim());
-      login(res.Token);
-      navigate("/");
+      if (import.meta.env.DEV) {
+        const res = await api.login(email.trim());
+        login(res.Token);
+        navigate("/");
+      } else {
+        navigate("/login", { state: { email: email.trim() } });
+      }
     } catch (e) {
       setError(
         e instanceof ApiError
           ? e.message
-          : "Verificação concluída, mas falha no login. Tente a tela de Entrar."
+          : "Verificação concluída. Use a tela de Entrar para acessar."
       );
     } finally {
       setLoading(false);

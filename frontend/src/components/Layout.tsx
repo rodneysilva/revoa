@@ -17,7 +17,7 @@ function navClass(active: boolean): string {
 }
 
 export function Layout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const admin = isAdminEmail(user?.email);
@@ -148,6 +148,29 @@ export function Layout() {
                   >
                     Cadastrar
                   </Link>
+                </div>
+              )}
+              {user && (
+                <div className="mt-1 pt-2 border-t border-smoke flex flex-col gap-1">
+                  <Link
+                    to="/profile"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    Perfil
+                  </Link>
+                  <Link
+                    to="/trades"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    Minhas trocas
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => { logout(); setOpen(false); }}
+                    className="px-3 py-2.5 rounded-lg text-sm text-left text-rosa hover:text-cream"
+                  >
+                    Sair
+                  </button>
                 </div>
               )}
             </div>

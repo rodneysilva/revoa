@@ -38,13 +38,14 @@ export default function App() {
           <Route path="/admin/reports" element={<AdminReportsPage />} />
           <Route path="/admin/coupons" element={<AdminCouponsPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
-          {/* Ações exigem login + verificação */}
+          {/* Páginas que exigem login */}
           <Route element={<ProtectedRoute />}>
             <Route path="/listings/new" element={<CreateListingPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/trades" element={<TradeTrackerPage />} />
           </Route>
-          <Route path="/wallet" element={<WalletPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/transparency" element={<TransparencyPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
