@@ -145,26 +145,30 @@ function CommunityCard({ c }: { c: Community }) {
   return (
     <Link
       to={`/community/${c.Id}`}
-      className="group block bg-charcoal rounded-xl border border-smoke overflow-hidden hover:border-amber/60 transition"
+      className="group block bg-charcoal rounded-2xl border border-smoke overflow-hidden hover:border-amber/60 hover:shadow-lg transition"
     >
-      <div className="bg-community h-2" aria-hidden />
-      <div className="p-4">
-        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber/15 text-amber">
-            {EIXO_EMOJI[c.Eixo]} {EIXO_LABEL[c.Eixo]}
-          </span>
+      <div className="bg-community relative h-16 flex items-center px-4">
+        <span className="text-2xl drop-shadow" aria-hidden>
+          {EIXO_EMOJI[c.Eixo]}
+        </span>
+        <div className="ml-auto flex items-center gap-1.5">
           {c.Tipo === "Default" && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-esmeralda/15 text-esmeralda">
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm text-white">
               Oficial
             </span>
           )}
           {c.Visibilidade === "Private" && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-smoke text-silver">
-              🔒 {VISIBILIDADE_LABEL[c.Visibilidade]}
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white">
+              🔒
             </span>
           )}
         </div>
-        <h3 className="font-semibold text-cream group-hover:text-amber line-clamp-1">
+      </div>
+      <div className="p-4">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber/15 text-amber">
+          {EIXO_LABEL[c.Eixo]}
+        </span>
+        <h3 className="mt-2 font-semibold text-cream group-hover:text-amber line-clamp-1">
           {c.Nome}
         </h3>
         <p className="mt-1 text-sm text-silver line-clamp-2 min-h-[2.5rem]">

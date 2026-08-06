@@ -100,11 +100,21 @@ public class CatalogController : ControllerBase
         [FromQuery] bool? doarApenas = null,
         [FromQuery] string? sort = null,
         [FromQuery] string? q = null,
+        [FromQuery] string? vendedorIds = null,
         CancellationToken ct = default)
     {
+        IReadOnlyList<Guid>? vendedorGuids = null;
+        if (!string.IsNullOrWhiteSpace(vendedorIds))
+        {
+            vendedorGuids = vendedorIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(Guid.Parse)
+                .ToList();
+        }
+
         var result = await _mediator.Send(
             new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page,
-                modo, precoMin, precoMax, doarApenas, sort, q),
+                modo, precoMin, precoMax, doarApenas, sort, q, vendedorGuids),
             ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
