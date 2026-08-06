@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 /* Design tokens da identidade visual (docs/VISUAL_IDENTITY.md §4-5).
-   Tailwind v4 gera utilitários a partir de @theme: bg-esmeralda, text-sky, etc. */
+   Tailwind v4 gera utilitários a partir de @theme: bg-esmeralda, text-sky, etc.
+   Neutros mapeados para TEMA LIGHT (bg claro, texto escuro). */
 @theme {
   --color-esmeralda: #10b981;
   --color-sky: #0ea5e9;
@@ -10,20 +11,22 @@
   --color-lima: #84cc16;
   --color-rosa: #ec4899;
   --color-roxo: #a855f7;
-  --color-ink: #0a0a0a;
-  --color-charcoal: #171717;
-  --color-smoke: #262626;
-  --color-silver: #737373;
-  --color-cream: #fefae0;
+
+  /* Neutros LIGHT: nomes mantidos p/ compatibilidade, valores invertidos */
+  --color-ink: #f8f9fa;      /* page bg: branco quente (era #0a0a0a) */
+  --color-charcoal: #ffffff; /* card bg: branco puro (era #171717) */
+  --color-smoke: #e5e7eb;    /* borders/inputs: cinza claro (era #262626) */
+  --color-silver: #6b7280;   /* texto secundário: cinza médio (era #737373) */
+  --color-cream: #171717;    /* texto principal: quase preto (era #fefae0) */
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --breakpoint-3xl: 120rem;
 }
 
-/* Dark-first (neutros do VISUAL_IDENTITY). */
+/* Light theme. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 html,
