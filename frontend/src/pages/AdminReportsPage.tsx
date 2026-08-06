@@ -163,7 +163,18 @@ export function AdminReportsPage() {
                   <span className="text-cream/80">{r.ReporterNome}</span> denunciou
                   {" "}
                   <span className="text-silver/70">
-                    {TARGET_LABEL[r.TargetType]?.toLowerCase()} #{r.TargetId.slice(0, 8)}
+                    {r.TargetType === "Listing" ? (
+                      <Link
+                        to={`/listings/${r.TargetId}`}
+                        className="text-esmeralda hover:underline"
+                      >
+                        {TARGET_LABEL[r.TargetType]?.toLowerCase()} #{r.TargetId.slice(0, 8)}
+                      </Link>
+                    ) : (
+                      <>
+                        {TARGET_LABEL[r.TargetType]?.toLowerCase()} #{r.TargetId.slice(0, 8)}
+                      </>
+                    )}
                   </span>
                 </div>
 

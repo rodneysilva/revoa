@@ -60,8 +60,8 @@ export function ProfilePage() {
           }
         />
         <Row
-          label="Saldo"
-          value={<span className="rms text-cream">RM$ —</span>}
+          label="Carteira"
+          value={<span className="text-silver">Em breve</span>}
         />
       </div>
 

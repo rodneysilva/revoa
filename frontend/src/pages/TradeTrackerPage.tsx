@@ -315,38 +315,40 @@ function TradeCard({
           <p className="text-xs text-silver mb-2">
             Aguardando resolução da equipe.
           </p>
-          <div className="border border-dashed border-smoke rounded-lg p-2">
-            <div className="text-[10px] uppercase tracking-wide text-amber mb-1">
-              DEV · modo árbitro
+          {import.meta.env.DEV && (
+            <div className="border border-dashed border-smoke rounded-lg p-2">
+              <div className="text-[10px] uppercase tracking-wide text-amber mb-1">
+                DEV · modo árbitro
+              </div>
+              <label className="flex items-center gap-2 text-xs text-cream mb-2">
+                <input
+                  type="checkbox"
+                  checked={releaseToSeller}
+                  onChange={(e) => setReleaseToSeller(e.target.checked)}
+                />
+                Liberar para o vendedor
+              </label>
+              <button
+                type="button"
+                disabled={!!busy}
+                onClick={() =>
+                  run(
+                    "resolve",
+                    "Resolver",
+                    () => api.resolveTrade(trade.Id, releaseToSeller),
+                    `Resolver a favor do ${
+                      releaseToSeller ? "vendedor" : "comprador"
+                    }?`
+                  )
+                }
+                className={BTN_WARN}
+              >
+                {busy === "resolve"
+                  ? "…"
+                  : "Resolver como árbitro (dev)"}
+              </button>
             </div>
-            <label className="flex items-center gap-2 text-xs text-cream mb-2">
-              <input
-                type="checkbox"
-                checked={releaseToSeller}
-                onChange={(e) => setReleaseToSeller(e.target.checked)}
-              />
-              Liberar para o vendedor
-            </label>
-            <button
-              type="button"
-              disabled={!!busy}
-              onClick={() =>
-                run(
-                  "resolve",
-                  "Resolver",
-                  () => api.resolveTrade(trade.Id, releaseToSeller),
-                  `Resolver a favor do ${
-                    releaseToSeller ? "vendedor" : "comprador"
-                  }?`
-                )
-              }
-              className={BTN_WARN}
-            >
-              {busy === "resolve"
-                ? "…"
-                : "Resolver como árbitro (dev)"}
-            </button>
-          </div>
+          )}
         </div>
       )}
 

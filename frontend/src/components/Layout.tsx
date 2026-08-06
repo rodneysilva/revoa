@@ -198,9 +198,11 @@ export function Layout() {
             <Link to="/transparency" className="hover:text-cream">
               Transparência
             </Link>
-            <Link to="/login" className="hover:text-cream">
-              Entrar
-            </Link>
+            {!user && (
+              <Link to="/login" className="hover:text-cream">
+                Entrar
+              </Link>
+            )}
             <span className="hidden sm:inline">
               RM$ = crédito de troca, não cripto
             </span>

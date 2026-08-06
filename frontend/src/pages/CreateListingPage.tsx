@@ -13,7 +13,7 @@ import type {
 
 const KINDS: Kind[] = ["Product", "Service"];
 const ALL_MODOS: Modo[] = ["Trocar", "Repassar", "Doar", "Voluntariar"];
-const VISIBILIDADES: Visibilidade[] = ["Global", "Comunidade", "Ambos"];
+const VISIBILIDADES: Visibilidade[] = ["Global"];
 
 const inputCls =
   "mt-1 w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none";
@@ -35,9 +35,9 @@ export function CreateListingPage() {
   const [imagens, setImagens] = useState<string[]>([]);
   const [imgInput, setImgInput] = useState("");
   const [preco, setPreco] = useState("0");
-  const [condition, setCondition] = useState("seminovo");
+  const [condition, setCondition] = useState("Seminovo");
   const [stock, setStock] = useState("1");
-  const [unitType, setUnitType] = useState("per-service");
+  const [unitType, setUnitType] = useState("PerService");
   const [duration, setDuration] = useState("");
   const [voucherDays, setVoucherDays] = useState("30");
   const [cep, setCep] = useState("");
@@ -283,9 +283,9 @@ export function CreateListingPage() {
                 onChange={(e) => setCondition(e.target.value)}
                 className={inputCls}
               >
-                <option value="novo">Novo</option>
-                <option value="seminovo">Seminovo</option>
-                <option value="usado">Usado</option>
+                <option value="Novo">Novo</option>
+                <option value="Seminovo">Seminovo</option>
+                <option value="Usado">Usado</option>
               </select>
             </label>
             <label className={labelCls}>
@@ -308,8 +308,8 @@ export function CreateListingPage() {
                 onChange={(e) => setUnitType(e.target.value)}
                 className={inputCls}
               >
-                <option value="per-service">Por serviço</option>
-                <option value="hours">Por hora</option>
+                <option value="PerService">Por serviço</option>
+                <option value="Hours">Por hora</option>
               </select>
             </label>
             <label className={labelCls}>
