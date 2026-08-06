@@ -1,7 +1,8 @@
 // Tempo relativo em pt-BR: "há 5 min", "há 2 h", "ontem", data.
-export function timeAgo(date: string | Date): string {
+export function timeAgo(date: string | Date | undefined | null): string {
+  if (!date) return "agora";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (isNaN(d.getTime())) return "";
+  if (!d || isNaN(d.getTime())) return "agora";
   const diff = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
   if (diff < 60) return "há poucos segundos";
   const min = Math.floor(diff / 60);

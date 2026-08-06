@@ -76,7 +76,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = null; // PascalCase (bate com os tipos do FE)
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // enums como string legível ("Ativo","Product")
     });
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddJsonProtocol(options => options.PayloadSerializerOptions.PropertyNamingPolicy = null);
 builder.Services.AddOpenApi();
 
 // Event bus de integração in-process (MVP)

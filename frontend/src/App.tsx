@@ -19,6 +19,7 @@ import { WalletPage } from "./pages/WalletPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { TransparencyPage } from "./pages/TransparencyPage";
+import { TermsPage } from "./pages/TermsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/trades" element={<TradeTrackerPage />} />
           </Route>
           <Route path="/transparency" element={<TransparencyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

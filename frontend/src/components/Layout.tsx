@@ -198,6 +198,9 @@ export function Layout() {
             <Link to="/transparency" className="hover:text-cream">
               Transparência
             </Link>
+            <Link to="/terms" className="hover:text-cream">
+              Termos de Uso
+            </Link>
             {!user && (
               <Link to="/login" className="hover:text-cream">
                 Entrar
