@@ -87,6 +87,11 @@
   O container `app` **DEVE** se chamar `revoa-app` e escutar em `0.0.0.0:8000`.
 - **Cutover (Fase 4):** parar/remover container Python do trocadeira (atual `revoa-app`) → o .NET assume `revoa.me`/`www.revoa.me` automaticamente. `revoa.org` já redireciona. **Sem mudança de DNS** (Cloudflare → túnel → Traefik → labels/file).
 - **Regras NUNCA violar:** sem portas no host; sem docker socket; DB/chain SÓ na rede `internal`; públicos (app/frontend/minio) na `traefik_net` (external); `/health` obrigatório; confiar em `X-Forwarded-*`.
+- **Acesso ao `dev.revoa.org` (PÚBLICO):** o WAF Cloudflare de IP-allowlist está **DESATIVADO** (regra `a51743736c0244c1be07c742010ba6a8` na zona `revoa.org`, phase `http_request_firewall_custom`). Qualquer IP acessa; a **própria app protege as ações** (login + verificação e-mail/telefone) — modelo "aberto p/ navegar, fechado p/ agir". Múltiplas pessoas acessam sem cadastro de IP.
+  - **Reativar bloqueio por IP (se necessário):** `PUT /zones/f49fd96f1495cd0b1ef89918c63fef05/rulesets/phases/http_request_firewall_custom/entrypoint` com `enabled:true` no body. Última allowlist: IPv4 `177.197.0.0/16` (ISP Vivo) + IPv6 `/64` (`2804:1b3:aa42:a045::/64`, `2804:1b3:aa43:3d99::/64`). IPs rotacionam (ISP), então o `/16` reduz — mas não elimina — a recorrência.
+  - **Credenciais Cloudflare:** `infra/.env` (`CF_API_EMAIL` + `CF_API_KEY` = Global API Key, acesso total). O `CLOUDFLARE_API_TOKEN` (`cfut_...`) é **só de túnel** — NÃO tem permissão de WAF (403).
+- **Zero Trust (Cloudflare Access) NÃO provisionado** — a API retorna `access.api.error.not_enabled`; exige 1 clique manual no dashboard ("Enable Access" + escolher team domain). É o caminho recomendado para acesso de múltiplas pessoas sem depender de IP (OTP por e-mail ou Google). Após provisionar, automatiza-se via API (IdP + app + policy).
+- **`revoa.org` (blog/apex) com erro 530** conhecido: o Cloudflare não alcança a origin do blog (container/blog não está rodando). Não é bloqueio WAF. `dev.revoa.org` (app) funciona.
 
 ### Subir ambientes
 ```powershell
@@ -163,4 +168,4 @@ docker compose --profile chain up -d
 
 ---
 
-*Última atualização: Fase 0 (03/08/2026).*
+*Última atualização: 07/08/2026 (dev.revoa.org público via login da app; WAF IP-allowlist desativado; redesign OOUX da comunidade).*
