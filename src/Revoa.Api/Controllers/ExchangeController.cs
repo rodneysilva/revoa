@@ -106,9 +106,10 @@ public class ExchangeController : ControllerBase
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
-    // Árbitro/admin resolve disputa. TODO: gatear por role ARBITRATOR. MVP: Policy Verified.
+    // Árbitro/admin resolve disputa (move fundos do escrow). Gate Admin (interino) até a policy
+    // dedicada ARBITRATOR — claim role no JWT — substituir o allowlist por e-mail.
     [HttpPost("{id:guid}/resolve")]
-    [Authorize(Policy = "Verified")]
+    [Authorize(Policy = "Admin")]
     public async Task<ActionResult> Resolve(Guid id, [FromBody] ResolveRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new ResolveDisputeCommand(id, request.ReleaseToSeller), ct);
