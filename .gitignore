@@ -87,3 +87,6 @@ Desktop.ini
 # ── Ollama / modelos ────────────────────────────────────────────
 ollama-models/
 *.gguf
+
+# Snapshots efêmeros do plugin Playwright MCP
+.playwright-mcp/
