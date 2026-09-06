@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Moderation.Application.Commands;
 using Revoa.Moderation.Application.DTOs;
 using Revoa.Moderation.Application.Queries;
@@ -30,26 +31,26 @@ public class ModerationController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         if (!Enum.TryParse<ReportTarget>(request.TargetType, ignoreCase: true, out var targetType)
             || !Enum.TryParse<ReportReason>(request.Reason, ignoreCase: true, out var reason))
         {
-            return BadRequest(new { error = "Tipo de alvo ou motivo de denúncia inválido." });
+            return BadRequest(new ApiError("Tipo de alvo ou motivo de denúncia inválido."));
         }
 
         if (!Guid.TryParse(request.TargetId, out var targetId) || targetId == Guid.Empty)
         {
-            return BadRequest(new { error = "Alvo da denúncia inválido." });
+            return BadRequest(new ApiError("Alvo da denúncia inválido."));
         }
 
         var result = await _mediator.Send(
             new CreateReportCommand(user.UserId, user.Nome, targetType, targetId, reason, request.Details), ct);
 
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
-            : Ok(new { id = result.Value });
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(new ResourceId(result.Value));
     }
 
     // Lista denúncias para o painel admin (filtrável por status). Gate Admin.
@@ -66,7 +67,7 @@ public class ModerationController : ControllerBase
         }
 
         var result = await _mediator.Send(new GetReportsQuery(statusFilter, page), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Resolve denúncia (arquivar/avisar/banir). Gate Admin. resolvedBy = e-mail do admin (claim email).
@@ -77,7 +78,7 @@ public class ModerationController : ControllerBase
     {
         if (!Enum.TryParse<ResolutionAction>(request.Action, ignoreCase: true, out var action))
         {
-            return BadRequest(new { error = "Ação de resolução inválida." });
+            return BadRequest(new ApiError("Ação de resolução inválida."));
         }
 
         var resolvedBy = User.FindFirst("email")?.Value
@@ -87,7 +88,7 @@ public class ModerationController : ControllerBase
         var result = await _mediator.Send(
             new ResolveReportCommand(resolvedBy, id, action, request.Note), ct);
 
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok();
     }
 }
 

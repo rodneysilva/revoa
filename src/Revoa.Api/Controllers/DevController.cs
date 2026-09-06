@@ -107,19 +107,19 @@ public class DevController : ControllerBase
 
         return Ok(new
         {
-            categorias = categoriasCriadas,
-            removidos,
-            usuarios,
-            carteiras,
-            produtos,
-            servicos,
-            listings = produtos + servicos,
-            comunidades,
-            memberships,
-            posts,
-            reviews,
-            reputacoes,
-            erros
+            Categorias = categoriasCriadas,
+            Removidos = removidos,
+            Usuarios = usuarios,
+            Carteiras = carteiras,
+            Produtos = produtos,
+            Servicos = servicos,
+            Listings = produtos + servicos,
+            Comunidades = comunidades,
+            Memberships = memberships,
+            Posts = posts,
+            Reviews = reviews,
+            Reputacoes = reputacoes,
+            Erros = erros
         });
     }
 

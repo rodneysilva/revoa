@@ -367,21 +367,21 @@ export interface DemurrageRun {
   Preview: boolean;
 }
 
-// Admin — seed do catálogo demo.
+// Admin — seed do catálogo demo (POST /api/dev/seed-catalog, PascalCase).
 
 export interface SeedCatalogResult {
-  categorias: number;
-  produtos: number;
-  servicos: number;
-  total: number;
-  erros: number;
+  Categorias: number;
+  Produtos: number;
+  Servicos: number;
+  Listings: number;
+  Erros: number;
 }
 
-// Taxa de estimativa BRL simbólica (PricingIntelligence) — camelCase como /api/pricing/*.
+// Taxa de estimativa BRL simbólica (PricingIntelligence) — PascalCase como /api/pricing/*.
 export interface BrlRate {
-  brlRate: number;
-  currency: "BRL";
-  disclaimer: string;
+  BrlRate: number;
+  Currency: "BRL";
+  Disclaimer: string;
 }
 
 // Referência de preço justo por categoria (PricingIntelligence — GET /api/pricing, leitura anônima).

@@ -28,7 +28,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       const res = await api.loginRequest(email.trim());
-      setInfo(res.message ?? "Se a conta existir, enviamos um código.");
+      setInfo(res.Message ?? "Se a conta existir, enviamos um código.");
       setStep("code");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Falha ao solicitar o código.");

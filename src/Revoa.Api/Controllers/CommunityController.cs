@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Revoa.Abstractions;
+using Revoa.Abstractions;
 using Revoa.Community.Application.Commands;
 using Revoa.Community.Application.DTOs;
 using Revoa.Community.Application.Queries;
@@ -38,7 +39,7 @@ public class CommunityController : ControllerBase
         }
 
         var result = await _mediator.Send(new GetCommunitiesQuery(raio, lat, lng, eixoEnum, page), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Detalhe de comunidade (anônimo vê).
@@ -47,7 +48,7 @@ public class CommunityController : ControllerBase
     public async Task<ActionResult<CommunityDto>> Detail(Guid id, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetCommunityDetailQuery(id), ct);
-        return result.IsFailure ? NotFound(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? NotFound(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Cria comunidade (gate Verified). Ownership (criador) do token, nunca do body.
@@ -59,22 +60,22 @@ public class CommunityController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         if (!TryParse(request.Tipo, out CommunityTipo tipo))
         {
-            return BadRequest(new { error = "Tipo inválido (Default|User)." });
+            return BadRequest(new ApiError("Tipo inválido (Default|User)."));
         }
 
         if (!TryParse(request.Eixo, out CommunityEixo eixo))
         {
-            return BadRequest(new { error = "Eixo inválido (Geo|Interesse|Causa)." });
+            return BadRequest(new ApiError("Eixo inválido (Geo|Interesse|Causa)."));
         }
 
         if (!TryParse(request.Visibilidade, out CommunityVisibilidade visibilidade))
         {
-            return BadRequest(new { error = "Visibilidade inválida (Open|Private)." });
+            return BadRequest(new ApiError("Visibilidade inválida (Open|Private)."));
         }
 
         var command = new CreateCommunityCommand(
@@ -85,10 +86,10 @@ public class CommunityController : ControllerBase
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
-        return CreatedAtAction(nameof(Detail), new { id = result.Value }, result.Value);
+        return CreatedAtAction(nameof(Detail), new ResourceId(result.Value), result.Value);
     }
 
     // Entra em comunidade (gate Verified).
@@ -99,13 +100,13 @@ public class CommunityController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(
             new JoinCommunityCommand(user.UserId, user.Nome, user.AvatarUrl, id, request?.Password), ct);
 
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(new ResourceId(id));
     }
 
     // Sai de comunidade (gate Verified).
@@ -116,11 +117,11 @@ public class CommunityController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(new LeaveCommunityCommand(user.UserId, id), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
     // Posts de uma comunidade (anônimo vê — UF-19).
@@ -133,7 +134,7 @@ public class CommunityController : ControllerBase
         CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetCommunityPostsQuery(id, parentId, page), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Cria post (gate Verified). Autor do token.
@@ -145,7 +146,7 @@ public class CommunityController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(
@@ -153,7 +154,7 @@ public class CommunityController : ControllerBase
 
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
         return Ok(result.Value);
@@ -167,11 +168,11 @@ public class CommunityController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(new HidePostCommand(postId, user.Nome, user.UserId), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
     // Membros de uma comunidade (anônimo vê).
@@ -180,7 +181,7 @@ public class CommunityController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<MembershipDto>>> Members(Guid id, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetMembersQuery(id), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum

@@ -62,11 +62,11 @@ export function clearToken(): void {
 
 export class ApiError extends Error {
   status: number;
-  fieldErrors?: { field: string; message: string }[];
+  fieldErrors?: { Field: string; Message: string }[];
   constructor(
     message: string,
     status: number,
-    fieldErrors?: { field: string; message: string }[]
+    fieldErrors?: { Field: string; Message: string }[]
   ) {
     super(message);
     this.name = "ApiError";
@@ -120,12 +120,13 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
   if (!res.ok) {
     let message = `Erro ${res.status}`;
-    let fieldErrors: { field: string; message: string }[] | undefined;
+    let fieldErrors: { Field: string; Message: string }[] | undefined;
     if (data && typeof data === "object") {
+      // Envelope único do backend: ApiError { Error, Errors? [{ Field, Message }] } (PascalCase).
       const obj = data as Record<string, unknown>;
-      if (typeof obj.error === "string") message = obj.error;
-      if (Array.isArray(obj.errors)) {
-        fieldErrors = obj.errors as { field: string; message: string }[];
+      if (typeof obj.Error === "string") message = obj.Error;
+      if (Array.isArray(obj.Errors)) {
+        fieldErrors = obj.Errors as { Field: string; Message: string }[];
       }
     } else if (typeof data === "string" && data) {
       message = data;
@@ -231,8 +232,8 @@ export const api = {
     apiPost<void>(`/api/auth/verify-phone`, { UserId: uid, Code: code }),
   resendVerification: (email: string): Promise<RegisterResult> =>
     apiPost<RegisterResult>("/api/auth/resend-verification", { Email: email }),
-  loginRequest: (email: string): Promise<{ message: string }> =>
-    apiPost<{ message: string }>("/api/auth/login/request", { Email: email }),
+  loginRequest: (email: string): Promise<{ Message: string }> =>
+    apiPost<{ Message: string }>("/api/auth/login/request", { Email: email }),
   loginConfirm: (email: string, code: string): Promise<LoginResult> =>
     apiPost<LoginResult>("/api/auth/login/confirm", { Email: email, Code: code }),
   login: (email: string): Promise<LoginResult> =>
@@ -252,8 +253,8 @@ export const api = {
     apiGet<Community>(`/api/communities/${encodeURIComponent(id)}`),
   createCommunity: (body: CreateCommunityBody): Promise<string> =>
     apiPost<string>(`/api/communities`, body),
-  joinCommunity: (id: string, password?: string): Promise<{ id: string }> =>
-    apiPost<{ id: string }>(
+  joinCommunity: (id: string, password?: string): Promise<{ Id: string }> =>
+    apiPost<{ Id: string }>(
       `/api/communities/${encodeURIComponent(id)}/join`,
       password ? { Password: password } : {}
     ),
@@ -321,8 +322,8 @@ export const api = {
     apiGet<AdminParameter[]>(`/api/admin/parameters`),
   setAdminParameter: (key: string, value: number | boolean | string): Promise<void> =>
     apiPut<void>(`/api/admin/parameters/${encodeURIComponent(key)}`, { Value: value }),
-  refreshPricing: (): Promise<{ updated: number }> =>
-    apiPost<{ updated: number }>(`/api/pricing/refresh`),
+  refreshPricing: (): Promise<{ Updated: number }> =>
+    apiPost<{ Updated: number }>(`/api/pricing/refresh`),
   brlRate: (): Promise<BrlRate> => apiGet<BrlRate>(`/api/pricing/rate`),
   pricing: (): Promise<PriceReference[]> => apiGet<PriceReference[]>(`/api/pricing`),
   pricingByCategory: (categoriaId: string): Promise<PriceReference> =>

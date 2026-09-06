@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Notifications.Application.Commands;
 using Revoa.Notifications.Application.DTOs;
 using Revoa.Notifications.Application.Queries;
@@ -31,11 +32,11 @@ public class NotificationsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(new GetNotificationsQuery(user.UserId, unreadOnly, page), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Contagem de não-lidas (badge do sino).
@@ -46,7 +47,7 @@ public class NotificationsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var count = await _mediator.Send(new GetUnreadCountQuery(user.UserId), ct);
@@ -61,11 +62,11 @@ public class NotificationsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(new MarkNotificationReadCommand(user.UserId, id), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
     // Inscreve Web Push do dispositivo.
@@ -77,13 +78,13 @@ public class NotificationsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(
             new SubscribePushCommand(user.UserId, request.Endpoint, request.P256dh, request.Auth), ct);
 
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Remove inscrição Web Push (logout/desinstalação). Endpoint via body ou query.
@@ -97,11 +98,11 @@ public class NotificationsController : ControllerBase
         var ep = request?.Endpoint ?? endpoint;
         if (string.IsNullOrWhiteSpace(ep))
         {
-            return BadRequest(new { error = "Endpoint é obrigatório." });
+            return BadRequest(new ApiError("Endpoint é obrigatório."));
         }
 
         var result = await _mediator.Send(new UnsubscribePushCommand(ep), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 }
 

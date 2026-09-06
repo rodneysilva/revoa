@@ -45,7 +45,7 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
         return Ok(result.Value);
@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> VerifyEmail([FromBody] VerifyTokenRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new VerifyEmailCommand(request.UserId, request.Token), ct);
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return result.IsSuccess ? Ok() : BadRequest(new ApiError(result.Error));
     }
 
     [HttpPost("verify-phone")]
@@ -64,7 +64,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> VerifyPhone([FromBody] VerifyPhoneRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new VerifyPhoneCommand(request.UserId, request.Code), ct);
-        return result.IsSuccess ? Ok() : BadRequest(new { error = result.Error });
+        return result.IsSuccess ? Ok() : BadRequest(new ApiError(result.Error));
     }
 
     // Recuperação de acesso: reenvia token de e-mail + OTP p/ conta ainda não verificada.
@@ -75,7 +75,7 @@ public class AuthController : ControllerBase
         [FromBody] ResendRequest request, CancellationToken ct)
     {
         var result = await _mediator.Send(new ResendVerificationCommand(request.Email), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Login passwordless (produção): etapa 1 — solicita código de acesso por e-mail.
@@ -85,7 +85,7 @@ public class AuthController : ControllerBase
     public async Task<ActionResult> LoginRequest([FromBody] ResendRequest request, CancellationToken ct)
     {
         await _mediator.Send(new LoginRequestCommand(request.Email), ct);
-        return Ok(new { message = "Se a conta existir, enviamos um código para o e-mail informado." });
+        return Ok(new ApiMessage("Se a conta existir, enviamos um código para o e-mail informado."));
     }
 
     // Login passwordless (produção): etapa 2 — valida o código e emite o JWT.
@@ -96,7 +96,7 @@ public class AuthController : ControllerBase
         var result = await _mediator.Send(new LoginConfirmCommand(request.Email, request.Code), ct);
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
         var c = result.Value;
@@ -119,13 +119,13 @@ public class AuthController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return BadRequest(new { error = "E-mail é obrigatório." });
+            return BadRequest(new ApiError("E-mail é obrigatório."));
         }
 
         var user = await _users.GetByEmailAsync(request.Email.Trim(), ct);
         if (user is null || user.Status != UserStatus.Active)
         {
-            return BadRequest(new { error = "Usuário não encontrado ou não verificado." });
+            return BadRequest(new ApiError("Usuário não encontrado ou não verificado."));
         }
 
         var roles = RolesFor(user.Email, user.Role);
@@ -147,13 +147,13 @@ public class AuthController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(request.Email))
         {
-            return BadRequest(new { error = "E-mail é obrigatório." });
+            return BadRequest(new ApiError("E-mail é obrigatório."));
         }
 
         var user = await _users.GetByEmailAsync(request.Email.Trim(), ct);
         if (user is null)
         {
-            return BadRequest(new { error = "Usuário não encontrado. Cadastre-se primeiro." });
+            return BadRequest(new ApiError("Usuário não encontrado. Cadastre-se primeiro."));
         }
 
         user.DevActivate();

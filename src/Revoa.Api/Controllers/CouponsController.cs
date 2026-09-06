@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Coupon.Application.Commands;
 using Revoa.Coupon.Application.DTOs;
 using Revoa.Coupon.Application.Queries;
@@ -41,7 +42,7 @@ public class CouponsController : ControllerBase
             new CreateCouponCommand(request.AmountRvm, request.MaxUses, expiry, request.Code, createdBy), ct);
 
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 
@@ -52,7 +53,7 @@ public class CouponsController : ControllerBase
         [FromQuery] int page = 1, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new ListCouponsQuery(page), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Revoga cupom (invalida o resgate on-chain). Gate Admin.
@@ -65,7 +66,7 @@ public class CouponsController : ControllerBase
                  ?? "Admin";
 
         var result = await _mediator.Send(new RevokeCouponCommand(id, by), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok();
     }
 
     // Resgata cupom (mint on-chain de RVM na carteira do usuário). Gate Verified. userId do token (claim sub).
@@ -76,11 +77,11 @@ public class CouponsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(new RedeemCouponCommand(user.UserId, request.Code ?? string.Empty), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok();
     }
 }
 

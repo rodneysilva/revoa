@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Reputation.Application.Commands;
 using Revoa.Reputation.Application.DTOs;
 using Revoa.Reputation.Application.Queries;
@@ -28,15 +29,15 @@ public class ReviewsController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(
             new CreateReviewCommand(user.UserId, user.Nome, id, request.Rating, request.Comment), ct);
 
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
-            : Ok(new { id = result.Value });
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(new ResourceId(result.Value));
     }
 
     // Avaliações recebidas por um usuário (perfil/ListingDetail). Leitura anônima.
@@ -46,7 +47,7 @@ public class ReviewsController : ControllerBase
         Guid userId, [FromQuery] int limit = 20, CancellationToken ct = default)
     {
         var result = await _mediator.Send(new GetUserReviewsQuery(userId, limit), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 }
 

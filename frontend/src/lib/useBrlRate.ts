@@ -22,7 +22,7 @@ function loadRate(): Promise<CachedRate | null> {
     inflight = api
       .brlRate()
       .then((r) => {
-        cached = { rate: r.brlRate, disclaimer: r.disclaimer, ts: Date.now() };
+        cached = { rate: r.BrlRate, disclaimer: r.Disclaimer, ts: Date.now() };
         return cached;
       })
       .catch(() => {

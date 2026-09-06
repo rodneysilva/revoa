@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Reputation.Application.DTOs;
 using Revoa.Reputation.Application.Queries;
 
@@ -25,6 +26,6 @@ public class ReputationController : ControllerBase
     public async Task<ActionResult<ReputationDto>> Get(Guid userId, CancellationToken ct = default)
     {
         var dto = await _mediator.Send(new GetReputationQuery(userId), ct);
-        return dto is null ? NotFound(new { error = "Reputação não encontrada para este usuário." }) : Ok(dto);
+        return dto is null ? NotFound(new ApiError("Reputação não encontrada para este usuário.")) : Ok(dto);
     }
 }

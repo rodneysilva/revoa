@@ -33,7 +33,8 @@ public class AdminParamsTests : IntegrationTestBase
         var put = await adminClient.PutAsync(
             "/api/admin/parameters/DonationReward.BonusRvm",
             JsonBody(new { Value = 7 }));
-        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        // Contrato: sucesso sem corpo = 204 (não mais 200 com { ok: true }).
+        put.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         // GET confirma o novo valor.
         var get = await adminClient.GetAsync("/api/admin/parameters");

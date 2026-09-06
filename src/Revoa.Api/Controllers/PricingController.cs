@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Revoa.Abstractions;
 using Revoa.IntegrationContracts.Admin;
 using Revoa.Pricing.Application.Commands;
 using Revoa.Pricing.Application.DTOs;
@@ -34,12 +35,10 @@ public class PricingController : ControllerBase
     public async Task<ActionResult> GetRate(CancellationToken ct)
     {
         var brlRate = await _params.GetAsync("Pricing.BrlRate", _options.BrlRate, ct);
-        return Ok(new
-        {
+        return Ok(new BrlRateDto(
             brlRate,
-            currency = "BRL",
-            disclaimer = "Estimativa simbólica para trocas — o RVM é crédito de troca da comunidade, não moeda/ativo financeiro.",
-        });
+            "BRL",
+            "Estimativa simbólica para trocas — o RVM é crédito de troca da comunidade, não moeda/ativo financeiro."));
     }
 
     // Recalcula referências de preço (mediana comunitária + BRL seed + IPCA IBGE + Ollama).
@@ -49,8 +48,8 @@ public class PricingController : ControllerBase
     {
         var result = await _mediator.Send(new RefreshPricingCommand(), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
-            : Ok(new { updated = result.Value });
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(new RefreshPricingResultDto(result.Value));
     }
 
     // Referência de UMA categoria (leitura anônima). 404 se inexistente.
@@ -61,11 +60,11 @@ public class PricingController : ControllerBase
         var result = await _mediator.Send(new GetPriceReferenceQuery(id), ct);
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
         return result.Value is null
-            ? NotFound(new { error = "Referência de preço não encontrada para esta categoria." })
+            ? NotFound(new ApiError("Referência de preço não encontrada para esta categoria."))
             : Ok(result.Value);
     }
 
@@ -76,7 +75,7 @@ public class PricingController : ControllerBase
     {
         var result = await _mediator.Send(new GetAllPriceReferencesQuery(), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 }

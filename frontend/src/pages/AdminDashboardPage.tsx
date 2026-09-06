@@ -143,7 +143,7 @@ export function AdminDashboardPage() {
     setPricingMsg(null);
     try {
       const res = await api.refreshPricing();
-      setPricingMsg(`${res.updated} categoria(s) atualizada(s).`);
+      setPricingMsg(`${res.Updated} categoria(s) atualizada(s).`);
     } catch (e) {
       setPricingMsg(e instanceof ApiError ? e.message : "Falha ao atualizar preços.");
     } finally {
@@ -332,8 +332,8 @@ export function AdminDashboardPage() {
             </button>
             {seedResult && (
               <p className="text-silver text-xs mt-2">
-                {seedResult.total} anúncio(s) · {seedResult.produtos} produtos · {seedResult.servicos}{" "}
-                serviços · {seedResult.categorias} categoria(s).
+                {seedResult.Listings} anúncio(s) · {seedResult.Produtos} produtos · {seedResult.Servicos}{" "}
+                serviços · {seedResult.Categorias} categoria(s).
               </p>
             )}
             {seedError && <p className="text-rosa text-xs mt-2">{seedError}</p>}

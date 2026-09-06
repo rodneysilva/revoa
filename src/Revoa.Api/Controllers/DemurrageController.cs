@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Revoa.Abstractions;
 using Revoa.Demurrage.Application.Commands;
 using Revoa.Demurrage.Application.DTOs;
 using Revoa.Demurrage.Application.Queries;
@@ -33,7 +34,7 @@ public class DemurrageController : ControllerBase
     {
         var result = await _mediator.Send(new PreviewDemurrageCommand(), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 
@@ -51,7 +52,7 @@ public class DemurrageController : ControllerBase
 
         var result = await _mediator.Send(new RunDemurrageCommand(executedBy), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 
@@ -63,7 +64,7 @@ public class DemurrageController : ControllerBase
     {
         var result = await _mediator.Send(new GetDemurrageRunsQuery(limit), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 }

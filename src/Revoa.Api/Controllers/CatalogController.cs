@@ -30,7 +30,7 @@ public class CatalogController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var vendedorGuid = user.UserId;
@@ -39,17 +39,17 @@ public class CatalogController : ControllerBase
 
         if (!TryParse(request.Kind, out ListingKind kind))
         {
-            return BadRequest(new { error = "Kind inválido (Product|Service)." });
+            return BadRequest(new ApiError("Kind inválido (Product|Service)."));
         }
 
         if (!TryParse(request.Modo, out ListingModo modo))
         {
-            return BadRequest(new { error = "Modo inválido (Trocar|Repassar|Doar|Voluntariar)." });
+            return BadRequest(new ApiError("Modo inválido (Trocar|Repassar|Doar|Voluntariar)."));
         }
 
         if (!TryParse(request.Visibilidade, out ListingVisibilidade visibilidade))
         {
-            return BadRequest(new { error = "Visibilidade inválida (Comunidade|Global|Ambos)." });
+            return BadRequest(new ApiError("Visibilidade inválida (Comunidade|Global|Ambos)."));
         }
 
         ProductCondition? condition = null;
@@ -74,10 +74,10 @@ public class CatalogController : ControllerBase
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
         {
-            return BadRequest(new { error = result.Error });
+            return BadRequest(new ApiError(result.Error));
         }
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
+        return CreatedAtAction(nameof(GetById), new ResourceId(result.Value), result.Value);
     }
 
     // Feed anônimo (UF-01). Filtros NxN (todos opcionais) via query string.
@@ -119,7 +119,7 @@ public class CatalogController : ControllerBase
             new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page,
                 modo, precoMin, precoMax, doarApenas, sort, q, vendedorGuids),
             ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Detalhe anônimo (UF-01).
@@ -128,7 +128,7 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<ListingDto>> GetById(Guid id, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetListingQuery(id), ct);
-        return result.IsFailure ? NotFound(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? NotFound(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Categorias ativas (dropdown do Criar Anúncio + filtros). Anônimo.
@@ -137,7 +137,7 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<CategoryDto>>> Categories(CancellationToken ct)
     {
         var result = await _mediator.Send(new GetCategoriesQuery(), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Comentários de um anúncio (thread recursiva — reuso do <PostThread> no FE). Raízes ou
@@ -148,7 +148,7 @@ public class CatalogController : ControllerBase
         Guid id, [FromQuery] Guid? parentId, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetListingCommentsQuery(id, parentId), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     // Cria comentário/resposta (gate Verified). Autor do token; depth ≤ 6.
@@ -160,13 +160,13 @@ public class CatalogController : ControllerBase
         var user = User.GetRevoaUser();
         if (user is null)
         {
-            return Unauthorized(new { error = "Token sem claim 'sub'." });
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
         var result = await _mediator.Send(
             new CreateCommentCommand(user.UserId, user.Nome, user.AvatarUrl, id, request.ParentId, request.Conteudo), ct);
 
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum

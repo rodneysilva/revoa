@@ -2,6 +2,7 @@ using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Admin.Application.Commands;
 using Revoa.Admin.Application.DTOs;
 using Revoa.Admin.Application.Queries;
@@ -34,7 +35,7 @@ public class AdminController : ControllerBase
     {
         var result = await _mediator.Send(new GetAllParametersQuery(), ct);
         return result.IsFailure
-            ? BadRequest(new { error = result.Error })
+            ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
 
@@ -45,7 +46,7 @@ public class AdminController : ControllerBase
     {
         if (body is null || body.Value.ValueKind == JsonValueKind.Undefined)
         {
-            return BadRequest(new { error = "Corpo inválido: informe { \"Value\": ... }." });
+            return BadRequest(new ApiError("Corpo inválido: informe { \"Value\": ... }."));
         }
 
         var updatedBy = User.FindFirst("email")?.Value
@@ -53,9 +54,7 @@ public class AdminController : ControllerBase
                         ?? "admin";
 
         var result = await _mediator.Send(new SetParameterCommand(key, body.Value, updatedBy), ct);
-        return result.IsFailure
-            ? BadRequest(new { error = result.Error })
-            : Ok(new { ok = true });
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
     // Altera a role de um usuário (User/Mod/Admin/Arbitrator). Única via de escrita de UserRole;
@@ -69,7 +68,7 @@ public class AdminController : ControllerBase
                         ?? "admin";
 
         var result = await _mediator.Send(new SetUserRoleCommand(id, body.Role, updatedBy), ct);
-        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 }
 
