@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Revoa.Abstractions;
 using Revoa.Account.Infrastructure;
 using Revoa.Admin.Infrastructure;
+using Revoa.Api.Dev;
 using Revoa.Api.Hubs;
 using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
@@ -115,6 +116,10 @@ builder.Services.AddPricingInfrastructure(builder.Configuration);
 // Demurrage module (UF-27): queima periódica de uma % do RVM ocioso (piso de isenção + taxa ajustável).
 // Consome IRvmService (porta on-chain do Token) e IWalletAddressReader (porta do Account).
 builder.Services.AddDemurrageInfrastructure(builder.Configuration);
+
+// Seed do ambiente DEV (usuários mock + catálogo + comunidades + reviews). Consumido pelo
+// DevController; dados de demonstração no DevSeedData (static).
+builder.Services.AddScoped<DevSeeder>();
 
 // Request timeouts p/ endpoints longos (ex.: demurrage preview/run — 1 balanceOf/tx por carteira).
 builder.Services.AddRequestTimeouts();
