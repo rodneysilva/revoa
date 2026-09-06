@@ -175,23 +175,29 @@ services:
   # ═══════════════════════════════════════════════════════════
 
   # ANVIL — nó dev local (fork do padrão Foundry; mesmos endereços do CI).
-  # Estado persistente em volume (--state): contratos e saldos sobrevivem a
-  # restarts. Endereços determinísticos do Deploy.s.sol são fixados no env do
-  # app (Chain__Contracts__*). É o RPC default do app (CHAIN_RPC_URL).
+  # Estado persistente em volume: --dump-state salva no shutdown gracioso
+  # (SIGTERM; `exec` torna o anvil PID 1) e --load-state restaura no boot
+  # (só quando o arquivo já existe — a flag rejeita path ausente).
+  # Endereços determinísticos do Deploy.s.sol são fixados no env do app
+  # (Chain__Contracts__*). É o RPC default do app (CHAIN_RPC_URL).
   anvil:
     profiles: ["chain"]
     image: ghcr.io/foundry-rs/foundry:latest
     container_name: revoa-anvil
+    # Volume nomeado cria /data como root; a imagem roda como user "foundry" e o
+    # --dump-state falha silenciosamente sem permissão de escrita. Root é aceitável
+    # aqui: nó dev descartável, só na rede interna.
+    user: root
     # ENTRYPOINT da imagem é ["bash","-l","-c"] — engole args avulsos; o comando
     # inteiro precisa vir como UMA string.
     entrypoint: ["bash", "-l", "-c",
-                 "anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --state /data/anvil-state.json --state-interval 10"]
+                 "exec anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --dump-state /data/state.json $([ -f /data/state.json ] && echo --load-state /data/state.json)"]
     volumes:
       - revoa-anvil-data:/data
     networks: [internal]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://localhost:8545 || exit 1"]
+      test: ["CMD-SHELL", "cast chain-id --rpc-url http://localhost:8545 >/dev/null"]  # imagem foundry não tem curl
       interval: 15s
       timeout: 5s
       retries: 5
