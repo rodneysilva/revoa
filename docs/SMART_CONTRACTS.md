@@ -194,7 +194,7 @@ escrow como qualquer EOA (aprovam RVM, assinam `fundTrade`/`release` via UserOp)
 ## 7. Estado da validação (Marco M2)
 
 - `forge build` — **OK** (apenas lint warnings de `block.timestamp`, intencional — janela 72h por design).
-- `forge test` — **67 testes, 0 falhas** (RVM, Treasury, ProductNFT, ServiceVoucher, EscrowVault, CouponRedeemer).
+- `forge test` — **71 testes, 0 falhas** (RVM, Treasury, ProductNFT, ServiceVoucher, EscrowVault, CouponRedeemer).
 - `forge coverage` (% de linhas nos contratos principais):
   - `CouponRedeemer` 100% · `ProductNFT` 100% · `EscrowVault` 97% · `ServiceVoucher` 95% · `RVM` 89% · `Treasury` 87.5%.
   - `Deploy.s.sol` e `Canonical/ISafe.sol` 0% (script de deploy + stub — sem teste de unidade).
@@ -205,7 +205,7 @@ escrow como qualquer EOA (aprovam RVM, assinam `fundTrade`/`release` via UserOp)
 
 - Indexer (eventos → read models idempotentes `txHash+logIndex`) — `.NET` Nethereum.
 - Plugar canônicos (EntryPoint/Safe/webauthn/Paymaster) — ADR-0002.
-- Demurrage (keeper IPCA-trimestral) e cupom admin CRUD — Fase 3.
-- Subnet-EVM config (`chain/`) e deploy em rede local privada.
+- Demurrage: já roda sob demanda via endpoints admin (`POST /api/demurrage/preview|run`) — falta o scheduler/agendamento (roadmap). Cupom admin CRUD: entregue (`/api/coupons`).
+- Subnet-EVM config e deploy em rede local privada (hoje: anvil local com endereços determinísticos, `contracts/deployed-dev.json`).
 
 *Última atualização: Marco M2 (03/08/2026).*

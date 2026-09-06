@@ -44,7 +44,8 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 > **Situação atual vs roadmap:** o Indexer dedicado e a integração bundler/paymaster (AA) são
 > **roadmap** — hoje o backend assina com EOAs managed (ADR-0015) e consulta a chain diretamente
 > via Nethereum. Os containers `bundler`/`paymaster` já existem no compose (`profile: chain`)
-> como contrato de infra prontos para uso.
+> como contrato de infra prontos para uso. A integração MinIO (upload de imagens/assets) também
+> é **roadmap**: o container existe no compose, mas nenhum código .NET o usa ainda.
 
 ### Containers (compose revoa — segue o protocolo da infra central `rodne/infra`)
 | Container | Rede | Perfil | Observação |
@@ -77,21 +78,21 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 | Módulo | Responsabilidade | Coleções |
 |--------|------------------|----------|
-| **Identity** | Registro (cupom **opcional** + verificação **e-mail e telefone**), JWT passwordless, roles (User/Arbitrator/Admin — ADR-0018), recuperação. **E-mail via MailKit→Postfix** (ADR-0014) | `Users` |
-| **Account (Wallet)** | Carteiras EOA por usuário (managed — desvio ADR-0015), saldo, transfer P2P | `Accounts` |
-| **Catalog** | Anúncios (`kind`+VOs), categorias (seed canônico `CategorySeed`), **modo**, **visibilidade**, comentários recursivos, busca, comparativo, **feed por geolocalização** | `Listings`, `Categories`, `Comments` |
+| **Identity** | Registro (cupom **opcional** + verificação **e-mail e telefone**), JWT passwordless, roles (User/Mod/Admin/Arbitrator — ADR-0018), recuperação. **E-mail via MailKit→Postfix** (ADR-0014) | `Users` |
+| **Account (Wallet)** | Carteiras EOA por usuário (managed — desvio ADR-0015), saldo, transfer P2P *(roadmap — sem endpoint)* | `Accounts` |
+| **Catalog** | Anúncios (`kind`+VOs), categorias (seed canônico `CategorySeed`), **modo**, **visibilidade**, comentários recursivos, busca, comparativo, **feed por geolocalização** (filtros `kind`/categoria/comunidade/modo/preço/`sellerIds`) | `Listings`, `Categories`, `Comments` |
 | **Exchange** | Máquina de estados escrow (purchase/redeem/release/dispute/cancel/resolve) + fila de doação/voluntariado | `Trades`, `HelpRequests` |
 | **Token (Treasury / Fundo Comunitário)** | Faucet R$20, mint/burn RVM, taxa 2%→Fundo Comunitário (sem FLP) | (on-chain; sem coleção) |
 | **Coupon** | Cupom on-chain: criação admin, resgate (mint RVM), revogação | `Coupons` |
-| **Demurrage** | Demurrage IPCA-trimestral (preview/run, queima) | `DemurrageRuns` |
-| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path depth 6); chat SignalR | `Communities`, `Memberships`, `Posts`, `Chats` |
+| **Demurrage** | Demurrage IPCA-trimestral (preview/run sob demanda via admin — sem job agendado; queima) | `DemurrageRuns` |
+| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path depth 6); chat SignalR | `Communities`, `Memberships`, `Posts`, `ChatMessages` |
 | **Pricing** | Referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA/IBGE + Ollama) | `PriceReferences` |
 | **Moderation** | Denúncias + resolução admin (ban via evento → Identity) | `Reports` |
 | **Notifications** | In-app + Web Push | `Notifications`, `PushSubscriptions` |
 | **Reputation** | Avaliações 1–5 pós-troca, agregados por usuário | `Reviews`, `Reputations` |
 | **Admin** | Parâmetros runtime tipados compartilhados entre módulos | `SystemParameters` |
 
-> **Host:** API ASP.NET única (endpoints + auth + SignalR hub). Sem YARP. Reverse proxy: Traefik + Cloudflared.
+> **Host:** API ASP.NET única (endpoints + auth + hubs SignalR `/hubs/community` e `/hubs/notifications`; JWT via query string `access_token`). Sem YARP. Reverse proxy: Traefik + Cloudflared.
 
 ### Estrutura da solution — Clean Architecture + Modular Monolith + DDD
 > Padrão: **Clean Architecture/Onion** (ApplicationCore no centro, sem deps de infra) + **modular monolith**
@@ -138,7 +139,7 @@ revoa/
 **Tipos por camada (padrão Microsoft/DDD):**
 - *Domain:* Entities, Aggregates, Value Objects, Domain Services, Specifications, Domain Events, Exceptions, SeedWork.
 - *Application:* Commands/Queries (CQRS), Handlers, DTOs, Validators, Mappers, Integration Event handlers.
-- *Infrastructure:* Repositories (MongoDB), UnitOfWork, serviços externos (chain via Nethereum, e-mail MailKit, WhatsApp Zenvia, ViaCEP, MinIO, Ollama).
+- *Infrastructure:* Repositories (MongoDB), UnitOfWork, serviços externos (chain via Nethereum, e-mail MailKit, WhatsApp Zenvia, ViaCEP, Ollama; MinIO é roadmap).
 
 ---
 
@@ -182,14 +183,20 @@ revoa/
 | **Paymaster (verifying)** | ERC-4337 | Patrocina gas (usuário não vê ETH) |
 
 ### Máquinas de estado
+> Estados reais do aggregate `Trade` (`TradeState`): **Offered · Funded · Released · Disputed · Refunded · Cancelled**
+> (espelham o `EscrowVault` on-chain). Não há estado "entregue": a logística é combinada fora da
+> plataforma e a liberação (`release`) é cooperativa (vendedor **ou** comprador) a qualquer momento
+> após `Funded`, ou automática após 72h sem disputa. No serviço, o `redeem` do voucher é um flag
+> (`VoucherRedeemed`) — o estado permanece `Funded`.
+
 ```
 PRODUTO:
-  Listar(mint NFT→Vault) → Offer → Funded(buyer Block) → Delivered
-        → [72h] → Released(RVM −2% → seller, NFT → buyer) | Disputed → árbitro
+  Listar(mint NFT→Vault) → Offered → Funded(buyer Block)
+        → Released(RVM −2% → seller, NFT → buyer; cooperativa ou auto após 72h) | Disputed → árbitro
   Cancelled → Refunded(RVM→buyer, NFT→seller)
 
 SERVIÇO:
-  Offer → Funded(RVM block + voucher→buyer) → Redeem/confirm
+  Offered → Funded(RVM block + voucher→buyer) → Redeem(flag)
         → [72h] → Released(RVM −2% → provider, voucher burn) | Disputado → árbitro
   Expiry(30d) → Refunded(RVM→buyer)
 ```
@@ -249,7 +256,7 @@ SERVIÇO:
 
 - **Carteira invisível:** hoje managed pelo backend (ADR-0015); alvo: passkey → cria Safe (via Safe SDK + permissionless.js; viem p/ assinar).
 - **Feed dinâmico por `kind`:** um objeto Anúncio; o frontend renderiza campos conforme `kind` (ProductDetails vs ServiceDetails).
-- **Troca tracker:** acompanha estado do escrow em tempo real (SignalR + Indexer).
+- **Troca tracker:** acompanha estado do escrow em tempo real (SignalR; Indexer é roadmap).
 - **Comunidade:** posts recursivos (materialized path, depth 6) + chat SignalR.
 - **PWA instalável** (manifest + service worker). Next.js/SSR só p/ marketing/SEO depois.
 - Em produção, a **SPA é servida pelo app .NET** (host único); o container `frontend` é dev-only.
@@ -291,9 +298,10 @@ O frontend renderiza o formulário/detalhe **dinamicamente** conforme `kind` + `
 ## 11. PricingIntelligence (Fase 3)
 
 - **Recálculo sob demanda:** endpoint admin (`POST /api/pricing/refresh`): API ML + seed admin + comunidade → normalização **Ollama Qwen 7B (GPU)** → referência BRL por categoria.
+- **Cotação BRL de referência:** `GET /api/pricing/rate` (público; conversão RVM↔BRL para exibição).
 - **Mediana RVM** dos listings + **sugestão justa** (faixa RVM).
 - **webfetcher trimestral:** IPCA/IBGE → reajusta parâmetros (faucet/cupom + base demurrage).
-- **Transparência:** página pública de preços/parâmetros (`/transparencia` no frontend).
+- **Transparência:** página pública de preços/parâmetros (`/transparency` no frontend).
 
 ---
 
@@ -311,7 +319,7 @@ O frontend renderiza o formulário/detalhe **dinamicamente** conforme `kind` + `
 
 - **OpenTelemetry + Serilog.** Tracing distribuído (API → chain).
 - **Testes:** xUnit + FluentAssertions + Testcontainers (Mongo + anvil) por handler/módulo; isolamento de coleção enforced; optimistic locking (Concurrent→ConcurrencyException). Foundry (`forge test`/`coverage`). Playwright (e2e). `workers:1` p/ e2e autenticados.
-- **CI verde:** `dotnet build` + `dotnet test` + `forge build` + `forge test` + `npm run build` + `npm run typecheck`.
+- **CI verde (`.github/workflows/ci.yml`, 5 jobs):** `backend` (dotnet build + testes domínio/off-chain) · `frontend` (npm build/typecheck) · `contracts` (forge build/test) · `onchain` (testes .NET↔anvil com deploy determinístico) · `e2e` (Playwright smoke com backend real + Mongo).
 
 ---
 

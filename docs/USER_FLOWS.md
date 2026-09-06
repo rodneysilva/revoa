@@ -43,8 +43,8 @@ Cenário: Anônimo vê e é gateado ao agir
 **Objetos:** Usuário, Verificação(e-mail), Verificação(WhatsApp), Credencial/Passkey, Carteira, Comunidade(default).
 **Estados:** `iniciado → email_validado → telefone_validado → passkey_criada → safe_gerada → creditada → ativo`
 
-**Jornada:**
-1. (Opcional) login social **Google/Apple** pré-preenche nome/e-mail.
+**Jornada:** *(hoje, ADR-0015: sem passkey/Safe — ao ativar, o backend gera uma **EOA managed** (carteira invisível) e credita o faucet; passkey/AA e login social são roadmap)*
+1. (Opcional) login social **Google/Apple** pré-preenche nome/e-mail. *(roadmap)*
 2. Nome/apelido, e-mail, telefone, **CEP** (→ ViaCEP automatiza bairro/cidade/estado; HTML5 geolocation opcional). Declara **idade ≥18**.
 3. **Avatar auto-gerado** (inicial+cor/DiceBear) se sem foto.
 4. **Confirmação dupla:** e-mail (link/token via MailKit+Postfix) **E** telefone (OTP **WhatsApp+SMS via Zenvia**).
@@ -78,11 +78,13 @@ Cenário: Cupom inválido não bloqueia o cadastro
 ```
 
 ## UF-04 — Login
-**Objetos:** Credencial/Passkey (ou login social Google/Apple), Usuário.
+**Objetos:** Usuário, CódigoDeAcesso (e-mail). *(Passkey/WebAuthn e login social Google/Apple: roadmap.)*
+
+**Fluxo implementado (passwordless, 2 passos):** `POST /api/auth/login/request` (envia código ao e-mail; resposta neutra anti-enumeração) → `POST /api/auth/login/confirm` (troca o código por JWT). Em Development existem atalhos (`POST /api/auth/login`, `POST /api/auth/dev-verify`), que retornam 404 em Production.
 ```gherkin
-Cenário: Login por passkey
+Cenário: Login por código de e-mail
   Dado um usuário cadastrado
-  Quando autentica com a passkey (WebAuthn) ou Google/Apple
+  Quando solicita o código (login/request) e informa o código recebido (login/confirm)
   Então recebe JWT e acessa ações (já verificado no cadastro)
 ```
 
@@ -109,7 +111,7 @@ Cenário: Auto-vínculo à comunidade da cidade
 
 # B. Anúncios (5 combinações kind×modo)
 
-> **Objeto comum:** Anúncio (kind+modo) + Categoria + Localização + vendedor(embed) + imagens(MinIO).
+> **Objeto comum:** Anúncio (kind+modo) + Categoria + Localização + vendedor(embed) + imagens(MinIO — *roadmap: o container existe, a app ainda não faz upload*).
 > **Diferença-chave:** produto gera **ProductNFT mint-to-escrow** ao publicar; serviço **não** gera token até a compra/voluntariado.
 
 ## UF-07 — Produto · trocar
@@ -170,13 +172,13 @@ Cenário: Publicar serviço para voluntariar
 # C. Transações & Ajuda
 
 ## UF-12 — Comprar produto
-**Objetos:** Troca, EscrowVault, Carteira(buyer), ProductNFT, Avaliação. **Estados:** `ofertada → financiada → entregue → [72h] → liberada|disputada | cancelada → reembolsada`
+**Objetos:** Troca, EscrowVault, Carteira(buyer), ProductNFT, Avaliação. **Estados:** `ofertada → financiada → liberada|disputada | cancelada → reembolsada` *(sem estado "entregue": a entrega é combinada fora da plataforma; a liberação é cooperativa — vendedor ou comprador — ou automática após 72h)*
 ```gherkin
 Cenário: Compra completa (atomic swap)
   Dado comprador com saldo e produto ativo (NFT no Vault)
   Quando paga RM$ 50
   Então RM$ 50 são bloqueados (Block)
-  Quando vendedor marca "entregue" e comprador confirma, e 72h sem disputa
+  Quando a troca é liberada (vendedor ou comprador), sem disputa na janela 72h
   Então atomic swap: vendedor recebe RM$ 49 (−2% Fundo Comunitário), Fundo recebe RM$ 1, NFT→comprador
 ```
 
@@ -219,7 +221,7 @@ Cenário: Voluntariado completo
   Então o voucher é queimado e o voluntário recebe reputação + selo 🤝 + bônus RVM (admin) + pontos
 ```
 
-## UF-16 — Transferir RVM P2P
+## UF-16 — Transferir RVM P2P *(roadmap — não implementado; sem endpoint de transferência)*
 **Objetos:** Transferência, Carteira(from/to).
 ```gherkin
 Cenário: Transferir RVM (inclui "presentear")
@@ -257,8 +259,8 @@ Cenário: Resposta além do limite
 - **UF-25 Moderar** (Denúncia, Anúncio/Post/Usuário) — moderador (escopo comunidade) / admin (global); aprovar, ocultar (cascata), banir (temp/perm).
 
 # F. Carteira, Economia & Pricing
-- **UF-26 Ver carteira** (Carteira, Transferência, DemurrageEntry, Recompensa) — disponível/bloqueado/histórico (faucet/trocas/doações/P2P/demurrage).
-- **UF-27 Demurrage** (DemurrageEntry, ParâmetroSistema, Carteira) — keeper restart-safe/idempotente; preview/run admin; 0,5%/mês acima do piso, queima.
+- **UF-26 Ver carteira** (Carteira, Transferência, DemurrageEntry, Recompensa) — disponível/bloqueado/histórico (faucet/trocas/doações/demurrage; P2P: roadmap).
+- **UF-27 Demurrage** (DemurrageEntry, ParâmetroSistema, Carteira) — **sob demanda** (sem job agendado): preview/run admin (`POST /api/demurrage/preview|run`, histórico `GET /api/demurrage/runs`; scheduler: roadmap); 0,5%/mês acima do piso, queima.
 - **UF-28 Comparativo de preço** (ReferênciaPreço, Anúncio) — sempre visível; BRL (ML+seed+comunidade) ↔ mediana RVM ↔ sugestão (Ollama).
 
 # G. Admin & Plataforma
@@ -276,7 +278,7 @@ Cenário: Resposta além do limite
 | UF-02/03 cadastro | Identity · Token(faucet/cupom) · Account(Safe) |
 | UF-04/05 login/recuperação | Identity |
 | UF-07–11 anúncios | Catalog · Token(mint) · PricingIntelligence |
-| UF-12/13 trocas | Exchange · Token · Indexer |
+| UF-12/13 trocas | Exchange · Token |
 | UF-14/15 doação/voluntariado | Exchange · Token(bônus) · Reputation |
 | UF-16 P2P · UF-17 cupom | Account · Token |
 | UF-18–22 comunidade | Community · Notifications |

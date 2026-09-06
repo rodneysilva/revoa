@@ -14,12 +14,12 @@
 |--------|------------|
 | **Backend** | .NET 10 · Nethereum · MediatR (CQRS, shared kernel ADR-0016) · FluentValidation · SignalR · Serilog + OpenTelemetry |
 | **Persistência** | MongoDB (replica set `rs0`; optimistic locking + `Version`; ACID seletiva) |
-| **Storage** | MinIO (S3-compatible; metadata/imagens NFT; `tokenURI` aponta p/ cá) |
-| **Contratos** | Solidity + Foundry (`forge test`, `forge coverage`, `anvil`) — 6 contratos, 67 testes |
+| **Storage** | MinIO (S3-compatible) — *roadmap: o container existe no compose, a app ainda não usa (nenhum pacote MinIO no .csproj)* |
+| **Contratos** | Solidity + Foundry (`forge test`, `forge coverage`, `anvil`) — 6 contratos, 71 testes |
 | **Chain** | Subnet-EVM/anvil privada agora → pública depois (ADR-0001) |
 | **Account Abstraction** | **Roadmap (ADR-0002)** — hoje: EOA plaintext managed pelo backend (desvio formalizado no **ADR-0015**; blocker pré-público) |
 | **Pricing/LLM** | API ML + seed admin + comunidade + webfetcher(IPCA/IBGE) + Ollama Qwen 7B (GPU); recálculo via endpoint admin (`POST /api/pricing/refresh`) |
-| **Auth** | JWT passwordless (código por e-mail; MailKit→Postfix ADR-0014) + dev-login só em Development; **carteira invisível** gerenciada pelo backend |
+| **Auth** | JWT passwordless em 2 passos (`POST /api/auth/login/request` envia código por e-mail → `POST /api/auth/login/confirm` troca por JWT; MailKit→Postfix ADR-0014) + atalhos dev (`/api/auth/login`, `/api/auth/dev-verify`, `/api/dev/seed-catalog`) só em Development (404 em Production); **carteira invisível** gerenciada pelo backend |
 | **Frontend** | **React + TypeScript** (Vite SPA) + Tailwind + SignalR client + PWA. **Único backend: .NET; único framework frontend: React/TypeScript.** (viem/Safe SDK entram com a AA) |
 | **Reverse proxy/SSL** | Traefik + Cloudflared (infra `rodne/infra` — local `C:\Users\rodne\infra`) |
 | **Testes** | xUnit + FluentAssertions + Testcontainers (Mongo+anvil) · Foundry · Playwright |
@@ -64,15 +64,15 @@
 
 | Módulo | Responsabilidade | Coleções MongoDB próprias |
 |--------|------------------|---------------------------|
-| **Identity** | Registro (cupom **opcional** + verificação **e-mail e telefone**), JWT passwordless, roles (User/Arbitrator/Admin), recuperação. **E-mail: MailKit→Postfix** (revoa.me, ADR-0014) | Users |
-| **Account (Wallet)** | Carteiras EOA por usuário (managed, ADR-0015), saldo, transfer P2P | Accounts |
+| **Identity** | Registro (cupom **opcional** + verificação **e-mail e telefone**), JWT passwordless, roles (User/Mod/Admin/Arbitrator), recuperação. **E-mail: MailKit→Postfix** (revoa.me, ADR-0014) | Users |
+| **Account (Wallet)** | Carteiras EOA por usuário (managed, ADR-0015), saldo, transfer P2P *(roadmap — sem endpoint ainda)* | Accounts |
 | **Catalog** | Anúncios (kind + VOs), categorias (seed canônico `CategorySeed`), **modo** (trocar/repassar/doar/voluntariar), **visibilidade**, comentários recursivos, feed por geolocalização + busca | Listings, Categories, Comments |
 | **Exchange** | Máquina de estados do escrow (purchase/redeem/release/dispute/cancel/resolve), fila de doação/voluntariado (help requests) | Trades, HelpRequests |
 | **Token (Treasury)** | Faucet R$20, mint/burn RVM, taxa 2%→**Fundo Comunitário** | (on-chain; sem coleção própria) |
 | **Coupon** | Cupom on-chain (criação admin, resgate minta RVM, revogação) | Coupons |
-| **Demurrage** | Demurrage IPCA-trimestral (preview/run, queima) | DemurrageRuns |
-| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path, depth 6); chat SignalR | Communities, Memberships, Posts, Chats |
-| **Pricing** | Referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA/IBGE + Ollama) | PriceReferences |
+| **Demurrage** | Demurrage IPCA-trimestral (preview/run sob demanda via admin — sem job agendado; queima) | DemurrageRuns |
+| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path, depth 6); chat SignalR | Communities, Memberships, Posts, ChatMessages |
+| **Pricing** | Referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA/IBGE + Ollama) + cotação BRL de referência (`GET /api/pricing/rate`) | PriceReferences |
 | **Moderation** | Denúncias + resolução admin (ban via evento → Identity) | Reports |
 | **Notifications** | In-app + Web Push: escrow/ofertas/posts/chat/preços | Notifications, PushSubscriptions |
 | **Reputation** | Avaliações 1–5 pós-troca, agregados por usuário | Reviews, Reputations |
@@ -82,7 +82,7 @@
 > como módulo — hoje o backend consulta a chain diretamente via Nethereum. Ações admin on-chain
 > usam a role `ARBITRATOR` (ADR-0018).
 
-**Host:** API ASP.NET única (endpoints + auth + SignalR hub). Sem YARP.
+**Host:** API ASP.NET única (endpoints + auth + hubs SignalR `/hubs/community` e `/hubs/notifications`; JWT via query string `access_token`). Sem YARP.
 
 ---
 

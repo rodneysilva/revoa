@@ -149,7 +149,9 @@ Fonte primária: **Inter** (WorkSans como fallback próximo).
 | Voluntariar | 🤝 Voluntário | Lima |
 
 ### Reputação + selos de ajuda
-🌱 Iniciante → ⭐ Trocador → 🌟 Pro → 💎 Lenda · + **🎁 Doador** / **🤝 Voluntário** (selos de ajuda por marcos).
+🌱 Iniciante → 🤝 Ajudante → 🧭 Mentor → 🛡️ Guardião · + **🎁 Doador** / **🤝 Voluntário** (selos de ajuda por marcos).
+
+(Níveis reais de `Reputation.Level`: Iniciante <50 · Ajudante <200 · Mentor <500 · Guardião 500+.)
 
 ---
 

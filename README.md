@@ -6,7 +6,7 @@
 
 **Domínios:** `revoa.me` (app) · `revoa.org` (blog/transparência/impacto) · `dev.revoa.org` (deploy público de desenvolvimento)
 **Stack:** Backend único **.NET 10** · Frontend único **React + TypeScript** · Solidity/Foundry · Subnet-EVM · MongoDB · MinIO · Traefik+Cloudflared
-**Status:** ✅ **Fases 0–3 do roadmap entregues** — monólito modular com **13 módulos**, 6 contratos Solidity (67 testes Foundry), SPA React/PWA completa, CI (dotnet+npm+forge), integração on-chain ponta a ponta e deploy público em `dev.revoa.org`. Em curso: **refactoração de coerência** (segurança, shared kernel, contrato PascalCase+ApiError, docs re-sincronizadas — ADRs 0015–0018).
+**Status:** ✅ **Fases 0–3 do roadmap entregues** — monólito modular com **13 módulos**, 6 contratos Solidity (71 testes Foundry), SPA React/PWA completa, CI com 5 jobs (backend · frontend · contracts · onchain · e2e), integração on-chain ponta a ponta e deploy público em `dev.revoa.org`. Em curso: **refactoração de coerência** (segurança, shared kernel, contrato PascalCase+ApiError, docs re-sincronizadas — ADRs 0015–0018).
 
 ---
 
@@ -55,8 +55,8 @@ revoa/
 │  ├─ Revoa.Api/                 ← host único: controllers, hubs SignalR, Program.cs
 │  ├─ modules/                   ← 13 bounded contexts (Domain/Application/Infrastructure cada)
 │  ├─ shared/                    ← Abstractions · Application (CQRS kernel) · Infrastructure (MongoRepositoryBase)
-│  └─ test/                      ← Revoa.IntegrationTests (OffChain no CI; OnChain com anvil local)
-├─ contracts/                    ← Solidity + Foundry (RVM, EscrowVault, ProductNFT, ServiceVoucher, CouponRedeemer, Faucet)
+│  └─ test/                      ← Revoa.Domain.Tests + Revoa.IntegrationTests (OffChain + OnChain no CI; OnChain com anvil local)
+├─ contracts/                    ← Solidity + Foundry (RVM, EscrowVault, ProductNFT, ServiceVoucher, CouponRedeemer, Treasury)
 ├─ frontend/                     ← React + TypeScript (Vite SPA) + PWA
 ├─ scripts/                      ← utilitários de operação (ex.: migração de campos Mongo)
 ├─ docs/                         ← TODA a documentação viva (ver mapa abaixo)
@@ -65,7 +65,7 @@ revoa/
 │  ├─ VISUAL_IDENTITY.md  VISUAL_EXPLORATIONS.md
 │  ├─ decisions/                 ← ADR-0001 … ADR-0018 (+ README índice)
 │  └─ visual-explorations/
-└─ .github/workflows/            ← CI: dotnet (build+testes OffChain) · npm (build+typecheck) · forge (testes de contratos)
+└─ .github/workflows/            ← CI (ci.yml, 5 jobs): backend (dotnet build/test OffChain+domínio) · frontend (npm build/typecheck) · contracts (forge build/test) · onchain (.NET↔anvil) · e2e (Playwright smoke)
 ```
 
 > **Princípio de limpeza:** pastas de código só existem no repo **quando têm conteúdo** (sem placeholders

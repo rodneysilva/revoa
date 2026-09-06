@@ -67,11 +67,11 @@ de troca (não reserva de valor).
 | **Inatividade** | Isenta se atividade recente (definir janela) | — |
 | **Destino** | **Queimado** (`burn`) — reduz oferta | — |
 
-### Execução (keeper)
-- `DemurrageSchedulerHostedService` (BackgroundService Quartz), **restart-safe e idempotente**
-  (tracking de última execução por período).
-- `PreviewAsync` (prévia do mês) + `ApplyAsync` (executa, lança no `DemurrageEntry` ledger).
-- Admin: `GET /api/admin/demurrage/preview` + `POST /api/admin/demurrage/run`.
+### Execução (sob demanda — sem job agendado)
+- Não há BackgroundService/Quartz: as queimas rodam **sob demanda via endpoints admin** (gated `Admin`):
+  `POST /api/demurrage/preview` (prévia, sem queimar) · `POST /api/demurrage/run` (executa as queimas
+  on-chain, 1 tx/carteira) · `GET /api/demurrage/runs` (histórico em `DemurrageRuns`).
+- *Roadmap:* scheduler Quartz (agendamento mensal) + reajuste IPCA-trimestral automático da taxa.
 
 ### Por que IPCA reajusta a *base* (não o valor do RVM)?
 O IPCA mede a inflação em BRL. Como o piso e a taxa base são expressos em "R$ equivalente",
@@ -89,7 +89,7 @@ inflação corroa os parâmetros do sistema.
 | **Índices** | **IPCA** (principal) + **INPC** (complementar) |
 | **O que reajusta** | **Parâmetros**: faucet (R$20 equiv) · cupom (amounts) · piso do demurrage · base do demurrage |
 | **O que NÃO reajusta** | Valor de mercado do RVM (emerge do uso) |
-| **Transparência** | Página pública de parâmetros (`docs/PRICING.md`, Fase 3) com histórico |
+| **Transparência** | Página pública de parâmetros (`/transparency` no frontend) com histórico |
 
 > Implementação: `PricingIntelligence` webfetcher consome API IBGE → job aplica reajuste →
 > registra ADR/mudança de parâmetro. Reprovável por admin em caso de anomalia.
@@ -121,10 +121,10 @@ BRL de mercado  ↔  Mediana RVM interna  ↔  Sugestão justa
   `webfetcher` só para **IPCA/IBGE** (não há scraping de ML — usamos a API oficial).
 - **Mediana RVM:** agregação dos listings ativos por categoria (off-chain, PricingIntelligence).
 - **Sugestão justa:** **Ollama Qwen 7B (GPU)** normaliza as fontes → sugere faixa RVM justa.
-- **Refresh semanal** (Quartz) para BRL/mediana; **trimestral** para IPCA.
+- **Recálculo sob demanda:** endpoint admin (`POST /api/pricing/refresh`) para BRL/mediana; cotação de referência em `GET /api/pricing/rate`. IPCA: coleta no refresh (roadmap: cadência trimestral automática).
 
 > **Anti-mensagem:** o comparativo é **informativo**, não uma cotação garantida. RVM não tem
-> "preço" — tem uma referência de poder de compra. Detalhes: `docs/PRICING.md` (Fase 3).
+> "preço" — tem uma referência de poder de compra (cotação exibida via `GET /api/pricing/rate`).
 
 ---
 
@@ -139,7 +139,8 @@ mint admin ──┘                  (escrow)     │                  (não vo
                                             └─→ vendedor recebe sellerPayout
 ```
 
-- **Saldo autoritativo ON-CHAIN** (Indexer projeta → read models).
+- **Saldo autoritativo ON-CHAIN** (hoje consultado diretamente via Nethereum; Indexer com read models é roadmap).
+- **P2P** (transferência entre usuários) é **roadmap** — ainda não há endpoint; hoje o RVM circula via escrow (trocas).
 - **Block/Release** no escrow: `buyer.Block(total)` ao pagar; `seller.Credit(sellerPayout)` + `treasury.Credit(fee)` ao liberar.
 
 ---

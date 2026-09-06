@@ -54,13 +54,12 @@ renderiza campos dinâmicos conforme o kind:
 ### 2.1 PRODUTO
 ```
 Listar (mint NFT → Vault)
-  → Offer  (comprador manifesta interesse)
+  → Offered  (comprador manifesta interesse)
   → Funded (comprador paga RVM → buyer.Block(total); NFT segue no Vault)
-  → Delivered (vendedor marca entregue / acordam logística hiperlocal)
   → [janela 72h, block.timestamp]
        ├─ Released  → atomic swap: seller.Credit(total − 2%) + treasury.Credit(2%) + NFT→buyer
        └─ Disputed → árbitro (ARBITRATOR) decide (libera/reembolsa)
-  Cancelled (antes de Delivered) → Refunded: buyer.Unblock(total) + NFT→seller
+  Cancelled (antes do release) → Refunded: buyer.Unblock(total) + NFT→seller
 ```
 
 ### 2.2 SERVIÇO
@@ -75,6 +74,7 @@ Offer
 ```
 
 ### 2.3 Regras do escrow
+- **Estados reais do aggregate `Trade`:** Offered · Funded · Released · Disputed · Refunded · Cancelled (espelham o `EscrowVault`). **Não há estado "entregue"** — a logística é combinada fora da plataforma; a liberação é cooperativa (vendedor **ou** comprador) a qualquer momento após Funded, ou automática após 72h sem disputa. No serviço, o `redeem` do voucher é um flag (`VoucherRedeemed`), não um estado.
 - **Fundos bloqueados** (`Block`) ao pagar; **liberados/creditados** só na finalização (`FinishTransactionAsync`, dentro de transação ACID).
 - **Taxa 2%** do vendedor → **Fundo Comunitário** (sem fins lucrativos; reinvestido na operação).
 - **Janela 72h** medida em `block.timestamp` (on-chain, imutável).
@@ -123,7 +123,7 @@ Cancelado/Expirado → sem recompensa
 ## 3. Os 3 Fluxos Econômicos
 1. **Moeda → Anúncio:** comprar produto/serviço com RVM (atomic swap).
 2. **Anúncio → Moeda:** oferecer e receber RVM (ao liberar).
-3. **Moeda → Conta:** transferência **P2P** de RVM entre carteiras (inclui "presentear" RVM de graça).
+3. **Moeda → Conta:** transferência **P2P** de RVM entre carteiras (inclui "presentear" RVM de graça) — *(roadmap: ainda não há endpoint de transferência)*.
 
 > **Doação/voluntariado NÃO são fluxos econômicos** (não movimentam RVM do receptor) — são **fluxos de
 > ajuda** com recompensa própria (multi-eixo). Detalhe em §2.4 e `USER_FLOWS.md`.
@@ -175,13 +175,12 @@ Cancelado/Expirado → sem recompensa
 - **Confirmação dupla (obrigatória no cadastro):** **e-mail** (link/token) **E telefone** (OTP via **WhatsApp + SMS**, provedor **Zenvia/TotalVoice**). Conta só ativa após ambos verificados.
 - **Idade mínima:** **18+** (responsabilidade legal plena; auto-custódia/contratos on-chain).
 - **CPF:** **OPCIONAL** (anti-sybil extra; sem FLP não é obrigatório; dado sensível sob LGPD).
-- **Login social:** **Google + Apple** (além da passkey) — reduz fricção.
-- **Passkey (WebAuthn)** — **sem seed phrase** (carteira invisível).
-- Ao ativar: backend gera **Safe** (4337 + módulo + signer webauthn-solidity) + **faucet R$20** (+ cupom se houver).
+- **Login:** passwordless por **código de e-mail** em 2 passos (`POST /api/auth/login/request` envia o código; `POST /api/auth/login/confirm` troca o código por JWT; resposta neutra anti-enumeração). *(Passkey/WebAuthn e login social Google+Apple: roadmap — não implementados.)*
+- Ao ativar: backend gera **carteira EOA managed** (mesma UX de carteira invisível — desvio formalizado no ADR-0015; Safe 4337 é roadmap) + **faucet R$20** (+ cupom se houver).
 - **Anti-sybil:** 1 conta/dispositivo (fingerprint) · 5 contas/IP/dia · **e-mail único** · **telefone único**.
 
 ### 5.1 Campos do cadastro
-**Obrigatórios:** nome/apelido · e-mail (verificado) · telefone (OTP WhatsApp+SMS) · CEP (→ ViaCEP) · passkey (WebAuthn) · aceite de Termos + LGPD · idade ≥18 (declaração/data) · cupom (opcional).
+**Obrigatórios:** nome/apelido · e-mail (verificado) · telefone (OTP WhatsApp+SMS) · CEP (→ ViaCEP) · passkey (WebAuthn) *(roadmap)* · aceite de Termos + LGPD · idade ≥18 (declaração/data) · cupom (opcional).
 
 **Opcionais:** CPF (opcional) · avatar (**auto-gerado**: inicial+cor/DiceBear se vazio) · bio · categorias de interesse (sugestão de feed/comunidades) · foto de capa.
 
@@ -223,7 +222,7 @@ Cancelado/Expirado → sem recompensa
 
 - **1–5 estrelas** por troca/doação/voluntariado finalizado (ambos se avaliam; 1× por par por interação).
 - **Média** aritmética visível no perfil: "★★★★☆ (4.2 — 15 avaliações)".
-- **Níveis/badges:** 🌱 Iniciante → ⭐ Trocador → 🌟 Trocador Pro → 💎 Lenda.
+- **Níveis/badges** (`Reputation.Level` no código): 🌱 Iniciante (<50 pts) → ⭐ Ajudante (<200) → 🌟 Mentor (<500) → 💎 Guardião (500+).
 - **Selos de ajuda:** doador 🎁 / voluntário 🤝 (por nº de doações/voluntariados).
 - **Pontos de ajuda:** contador separado (não RVM, não conversível); ranking comunitário.
 - **Bônus de RVM** creditado ao doador/voluntário (`DonationReward:BonusRvm` admin-configurável).
@@ -262,7 +261,7 @@ Cancelado/Expirado → sem recompensa
 | Docs legados (sem `Version`) | `$or` + `$exists:false` (blueprint equivale) |
 | Ownership | `SellerId`/`BuyerId`/`ProviderId` vêm do **token**, nunca do body |
 | Voucher expirado | Auto-reembolso (buyer desbloqueia) + provider pode claim via árbitro |
-| P2P transfer | Entre Safes, sem taxa no MVP |
+| P2P transfer | Entre carteiras, sem taxa no MVP — *(roadmap: ainda sem endpoint)* |
 | Demurrage | Não atinge saldo em escrow nem abaixo do piso (R$100 equiv) |
 | Comunidade private | `join` exige `{password}` (password-gated) |
 
@@ -273,7 +272,7 @@ Cancelado/Expirado → sem recompensa
 | Termo | Definição |
 |-------|-----------|
 | **RVM** | "crédito de troca" on-chain (ERC-20). Exibição **RM$**. NÃO ativo financeiro. |
-| **Safe** | Carteira do usuário (Account Abstraction, self-custody, passkey). |
+| **Safe** | Carteira do usuário (Account Abstraction, self-custody, passkey). Hoje: EOA managed pelo backend (ADR-0015); AA é roadmap. |
 | **EscrowVault** | Custódia on-chain de NFT/RVM durante a troca (atomic swap). |
 | **Anúncio** | "Uma coisa que você oferece" (OOUX) — product ou service, com modo e visibilidade. |
 | **Atomic swap** | Troca simultânea e irrevogável de RVM↔NFT/voucher na liberação. |

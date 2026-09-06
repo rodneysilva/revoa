@@ -157,16 +157,16 @@
 
 ### 11. Troca (escrow)
 - **Core:** id, anúncio, buyer, seller, valorRvm, taxa(2%→Fundo), nft/voucher, createdAt.
-- **CTAs:** ofertar, pagar(fund), marcar entregue, confirmar, disputar, liberar, cancelar.
-- **States:** `ofertada → financiada → entregue → [72h] → liberada|disputada`; `cancelada → reembolsada`.
+- **CTAs:** ofertar, pagar(fund), liberar (confirmação cooperativa), disputar, cancelar.
+- **States:** `ofertada → financiada → liberada|disputada` (liberação cooperativa; auto após 72h sem ação); `cancelada → reembolsada`.
 - **Views:** tracker de troca, histórico, admin (árbitro).
 - **Aggregate:** `Exchange.Trade` (ACID no finish). **Ranking:** 1.
 
 ### 12. Doação / Ajuda
 - **Core:** anúncio(modo doar/voluntariar), doador, receptor(escolhido), voucher/NFT, recompensas aplicadas, createdAt.
-- **CTAs:** anunciar(0 RVM), pedir(fila), escolher receptor(curadoria), aceitar, entregar, confirmar, cancelar.
+- **CTAs:** anunciar(0 RVM), pedir(fila), escolher receptor(curadoria), aceitar, liberar, cancelar.
 - **Relacionamentos:** → Anúncio, Usuário(doador+receptor), PedidoDeAjuda, Recompensa, PontosDeAjuda.
-- **States:** `anunciada → pedida → combinada → entregue → confirmada → recompensada | cancelada`.
+- **States:** `anunciada → pedida (Open) → combinada (Selected) → liberada → recompensada | cancelada | retirada (Withdrawn)`.
 - **Views:** feed (badge Doar/Voluntariar), detalhe, "minhas doações", perfil (selos).
 - **Aggregate:** `Exchange.Donation` (discriminado por modo; reusa escrow/voucher valor 0). **Ranking:** 1.
 
