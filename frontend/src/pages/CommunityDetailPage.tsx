@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
-import { ListingCard } from "../components/ListingCard";
+import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { LiveChat } from "../components/LiveChat";
 import { PostThread } from "../components/PostThread";
 import { timeAgo } from "../lib/time";
@@ -19,14 +19,14 @@ import type { Community, FeedItem, Membership, MembershipRole, Post } from "../a
    Navegação por objetos (OOUX — objects-first).
    A Comunidade é o objeto central; cada aba é a "casa" de um objeto
    relacionado, com seus atributos e CTAs. Deep-link via #hash.
-   Objetos: Conversas (Post) · Ao vivo (Chat) · Ofertas (Anúncio) · Membros (Membership).
+   Objetos: Conversas (Post) · Ao vivo (Chat) · Anúncios (Anúncio) · Membros (Membership).
    ═══════════════════════════════════════════════════════════════════════ */
 type ObjectTab = "conversas" | "aovivo" | "ofertas" | "membros";
 
 const TABS: { id: ObjectTab; icon: string; label: string }[] = [
   { id: "conversas", icon: "💬", label: "Conversas" },
   { id: "aovivo", icon: "⚡", label: "Ao vivo" },
-  { id: "ofertas", icon: "🛍️", label: "Ofertas" },
+  { id: "ofertas", icon: "🛍️", label: "Anúncios" },
   { id: "membros", icon: "👥", label: "Membros" },
 ];
 
@@ -110,8 +110,11 @@ export function CommunityDetailPage() {
     let active = true;
     setMemberListings(null);
     setListingsError(false);
+    // Anúncios dos membros VISÍVEIS no contexto desta comunidade: communityId
+    // faz o backend incluir também os escopados à comunidade (Visibility=
+    // Community), que o feed sem esse filtro exclui.
     api
-      .feed({ sellerIds: ids.join(","), page: 1 })
+      .feed({ sellerIds: ids.join(","), communityId: id, page: 1 })
       .then((items) => {
         if (active) setMemberListings(items);
       })
@@ -234,9 +237,10 @@ export function CommunityDetailPage() {
     .filter(Boolean)
     .join(", ");
 
-  const counts: Record<ObjectTab, number> = {
+  // Contadores apenas de objetos com dado real — "Ao vivo" não tem contador
+  // (não há sinal de presença; dot pulsante seria fantasma).
+  const counts: Partial<Record<ObjectTab, number>> = {
     conversas: posts.length,
-    aovivo: 0,
     ofertas: memberListings?.length ?? 0,
     membros: activeMembers.length,
   };
@@ -349,7 +353,7 @@ export function CommunityDetailPage() {
         <div className="flex gap-1 overflow-x-auto">
           {TABS.map((t) => {
             const active = tab === t.id;
-            const count = counts[t.id];
+            const count = counts[t.id] ?? 0;
             return (
               <button
                 key={t.id}
@@ -363,7 +367,7 @@ export function CommunityDetailPage() {
                   {t.icon}
                 </span>
                 {t.label}
-                {t.id !== "aovivo" && count > 0 && (
+                {count > 0 && (
                   <span
                     className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
                       active ? "bg-esmeralda/15 text-esmeralda" : "bg-smoke text-silver"
@@ -371,12 +375,6 @@ export function CommunityDetailPage() {
                   >
                     {count}
                   </span>
-                )}
-                {t.id === "aovivo" && isMember && (
-                  <span
-                    className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-esmeralda animate-pulse align-middle"
-                    title="Ao vivo"
-                  />
                 )}
                 {active && (
                   <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-esmeralda rounded-full" />
@@ -553,7 +551,7 @@ function AoVivoPanel({
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Objeto: Ofertas (Anúncio — economia circular dos membros, UF-07..11)
+   Objeto: Anúncios (Listing — economia circular dos membros, UF-07..11)
    ═══════════════════════════════════════════════════════════════════════ */
 function OfertasPanel({
   loading,
@@ -572,12 +570,12 @@ function OfertasPanel({
     <div>
       {error ? (
         <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
-          Não foi possível carregar as ofertas agora. Tente novamente mais tarde.
+          Não foi possível carregar os anúncios agora. Tente novamente mais tarde.
         </div>
       ) : loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="aspect-[3/4] bg-smoke rounded-xl animate-pulse" />
+            <ListingCardSkeleton key={i} />
           ))}
         </div>
       ) : items.length === 0 ? (

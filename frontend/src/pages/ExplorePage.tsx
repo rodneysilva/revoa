@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ListingCard } from "../components/ListingCard";
+import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
 import type { Category, FeedItem, FeedParams, Kind, Mode } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -315,10 +315,7 @@ export function ExplorePage() {
           {loading ? (
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">
               {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="aspect-[3/4] bg-smoke rounded-xl animate-pulse"
-                />
+                <ListingCardSkeleton key={i} />
               ))}
             </div>
           ) : items.length === 0 ? (

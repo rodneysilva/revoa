@@ -17,6 +17,22 @@ function serviceDurationLabel(item: FeedItem): string | null {
   return item.UnitType === "Hours" ? `≈ ${item.Duration} h` : "por serviço";
 }
 
+// Placeholder de carregamento com a mesma forma do card real (imagem quadrada +
+// bloco de texto) — o layout não "pula" quando os dados chegam.
+export function ListingCardSkeleton() {
+  return (
+    <div className="bg-charcoal rounded-xl border border-smoke overflow-hidden animate-pulse">
+      <div className="aspect-square bg-smoke" />
+      <div className="p-4">
+        <div className="h-3.5 w-16 rounded-full bg-smoke mb-2.5" />
+        <div className="h-4 w-2/3 rounded bg-smoke mb-2" />
+        <div className="h-5 w-1/3 rounded bg-smoke mb-3" />
+        <div className="h-3 w-1/2 rounded bg-smoke" />
+      </div>
+    </div>
+  );
+}
+
 export function ListingCard({ item }: { item: FeedItem }) {
   const gratis = item.PriceRvm === 0;
   const isService = item.Kind === "Service";
