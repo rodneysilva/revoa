@@ -221,7 +221,21 @@ app.UseForwardedHeaders();
 // servida pela própria API — única origem, sem CORS. Em Development (sem wwwroot)
 // estes middlewares são no-op e a UI roda no Vite dev server.
 app.UseDefaultFiles();
-app.UseStaticFiles();
+// Cache-Control da SPA: /assets/* tem nome com hash de conteúdo → immutable.
+// Todo o resto (index.html, sw.js, registerSW.js, manifest) muda a cada deploy
+// SEM mudar de nome → "no-cache" (revalida sempre). Sem isso a Cloudflare
+// cacheia o sw.js velho na borda (default .js = 2h) e o service worker do PWA
+// nunca vê a nova versão — o cliente fica preso no precache antigo.
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path;
+        ctx.Context.Response.Headers.CacheControl = path.StartsWithSegments("/assets")
+            ? "public, max-age=31536000, immutable"
+            : "no-cache";
+    }
+});
 
 // Log de request HTTP condensado pelo Serilog (1 evento por request, com método/path/status/duração).
 app.UseSerilogRequestLogging();
@@ -273,6 +287,7 @@ app.MapFallback(async context =>
     }
 
     context.Response.ContentType = "text/html; charset=utf-8";
+    context.Response.Headers.CacheControl = "no-cache";
     await context.Response.SendFileAsync(index);
 });
 
