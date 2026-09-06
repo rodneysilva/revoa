@@ -9,7 +9,6 @@ import { PostThread } from "../components/PostThread";
 import { timeAgo } from "../lib/time";
 import {
   EIXO_EMOJI,
-  EIXO_LABEL,
   PAPEL_META,
   VISIBILIDADE_LABEL,
 } from "../lib/community";
@@ -254,102 +253,105 @@ export function CommunityDetailPage() {
         ← Comunidades
       </Link>
 
-      {/* ══ HERO do objeto Comunidade ══ */}
+      {/* ══ HERO do objeto Comunidade — compacto, 1 linha: nome + chips +
+             membros + CTA. O conteúdo (aba ativa) fica acima da dobra. ══ */}
       <header className="relative rounded-2xl overflow-hidden border border-smoke">
         <div className="bg-community absolute inset-0" aria-hidden />
         <div className="absolute inset-0 bg-black/30" aria-hidden />
-        <div className="relative p-6 sm:p-8 text-white">
-          <div className="flex items-center gap-1.5 flex-wrap mb-3">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm">
-              {EIXO_EMOJI[community.Axis]} {EIXO_LABEL[community.Axis]}
-            </span>
+        <div className="relative p-4 sm:p-5 text-white">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold drop-shadow">
+              <span aria-hidden>{EIXO_EMOJI[community.Axis]}</span>
+              <span className="truncate max-w-[16rem] sm:max-w-none">{community.Name}</span>
+            </h1>
             {community.Type === "Default" && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-esmeralda/40 backdrop-blur-sm">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-esmeralda/40 backdrop-blur-sm">
                 Oficial
               </span>
             )}
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
               {community.Visibility === "Private"
                 ? `🔒 ${VISIBILIDADE_LABEL[community.Visibility]}`
                 : VISIBILIDADE_LABEL[community.Visibility]}
             </span>
-          </div>
 
-          <h1 className="text-2xl sm:text-4xl font-bold drop-shadow">{community.Name}</h1>
-          {community.Description && (
-            <p className="mt-2 max-w-3xl text-white/90 whitespace-pre-wrap drop-shadow">
-              {community.Description}
-            </p>
-          )}
-
-          <div className="mt-4 flex items-center gap-x-4 gap-y-2 text-sm flex-wrap">
-            <div className="flex items-center gap-2">
-              <Avatar name={community.CreatorName} src={community.CreatorAvatarUrl} size={26} />
-              <span className="text-white/90">
-                por <span className="font-semibold">{community.CreatorName}</span>
-              </span>
-            </div>
             <button
               type="button"
               onClick={() => selectTab("membros")}
-              className="text-white/90 hover:text-white"
+              className="text-sm text-white/90 hover:text-white ml-auto whitespace-nowrap"
             >
-              👥 {community.MembersCount}{" "}
-              {community.MembersCount === 1 ? "membro" : "membros"}
+              👥 {community.MembersCount}
             </button>
-            {local && <span className="text-white/90">📍 {local}</span>}
-          </div>
 
-          <div className="mt-5">
             {!user ? (
               <Link
                 to="/login"
-                className="inline-block bg-white text-ink font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-white/90"
+                className="bg-white text-ink font-semibold px-4 py-1.5 rounded-lg text-sm hover:bg-white/90 whitespace-nowrap"
               >
                 Entrar para participar
               </Link>
             ) : !user.verified ? (
-              <p className="text-sm bg-white/15 inline-block px-3 py-2 rounded-lg">
-                Confirme e-mail e telefone para participar.{" "}
-                <Link to="/register" className="underline font-semibold">
-                  Verificar
-                </Link>
-              </p>
+              <Link
+                to="/register"
+                className="text-sm text-white/90 underline hover:text-white whitespace-nowrap"
+              >
+                Verificar conta para participar
+              </Link>
             ) : isMember ? (
               <button
                 onClick={leave}
                 disabled={leaving}
-                className="bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/40 text-white font-semibold px-5 py-2.5 rounded-xl text-sm disabled:opacity-60"
+                className="bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/40 text-white font-semibold px-4 py-1.5 rounded-lg text-sm disabled:opacity-60 whitespace-nowrap"
               >
-                {leaving ? "Saindo…" : "Sair da comunidade"}
+                {leaving ? "Saindo…" : "Sair"}
               </button>
-            ) : (
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                {isPrivate && (
-                  <input
-                    type="password"
-                    value={joinPassword}
-                    onChange={(e) => setJoinPassword(e.target.value)}
-                    placeholder="Senha da comunidade"
-                    className="bg-white/15 backdrop-blur-sm border border-white/40 rounded-xl px-3 py-2.5 outline-none text-sm text-white placeholder:text-white/70 sm:w-56"
-                  />
-                )}
-                <button
-                  onClick={join}
-                  disabled={joining}
-                  className="bg-white text-ink font-semibold px-5 py-2.5 rounded-xl text-sm hover:bg-white/90 disabled:opacity-60"
-                >
-                  {joining ? "Entrando…" : "Entrar na comunidade"}
-                </button>
-              </div>
+            ) : !isPrivate ? (
+              <button
+                onClick={join}
+                disabled={joining}
+                className="bg-white text-ink font-semibold px-4 py-1.5 rounded-lg text-sm hover:bg-white/90 disabled:opacity-60 whitespace-nowrap"
+              >
+                {joining ? "Entrando…" : "Participar"}
+              </button>
+            ) : null}
+
+            {local && (
+              <span className="basis-full text-xs text-white/75 drop-shadow">📍 {local}</span>
             )}
-            {actionError && <p className="mt-2 text-sm text-rosa drop-shadow">{actionError}</p>}
           </div>
+
+          {community.Description && (
+            <p className="mt-2 max-w-3xl text-sm text-white/85 line-clamp-2 drop-shadow">
+              {community.Description}
+            </p>
+          )}
+
+          {/* Comunidade privada: senha + CTA em linha compacta abaixo do nome */}
+          {user?.verified && !isMember && isPrivate && (
+            <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
+              <input
+                type="password"
+                value={joinPassword}
+                onChange={(e) => setJoinPassword(e.target.value)}
+                placeholder="Senha da comunidade"
+                className="bg-white/15 backdrop-blur-sm border border-white/40 rounded-lg px-3 py-1.5 outline-none text-sm text-white placeholder:text-white/70 sm:w-56"
+              />
+              <button
+                onClick={join}
+                disabled={joining}
+                className="bg-white text-ink font-semibold px-4 py-1.5 rounded-lg text-sm hover:bg-white/90 disabled:opacity-60"
+              >
+                {joining ? "Entrando…" : "Participar"}
+              </button>
+            </div>
+          )}
+
+          {actionError && <p className="mt-2 text-sm text-rosa drop-shadow">{actionError}</p>}
         </div>
       </header>
 
       {/* ══ NAVEGAÇÃO POR OBJETOS (sticky) ══ */}
-      <nav className="sticky top-16 z-30 mt-5 -mx-1 px-1 bg-ink/85 backdrop-blur border-b border-smoke">
+      <nav className="sticky top-16 z-30 mt-4 -mx-1 px-1 bg-ink/85 backdrop-blur border-b border-smoke">
         <div className="flex gap-1 overflow-x-auto">
           {TABS.map((t) => {
             const active = tab === t.id;
@@ -385,8 +387,9 @@ export function CommunityDetailPage() {
         </div>
       </nav>
 
-      {/* ══ PAINEL DO OBJETO ATIVO ══ */}
-      <div className="mt-6">
+      {/* ══ PAINEL DO OBJETO ATIVO — mesma largura de leitura em todas as
+             abas (trocar de aba não muda a largura do conteúdo) ══ */}
+      <div className="mt-4 max-w-4xl">
         {tab === "conversas" && (
           <ConversasPanel
             isMember={isMember}
@@ -457,7 +460,7 @@ function ConversasPanel({
   replyingId?: string;
 }) {
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="space-y-4">
       {canPost && (
         <form onSubmit={submitRoot} className="bg-charcoal border border-smoke rounded-xl p-4">
           <textarea
@@ -528,7 +531,7 @@ function AoVivoPanel({
   verified: boolean;
 }) {
   return (
-    <div className="max-w-3xl">
+    <div>
       <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
         <p className="text-sm text-silver">
           ⚡ Conversa em tempo real com quem está online agora.
