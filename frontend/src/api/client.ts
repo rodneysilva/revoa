@@ -177,10 +177,6 @@ export const api = {
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
     apiPost<{ Id: string }>(`/api/listings`, body).then((r) => r.Id),
-  trades: (p: TradesParams): Promise<Trade[]> =>
-    apiGet<Trade[]>(
-      `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`
-    ),
   tradeHistory: (p: TradesParams): Promise<Trade[]> =>
     apiGet<Trade[]>(
       `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`

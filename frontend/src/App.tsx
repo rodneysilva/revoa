@@ -33,7 +33,6 @@ export default function App() {
           <Route path="/listings/:id" element={<ListingDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/trades" element={<TradeTrackerPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/community/:id" element={<CommunityDetailPage />} />
           <Route path="/admin/reports" element={<AdminReportsPage />} />
