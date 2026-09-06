@@ -67,7 +67,7 @@ public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, R
             return Result<IReadOnlyList<CommunityDto>>.Ok(empty);
         }
 
-        var counts = await _memberships.CountAtivasByComunidadeAsync(paged.Select(c => c.Id), ct);
+        var counts = await _memberships.CountActiveByCommunityAsync(paged.Select(c => c.Id), ct);
 
         IReadOnlyList<CommunityDto> result = paged
             .Select(c => CommunityDtoMapper.From(c, counts.GetValueOrDefault(c.Id)))

@@ -4,9 +4,9 @@ namespace Revoa.Community.Application.DTOs;
 
 public sealed record MembershipDto(
     Guid Id,
-    Guid UsuarioId,
+    Guid UserId,
     string UserName,
-    string? UsuarioAvatarUrl,
+    string? UserAvatarUrl,
     Guid CommunityId,
     MembershipRole Role,
     MembershipStatus Status,
@@ -16,9 +16,9 @@ public static class MembershipDtoMapper
 {
     public static MembershipDto From(Membership m) => new(
         m.Id,
-        m.UsuarioId,
+        m.UserId,
         m.UserName,
-        m.UsuarioAvatarUrl,
+        m.UserAvatarUrl,
         m.CommunityId,
         m.Role,
         m.Status,

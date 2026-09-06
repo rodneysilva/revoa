@@ -14,10 +14,10 @@ function errMsg(e: unknown): string {
 }
 
 export function LiveChat({
-  comunidadeId,
+  communityId,
   isMember,
 }: {
-  comunidadeId: string;
+  communityId: string;
   isMember: boolean;
 }) {
   const { user } = useAuth();
@@ -31,7 +31,7 @@ export function LiveChat({
   useEffect(() => {
     if (!isMember) return;
     let active = true;
-    const conn = buildCommunityHub(comunidadeId, getToken());
+    const conn = buildCommunityHub(communityId, getToken());
     connRef.current = conn;
 
     conn.on("ReceiveMessage", (dto: ChatMessage) => {
@@ -65,7 +65,7 @@ export function LiveChat({
       conn.stop().catch(() => {});
       connRef.current = null;
     };
-  }, [comunidadeId, isMember]);
+  }, [communityId, isMember]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -78,7 +78,7 @@ export function LiveChat({
     setText("");
     setError(null);
     try {
-      await connRef.current.invoke("SendMessage", comunidadeId, c);
+      await connRef.current.invoke("SendMessage", communityId, c);
     } catch (e) {
       setError(errMsg(e));
       setText(c);

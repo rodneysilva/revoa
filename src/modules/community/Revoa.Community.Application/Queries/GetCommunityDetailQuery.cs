@@ -27,7 +27,7 @@ public class GetCommunityDetailQueryHandler : IRequestHandler<GetCommunityDetail
             return Result<CommunityDto>.Fail("Comunidade não encontrada.");
         }
 
-        var counts = await _memberships.CountAtivasByComunidadeAsync(new[] { community.Id }, ct);
+        var counts = await _memberships.CountActiveByCommunityAsync(new[] { community.Id }, ct);
         return Result<CommunityDto>.Ok(CommunityDtoMapper.From(community, counts.GetValueOrDefault(community.Id)));
     }
 }

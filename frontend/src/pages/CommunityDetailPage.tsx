@@ -94,14 +94,14 @@ export function CommunityDetailPage() {
   }, [id]);
 
   const activeMembers = useMemo(
-    () => members.filter((m) => m.Status === "Ativa"),
+    () => members.filter((m) => m.Status === "Active"),
     [members]
   );
-  const isMember = !!(user && activeMembers.some((m) => m.UsuarioId === user.userId));
+  const isMember = !!(user && activeMembers.some((m) => m.UserId === user.userId));
   const isPrivate = community?.Visibility === "Private";
 
   useEffect(() => {
-    const ids = Array.from(new Set(activeMembers.map((m) => m.UsuarioId).filter(Boolean)));
+    const ids = Array.from(new Set(activeMembers.map((m) => m.UserId).filter(Boolean)));
     if (ids.length === 0) {
       setMemberListings([]);
       setListingsError(false);
@@ -537,7 +537,7 @@ function AoVivoPanel({
         </p>
         <span className="text-xs text-silver/70">As mensagens expiram em 90 dias</span>
       </div>
-      <LiveChat comunidadeId={community.Id} isMember={isMember} />
+      <LiveChat communityId={community.Id} isMember={isMember} />
       {!isMember && (
         <p className="mt-3 text-sm text-silver text-center">
           Entre na comunidade para participar da conversa ao vivo. 🤝
@@ -679,13 +679,13 @@ function MembrosPanel({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {visiveis.map((m) => {
             const papel = PAPEL_META[m.Role];
-            const voce = currentUserId && m.UsuarioId === currentUserId;
+            const voce = currentUserId && m.UserId === currentUserId;
             return (
               <div
                 key={m.Id}
                 className="flex items-center gap-3 bg-charcoal border border-smoke rounded-xl p-3"
               >
-                <Avatar name={m.UserName} src={m.UsuarioAvatarUrl} size={44} />
+                <Avatar name={m.UserName} src={m.UserAvatarUrl} size={44} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-cream truncate">

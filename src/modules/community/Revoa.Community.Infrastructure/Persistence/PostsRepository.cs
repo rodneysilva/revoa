@@ -13,10 +13,10 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
     {
     }
 
-    public async Task<IReadOnlyList<Post>> GetByComunidadeAsync(Guid comunidadeId, Guid? parentId, CancellationToken ct)
+    public async Task<IReadOnlyList<Post>> GetByCommunityAsync(Guid communityId, Guid? parentId, CancellationToken ct)
     {
         var fb = Builders<Post>.Filter;
-        var query = fb.Eq(p => p.CommunityId, comunidadeId)
+        var query = fb.Eq(p => p.CommunityId, communityId)
                     & fb.Eq(p => p.Status, PostStatus.Visible);
 
         query &= parentId is null
@@ -28,10 +28,10 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Post>> GetByComunidadeRecentAsync(Guid comunidadeId, int limit, CancellationToken ct)
+    public async Task<IReadOnlyList<Post>> GetByComunidadeRecentAsync(Guid communityId, int limit, CancellationToken ct)
     {
         var fb = Builders<Post>.Filter;
-        var query = fb.Eq(p => p.CommunityId, comunidadeId)
+        var query = fb.Eq(p => p.CommunityId, communityId)
                     & fb.Eq(p => p.Status, PostStatus.Visible);
 
         var safeLimit = limit > 0 ? limit : 50;

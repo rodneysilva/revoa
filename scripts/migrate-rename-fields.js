@@ -56,6 +56,8 @@ const RENAMES = {
   },
   Memberships: {
     UsuarioNome: "UserName",
+    UsuarioId: "UserId",
+    UsuarioAvatarUrl: "UserAvatarUrl",
     ComunidadeId: "CommunityId",
     Papel: "Role",
   },

@@ -241,7 +241,7 @@ public class DevController : ControllerBase
                     vendedorAvatarUrl: seller.AvatarUrl,
                     localizacao: local,
                     categoriaId: catId,
-                    comunidadeId: null,
+                    communityId: null,
                     visibilidade: ListingVisibility.Global,
                     productDetails: pd,
                     serviceDetails: sd);

@@ -203,7 +203,7 @@ export type CommunityType = "Default" | "User";
 export type CommunityAxis = "Geo" | "Interest" | "Cause";
 export type CommunityVisibility = "Open" | "Private";
 export type MembershipRole = "Member" | "Moderator" | "Creator";
-export type MembershipStatus = "Ativa" | "Bloqueada";
+export type MembershipStatus = "Active" | "Blocked";
 
 export interface Community {
   Id: string;
@@ -246,9 +246,9 @@ export interface Comment extends Post {
 
 export interface Membership {
   Id: string;
-  UsuarioId: string;
+  UserId: string;
   UserName: string;
-  UsuarioAvatarUrl?: string;
+  UserAvatarUrl?: string;
   CommunityId: string;
   Role: MembershipRole;
   Status: MembershipStatus;

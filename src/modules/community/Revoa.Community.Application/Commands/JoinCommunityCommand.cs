@@ -8,9 +8,9 @@ namespace Revoa.Community.Application.Commands;
 
 // Entra em comunidade. Private valida senha. Não permite reentrar se já ativo ou bloqueado.
 public sealed record JoinCommunityCommand(
-    Guid UsuarioId,
+    Guid UserId,
     string UserName,
-    string? UsuarioAvatarUrl,
+    string? UserAvatarUrl,
     Guid CommunityId,
     string? Password) : IRequest<Result<string>>;
 
@@ -52,18 +52,18 @@ public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand,
             await _communities.UpdateAsync(community, ct);
         }
 
-        var existing = await _memberships.GetByUsuarioEComunidadeAsync(request.UsuarioId, request.CommunityId, ct);
+        var existing = await _memberships.GetByUserAndCommunityAsync(request.UserId, request.CommunityId, ct);
         if (existing is not null)
         {
-            return Result<string>.Fail(existing.Status == MembershipStatus.Bloqueada
+            return Result<string>.Fail(existing.Status == MembershipStatus.Blocked
                 ? "Você está bloqueado desta comunidade."
                 : "Você já é membro desta comunidade.");
         }
 
         var membership = Membership.Create(
-            request.UsuarioId,
+            request.UserId,
             request.UserName,
-            request.UsuarioAvatarUrl,
+            request.UserAvatarUrl,
             request.CommunityId,
             MembershipRole.Member);
         await _memberships.AddAsync(membership, ct);

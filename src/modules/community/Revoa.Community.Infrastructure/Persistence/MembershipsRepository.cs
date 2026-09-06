@@ -12,29 +12,29 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
     {
     }
 
-    public async Task<Membership?> GetByUsuarioEComunidadeAsync(Guid usuarioId, Guid comunidadeId, CancellationToken ct)
+    public async Task<Membership?> GetByUserAndCommunityAsync(Guid userId, Guid communityId, CancellationToken ct)
     {
         var fb = Builders<Membership>.Filter;
         return await Collection.Find(
-            fb.Eq(m => m.UsuarioId, usuarioId) & fb.Eq(m => m.CommunityId, comunidadeId))
+            fb.Eq(m => m.UserId, userId) & fb.Eq(m => m.CommunityId, communityId))
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Membership>> ListByComunidadeAsync(Guid comunidadeId, CancellationToken ct)
+    public async Task<IReadOnlyList<Membership>> ListByCommunityAsync(Guid communityId, CancellationToken ct)
     {
-        return await Collection.Find(m => m.CommunityId == comunidadeId)
+        return await Collection.Find(m => m.CommunityId == communityId)
             .SortBy(m => m.JoinedAt)
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<Membership>> ListByUsuarioAsync(Guid usuarioId, CancellationToken ct)
+    public async Task<IReadOnlyList<Membership>> ListByUsuarioAsync(Guid userId, CancellationToken ct)
     {
-        return await Collection.Find(m => m.UsuarioId == usuarioId)
+        return await Collection.Find(m => m.UserId == userId)
             .SortByDescending(m => m.JoinedAt)
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, int>> CountAtivasByComunidadeAsync(
+    public async Task<IReadOnlyDictionary<Guid, int>> CountActiveByCommunityAsync(
         IEnumerable<Guid> comunidadeIds, CancellationToken ct)
     {
         var ids = comunidadeIds.ToList();
@@ -44,7 +44,7 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
         }
 
         var fb = Builders<Membership>.Filter;
-        var query = fb.In(m => m.CommunityId, ids) & fb.Eq(m => m.Status, MembershipStatus.Ativa);
+        var query = fb.In(m => m.CommunityId, ids) & fb.Eq(m => m.Status, MembershipStatus.Active);
 
         var matchDoc = query.Render(Collection.DocumentSerializer, Collection.Settings.SerializerRegistry);
 
@@ -58,8 +58,8 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
         using var cursor = await Collection.AggregateAsync<BsonDocument>(pipeline, cancellationToken: ct);
         await cursor.ForEachAsync(doc =>
         {
-            var comunidadeId = doc["_id"].AsGuid;
-            result[comunidadeId] = doc["count"].AsInt32;
+            var communityId = doc["_id"].AsGuid;
+            result[communityId] = doc["count"].AsInt32;
         }, ct);
 
         return result;
@@ -71,7 +71,7 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
     }
 
     /// <summary>
-    /// Índice único composto (UsuarioId, CommunityId) — garante 1 membership por usuário/comunidade.
+    /// Índice único composto (UserId, CommunityId) — garante 1 membership por usuário/comunidade.
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
@@ -79,7 +79,7 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
         {
             new CreateIndexModel<Membership>(
                 Builders<Membership>.IndexKeys
-                    .Ascending(m => m.UsuarioId)
+                    .Ascending(m => m.UserId)
                     .Ascending(m => m.CommunityId),
                 new CreateIndexOptions { Name = "ux_Usuario_Comunidade", Unique = true }),
             new CreateIndexModel<Membership>(

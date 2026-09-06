@@ -7,7 +7,7 @@ using Revoa.Community.Domain.Repositories;
 namespace Revoa.Api.Hubs;
 
 // Hub de chat tempo-real do módulo Community (UF-20/21). Cliente entra no grupo "comunidade-{id}"
-// via query string `comunidadeId` ao conectar. Envio exige membro ativo (gate no hub).
+// via query string `communityId` ao conectar. Envio exige membro ativo (gate no hub).
 public class CommunityHub : Hub
 {
     private readonly IMembershipRepository _memberships;
@@ -22,16 +22,16 @@ public class CommunityHub : Hub
     public override async Task OnConnectedAsync()
     {
         var comunidadeIdStr = Context.GetHttpContext()?.Request.Query["communityId"].ToString();
-        if (Guid.TryParse(comunidadeIdStr, out var comunidadeId))
+        if (Guid.TryParse(comunidadeIdStr, out var communityId))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, $"comunidade-{comunidadeId}");
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"comunidade-{communityId}");
         }
 
         await base.OnConnectedAsync();
     }
 
     // Envia mensagem à comunidade. Autenticação + membership ativo obrigatórios (gate).
-    public async Task SendMessage(Guid comunidadeId, string conteudo)
+    public async Task SendMessage(Guid communityId, string conteudo)
     {
         if (Context.User?.Identity?.IsAuthenticated != true)
         {
@@ -48,8 +48,8 @@ public class CommunityHub : Hub
         var avatar = Context.User?.FindFirst("avatar")?.Value;
 
         var ct = Context.ConnectionAborted;
-        var membership = await _memberships.GetByUsuarioEComunidadeAsync(autorId, comunidadeId, ct);
-        if (membership is null || membership.Status != MembershipStatus.Ativa)
+        var membership = await _memberships.GetByUserAndCommunityAsync(autorId, communityId, ct);
+        if (membership is null || membership.Status != MembershipStatus.Active)
         {
             throw new HubException("Você não é membro ativo desta comunidade.");
         }
@@ -57,7 +57,7 @@ public class CommunityHub : Hub
         ChatMessage message;
         try
         {
-            message = ChatMessage.Create(comunidadeId, autorId, nome, avatar, conteudo ?? string.Empty);
+            message = ChatMessage.Create(communityId, autorId, nome, avatar, conteudo ?? string.Empty);
         }
         catch (DomainException ex)
         {
@@ -77,6 +77,6 @@ public class CommunityHub : Hub
             message.CreatedAt
         };
 
-        await Clients.Group($"comunidade-{comunidadeId}").SendAsync("ReceiveMessage", dto, ct);
+        await Clients.Group($"comunidade-{communityId}").SendAsync("ReceiveMessage", dto, ct);
     }
 }

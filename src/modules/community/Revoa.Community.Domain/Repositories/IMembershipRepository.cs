@@ -6,14 +6,14 @@ public interface IMembershipRepository
 {
     Task<Membership?> GetByIdAsync(Guid id, CancellationToken ct);
 
-    Task<Membership?> GetByUsuarioEComunidadeAsync(Guid usuarioId, Guid comunidadeId, CancellationToken ct);
+    Task<Membership?> GetByUserAndCommunityAsync(Guid userId, Guid communityId, CancellationToken ct);
 
-    Task<IReadOnlyList<Membership>> ListByComunidadeAsync(Guid comunidadeId, CancellationToken ct);
+    Task<IReadOnlyList<Membership>> ListByCommunityAsync(Guid communityId, CancellationToken ct);
 
-    Task<IReadOnlyList<Membership>> ListByUsuarioAsync(Guid usuarioId, CancellationToken ct);
+    Task<IReadOnlyList<Membership>> ListByUsuarioAsync(Guid userId, CancellationToken ct);
 
-    // Contagem batch por comunidade (anti-N+1 no feed de comunidades). Só memberships Ativa.
-    Task<IReadOnlyDictionary<Guid, int>> CountAtivasByComunidadeAsync(IEnumerable<Guid> comunidadeIds, CancellationToken ct);
+    // Contagem batch por comunidade (anti-N+1 no feed de comunidades). Só memberships Active.
+    Task<IReadOnlyDictionary<Guid, int>> CountActiveByCommunityAsync(IEnumerable<Guid> comunidadeIds, CancellationToken ct);
 
     Task AddAsync(Membership membership, CancellationToken ct);
 

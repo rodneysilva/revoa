@@ -29,9 +29,9 @@ public class HidePostCommandHandler : IRequestHandler<HidePostCommand, Result>
         }
 
         // Gate: moderador daquela comunidade (Moderador ou Criador).
-        var membership = await _memberships.GetByUsuarioEComunidadeAsync(request.ModeradorId, post.CommunityId, ct);
+        var membership = await _memberships.GetByUserAndCommunityAsync(request.ModeradorId, post.CommunityId, ct);
         if (membership is null
-            || membership.Status != MembershipStatus.Ativa
+            || membership.Status != MembershipStatus.Active
             || membership.Role is not (MembershipRole.Moderator or MembershipRole.Creator))
         {
             return Result.Fail("Apenas moderadores ou o criador podem ocultar posts.");

@@ -29,8 +29,8 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, Resul
     public async Task<Result<string>> Handle(CreatePostCommand request, CancellationToken ct)
     {
         // Gate: autor deve ser membro ativo da comunidade.
-        var membership = await _memberships.GetByUsuarioEComunidadeAsync(request.AutorId, request.CommunityId, ct);
-        if (membership is null || membership.Status != MembershipStatus.Ativa)
+        var membership = await _memberships.GetByUserAndCommunityAsync(request.AutorId, request.CommunityId, ct);
+        if (membership is null || membership.Status != MembershipStatus.Active)
         {
             return Result<string>.Fail("Apenas membros ativos podem postar nesta comunidade.");
         }

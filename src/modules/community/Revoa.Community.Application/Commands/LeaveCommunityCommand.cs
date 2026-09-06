@@ -6,7 +6,7 @@ using Revoa.Community.Domain.Repositories;
 namespace Revoa.Community.Application.Commands;
 
 // Sai de comunidade (remove o membership). Criador deve arquivar a comunidade em vez de sair.
-public sealed record LeaveCommunityCommand(Guid UsuarioId, Guid CommunityId) : IRequest<Result>;
+public sealed record LeaveCommunityCommand(Guid UserId, Guid CommunityId) : IRequest<Result>;
 
 public class LeaveCommunityCommandHandler : IRequestHandler<LeaveCommunityCommand, Result>
 {
@@ -19,7 +19,7 @@ public class LeaveCommunityCommandHandler : IRequestHandler<LeaveCommunityComman
 
     public async Task<Result> Handle(LeaveCommunityCommand request, CancellationToken ct)
     {
-        var membership = await _memberships.GetByUsuarioEComunidadeAsync(request.UsuarioId, request.CommunityId, ct);
+        var membership = await _memberships.GetByUserAndCommunityAsync(request.UserId, request.CommunityId, ct);
         if (membership is null)
         {
             return Result.Fail("Você não é membro desta comunidade.");

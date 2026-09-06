@@ -64,7 +64,7 @@ public class CommunityTests : IntegrationTestBase
         var members = await client.GetAsync($"/api/communities/{communityId}/members");
         members.StatusCode.Should().Be(HttpStatusCode.OK);
         var membersArr = await members.Content.ReadFromJsonAsync<JsonArray>();
-        membersArr!.Select(m => m!["UsuarioId"]!.GetValue<Guid>())
+        membersArr!.Select(m => m!["UserId"]!.GetValue<Guid>())
             .Should().Contain(creator.UserId);
     }
 

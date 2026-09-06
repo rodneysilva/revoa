@@ -11,17 +11,17 @@ public enum MembershipRole
 
 public enum MembershipStatus
 {
-    Ativa,
-    Bloqueada
+    Active,
+    Blocked
 }
 
 // Vínculo usuário↔comunidade (OOUX objeto 18). UserName/AvatarUrl embed anti-N+1.
-// Papel Criador é imutável (não pode ser rebaixado/bloqueado). Índice único (UsuarioId, CommunityId).
+// Papel Criador é imutável (não pode ser rebaixado/bloqueado). Índice único (UserId, CommunityId).
 public class Membership : AggregateRoot
 {
-    public Guid UsuarioId { get; private set; }
+    public Guid UserId { get; private set; }
     public string UserName { get; private set; } = string.Empty;
-    public string? UsuarioAvatarUrl { get; private set; }
+    public string? UserAvatarUrl { get; private set; }
 
     public Guid CommunityId { get; private set; }
     public MembershipRole Role { get; private set; }
@@ -31,18 +31,18 @@ public class Membership : AggregateRoot
     private Membership() { }
 
     public static Membership Create(
-        Guid usuarioId,
-        string usuarioNome,
-        string? usuarioAvatarUrl,
-        Guid comunidadeId,
+        Guid userId,
+        string userName,
+        string? userAvatarUrl,
+        Guid communityId,
         MembershipRole papel)
     {
-        if (usuarioId == Guid.Empty)
+        if (userId == Guid.Empty)
         {
             throw new DomainException("Usuário é obrigatório.");
         }
 
-        if (comunidadeId == Guid.Empty)
+        if (communityId == Guid.Empty)
         {
             throw new DomainException("Comunidade é obrigatória.");
         }
@@ -50,20 +50,20 @@ public class Membership : AggregateRoot
         return new Membership
         {
             Id = Guid.NewGuid(),
-            UsuarioId = usuarioId,
-            UserName = string.IsNullOrWhiteSpace(usuarioNome) ? "Usuário" : usuarioNome,
-            UsuarioAvatarUrl = usuarioAvatarUrl,
-            CommunityId = comunidadeId,
+            UserId = userId,
+            UserName = string.IsNullOrWhiteSpace(userName) ? "Usuário" : userName,
+            UserAvatarUrl = userAvatarUrl,
+            CommunityId = communityId,
             Role = papel,
             JoinedAt = DateTime.UtcNow,
-            Status = MembershipStatus.Ativa,
+            Status = MembershipStatus.Active,
             Version = 1
         };
     }
 
     public void PromoverModerador()
     {
-        if (Status != MembershipStatus.Ativa)
+        if (Status != MembershipStatus.Active)
         {
             throw new DomainException("Membro bloqueado não pode ser promovido.");
         }
@@ -94,21 +94,21 @@ public class Membership : AggregateRoot
             throw new DomainException("Criador não pode ser bloqueado.");
         }
 
-        if (Status == MembershipStatus.Bloqueada)
+        if (Status == MembershipStatus.Blocked)
         {
             throw new DomainException("Membro já está bloqueado.");
         }
 
-        Status = MembershipStatus.Bloqueada;
+        Status = MembershipStatus.Blocked;
     }
 
     public void Desbloquear()
     {
-        if (Status != MembershipStatus.Bloqueada)
+        if (Status != MembershipStatus.Blocked)
         {
             throw new DomainException("Membro não está bloqueado.");
         }
 
-        Status = MembershipStatus.Ativa;
+        Status = MembershipStatus.Active;
     }
 }

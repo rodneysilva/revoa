@@ -21,7 +21,7 @@ public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQu
 
     public async Task<Result<IReadOnlyList<PostDto>>> Handle(GetCommunityPostsQuery request, CancellationToken ct)
     {
-        var posts = await _posts.GetByComunidadeAsync(request.CommunityId, request.ParentId, ct);
+        var posts = await _posts.GetByCommunityAsync(request.CommunityId, request.ParentId, ct);
 
         var page = request.Page <= 0 ? 1 : request.Page;
         var paged = posts
