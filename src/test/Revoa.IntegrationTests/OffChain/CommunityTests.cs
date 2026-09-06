@@ -106,4 +106,49 @@ public class CommunityTests : IntegrationTestBase
             $"/api/communities/{communityId}/join", JsonBody(new { Password = "senha-secreta-e2e" }));
         ok.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    // GET /api/communities/mine → vínculos Active do usuário com papel; anônimo → 401.
+    [Fact]
+    public async Task Mine_lists_user_communities_with_role()
+    {
+        var creator = await CreateUserAsync();
+        var client = AuthedClient(creator);
+
+        var create = await client.PostAsync("/api/communities", JsonBody(new
+        {
+            Name = "Comunidade Mine E2E",
+            Description = "Minhas comunidades",
+            Type = "User",
+            Axis = "Interest",
+            Visibility = "Open",
+            Password = (string?)null,
+            Lat = (double?)null,
+            Lng = (double?)null,
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            State = (string?)null,
+        }));
+        create.IsSuccessStatusCode.Should().BeTrue(
+            $"esperado 2xx ao criar comunidade: {await create.Content.ReadAsStringAsync()}");
+        var communityId = await ReadIdAsync(create);
+
+        var mine = await client.GetAsync("/api/communities/mine");
+        mine.StatusCode.Should().Be(HttpStatusCode.OK);
+        var arr = await mine.Content.ReadFromJsonAsync<JsonArray>();
+        var mineIds = arr!.Select(m => m!["Community"]!["Id"]!.GetValue<Guid>()).ToList();
+        mineIds.Should().Contain(communityId);
+        arr!.Single(m => m!["Community"]!["Id"]!.GetValue<Guid>() == communityId)!["Role"]!
+            .GetValue<string>().Should().Be("Creator");
+
+        // Quem não tem vínculo → lista vazia (não erro).
+        var other = await CreateUserAsync();
+        var otherMine = await AuthedClient(other).GetAsync("/api/communities/mine");
+        otherMine.StatusCode.Should().Be(HttpStatusCode.OK);
+        var otherArr = await otherMine.Content.ReadFromJsonAsync<JsonArray>();
+        otherArr!.Count.Should().Be(0);
+
+        // Anônimo → 401.
+        var anon = await Http.GetAsync("/api/communities/mine");
+        anon.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
 }

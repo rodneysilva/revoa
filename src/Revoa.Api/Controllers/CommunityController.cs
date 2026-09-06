@@ -50,6 +50,21 @@ public class CommunityController : ControllerBase
         return result.IsFailure ? NotFound(new ApiError(result.Error)) : Ok(result.Value);
     }
 
+    // Comunidades do usuário autenticado (UserId do token, nunca do body).
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<MyCommunityDto>>> Mine(CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(new GetMyCommunitiesQuery(user.UserId), ct);
+        return Ok(result.Value);
+    }
+
     // Cria comunidade (gate Verified). Ownership (criador) do token, nunca do body.
     [HttpPost]
     [Authorize(Policy = "Verified")]
