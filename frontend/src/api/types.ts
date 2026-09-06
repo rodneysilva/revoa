@@ -37,6 +37,12 @@ export interface FeedItem {
   CreatedAt?: string;
 }
 
+// Busca global (header): anúncios + comunidades agrupados num pedido.
+export interface SearchResults {
+  Listings: FeedItem[];
+  Communities: Community[];
+}
+
 export interface ProductDetails {
   Condition: string;
   Stock?: number;

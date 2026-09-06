@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
@@ -38,6 +38,9 @@ type RailPost = { post: Post; community: Community };
 
 export function FeedPage() {
   const { user } = useAuth();
+  // Busca vinda do header (?q=) — a GlobalSearch navega para cá com o termo.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get("q")?.trim() || "";
   const [items, setItems] = useState<FeedItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -112,6 +115,7 @@ export function FeedPage() {
         mode: modeFilter === "Todos" ? undefined : modeFilter,
         kind: kindFilter === "Todos" ? undefined : kindFilter,
         categoryId: categoriaId || undefined,
+        q: q || undefined,
       })
       .then((data) => {
         if (!active) return;
@@ -129,7 +133,7 @@ export function FeedPage() {
     return () => {
       active = false;
     };
-  }, [modeFilter, kindFilter, categoriaId]);
+  }, [modeFilter, kindFilter, categoriaId, q]);
 
   async function loadMore() {
     if (loadingMore || !hasMore || loading) return;
@@ -141,6 +145,7 @@ export function FeedPage() {
         mode: modeFilter === "Todos" ? undefined : modeFilter,
         kind: kindFilter === "Todos" ? undefined : kindFilter,
         categoryId: categoriaId || undefined,
+        q: q || undefined,
       });
       setItems((prev) => [...prev, ...data]);
       setPage(next);
@@ -171,7 +176,8 @@ export function FeedPage() {
     return () => obs.disconnect();
   }, [hasMore]);
 
-  const semFiltro = modeFilter === "Todos" && kindFilter === "Todos" && !categoriaId;
+  const semFiltro =
+    modeFilter === "Todos" && kindFilter === "Todos" && !categoriaId && !q;
 
   // Seções temporais: o feed chega CreatedAt desc — muda o rótulo, muda a seção.
   const sections: { label: string; items: FeedItem[] }[] = [];
@@ -206,6 +212,23 @@ export function FeedPage() {
             </Link>
           )}
         </div>
+
+        {/* Busca ativa (?q= do header) — chip removível */}
+        {q && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 bg-smoke border border-smoke text-cream text-sm px-3 py-1.5 rounded-full">
+              🔎 {q}
+              <button
+                type="button"
+                onClick={() => setSearchParams({}, { replace: true })}
+                aria-label="Limpar busca"
+                className="text-silver hover:text-rosa leading-none"
+              >
+                ✕
+              </button>
+            </span>
+          </div>
+        )}
 
         {/* Modo — o diferencial semântico do revoa, cor por papel (§4/§6) */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -282,20 +305,36 @@ export function FeedPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <EmptyState
-          icon="♻️"
-          title="Nenhum anúncio por aqui ainda."
-          action={
-            user?.verified ? (
-              <Link
-                to="/listings/new"
+        q ? (
+          <EmptyState
+            icon="🔎"
+            title={`Nenhum anúncio encontrado para “${q}”.`}
+            action={
+              <button
+                type="button"
+                onClick={() => setSearchParams({}, { replace: true })}
                 className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
               >
-                Criar o primeiro anúncio
-              </Link>
-            ) : undefined
-          }
-        />
+                Limpar busca
+              </button>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon="♻️"
+            title="Nenhum anúncio por aqui ainda."
+            action={
+              user?.verified ? (
+                <Link
+                  to="/listings/new"
+                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                >
+                  Criar o primeiro anúncio
+                </Link>
+              ) : undefined
+            }
+          />
+        )
       ) : (
         <>
           {/* Rails só sem filtro ativo — com filtro eles duplicariam o resultado */}

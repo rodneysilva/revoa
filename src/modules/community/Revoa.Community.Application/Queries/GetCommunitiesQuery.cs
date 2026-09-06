@@ -8,12 +8,14 @@ using Revoa.Community.Domain.Repositories;
 namespace Revoa.Community.Application.Queries;
 
 // Feed de comunidades públicas (UF-18). Radius opcional aplica Haversine. Ordena por mais recente (Version desc).
+// Q = busca textual por nome/descrição (busca global do header).
 public sealed record GetCommunitiesQuery(
     double? Radius,
     double? Lat,
     double? Lng,
     CommunityAxis? Axis,
-    int Page) : IRequest<Result<IReadOnlyList<CommunityDto>>>;
+    int Page,
+    string? Q = null) : IRequest<Result<IReadOnlyList<CommunityDto>>>;
 
 public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, Result<IReadOnlyList<CommunityDto>>>
 {
@@ -33,6 +35,17 @@ public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, R
     {
         var candidates = await _communities.GetPublicAsync(
             new PublicFilter(request.Axis, null, CandidateCap), ct);
+
+        // Busca textual (busca global): nome/descrição, case-insensitive, sobre os
+        // candidatos públicos do cap — mesmo universo que o feed de comunidades.
+        if (!string.IsNullOrWhiteSpace(request.Q))
+        {
+            var termo = request.Q.Trim();
+            candidates = candidates
+                .Where(c => c.Name.Contains(termo, StringComparison.OrdinalIgnoreCase)
+                    || (c.Description?.Contains(termo, StringComparison.OrdinalIgnoreCase) ?? false))
+                .ToList();
+        }
 
         var useRadius = request.Radius is > 0 && request.Lat is not null && request.Lng is not null;
 

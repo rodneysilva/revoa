@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { isAdminUser } from "../lib/admin";
+import { GlobalSearch } from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
@@ -78,6 +79,8 @@ export function Layout() {
               </NavLink>
             )}
           </nav>
+
+          <GlobalSearch />
 
           <div className="ml-auto flex items-center gap-3">
             {user ? (

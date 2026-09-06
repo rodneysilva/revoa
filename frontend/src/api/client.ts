@@ -36,6 +36,7 @@ import type {
   ReportTarget,
   ResolutionAction,
   Review,
+  SearchResults,
   SeedCatalogResult,
   Trade,
   TradesParams,
@@ -194,6 +195,8 @@ export const api = {
         sellerIds: p.sellerIds,
       })}`
     ),
+  search: (q: string): Promise<SearchResults> =>
+    apiGet<SearchResults>(`/api/search${qs({ q })}`),
   listing: (id: string): Promise<Listing> =>
     apiGet<Listing>(`/api/listings/${encodeURIComponent(id)}`),
   listingComments: (listingId: string, parentId?: string): Promise<Comment[]> =>
