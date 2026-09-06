@@ -65,6 +65,23 @@ public class CommunityController : ControllerBase
         return Ok(result.Value);
     }
 
+    // Feed social: posts recentes das comunidades do usuário (rail "Da sua
+    // comunidade" do feed). UserId do token, nunca do body.
+    [HttpGet("mine/posts")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<SocialFeedItemDto>>> MyPosts(
+        [FromQuery] int limit = 12, CancellationToken ct = default)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(new GetSocialFeedQuery(user.UserId, limit), ct);
+        return Ok(result.Value);
+    }
+
     // Histórico do chat ao vivo (anônimo vê — leitura pública como posts).
     // Mensagens em ordem cronológica (mais antigas primeiro).
     [HttpGet("{id:guid}/chat")]

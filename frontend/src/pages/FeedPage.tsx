@@ -78,34 +78,25 @@ export function FeedPage() {
     };
   }, []);
 
-  // "Da sua comunidade": últimos posts das comunidades do usuário (batimento
-  // social que não existe no grid de anúncios).
+  // "Da sua comunidade": batimento social das comunidades do usuário, resolvido
+  // no servidor (mine/posts) — raízes e respostas recentes em uma chamada.
   useEffect(() => {
     if (!user) {
       setPostsRail(null);
       return;
     }
     let active = true;
-    (async () => {
-      try {
-        const mine = await api.myCommunities();
-        const recentes = await Promise.all(
-          mine.slice(0, 3).map(async (m) => {
-            const posts = await api.communityPosts(m.Community.Id);
-            return posts.slice(0, 5).map((post) => ({ post, community: m.Community }));
-          })
-        );
-        if (!active) return;
-        setPostsRail(
-          recentes
-            .flat()
-            .sort((a, b) => b.post.CreatedAt.localeCompare(a.post.CreatedAt))
-            .slice(0, 4)
-        );
-      } catch {
+    api
+      .socialFeed()
+      .then((items) => {
+        if (active)
+          setPostsRail(
+            items.slice(0, 4).map((i) => ({ post: i.Post, community: i.Community }))
+          );
+      })
+      .catch(() => {
         if (active) setPostsRail([]);
-      }
-    })();
+      });
     return () => {
       active = false;
     };

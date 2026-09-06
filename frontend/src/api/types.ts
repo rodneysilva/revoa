@@ -262,6 +262,13 @@ export interface MyCommunity {
   JoinedAt: string;
 }
 
+// GET /api/communities/mine/posts — feed social: posts recentes das comunidades
+// do usuário (raízes + respostas, desc), cada item com a comunidade para linkar.
+export interface SocialFeedItem {
+  Post: Post;
+  Community: Community;
+}
+
 // GET /api/wallet/balance — saldo RVM do usuário logado. Rvm null = saldo
 // indisponível (chain offline ou carteira ainda não criada); a UI degrada em silêncio.
 export interface WalletBalance {

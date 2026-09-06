@@ -23,6 +23,7 @@ import type {
   LoginResult,
   Membership,
   MyCommunity,
+  SocialFeedItem,
   Post,
   PriceReference,
   RegisterBody,
@@ -254,6 +255,10 @@ export const api = {
   // Comunidades do usuário autenticado (401 se anônimo).
   myCommunities: (): Promise<MyCommunity[]> =>
     apiGet<MyCommunity[]>("/api/communities/mine"),
+  // Feed social: posts recentes das minhas comunidades em uma chamada (rail
+  // "Da sua comunidade" — antes era myCommunities + N× communityPosts no cliente).
+  socialFeed: (): Promise<SocialFeedItem[]> =>
+    apiGet<SocialFeedItem[]>("/api/communities/mine/posts"),
   createCommunity: (body: CreateCommunityBody): Promise<string> =>
     apiPost<{ Id: string }>(`/api/communities`, body).then((r) => r.Id),
   joinCommunity: (id: string, password?: string): Promise<{ Id: string }> =>
