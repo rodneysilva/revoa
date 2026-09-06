@@ -41,6 +41,20 @@ public static class DependencyInjection
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
         services.AddScoped<IEmailSender, MailKitEmailSender>();
 
+        // Hash de OTP (login/telefone): HMAC-SHA256 com chave do servidor — SHA256 puro é
+        // quebrável offline (900k combinações) com só leitura do banco. Fail-fast sem chave.
+        var otpSecret = configuration["Email:OtpHashKey"];
+        if (string.IsNullOrWhiteSpace(otpSecret))
+        {
+            otpSecret = configuration["Jwt:Key"];
+        }
+        if (string.IsNullOrWhiteSpace(otpSecret))
+        {
+            throw new InvalidOperationException(
+                "Hash de OTP exige Email:OtpHashKey ou Jwt:Key configurado (código de 6 dígitos nunca vai sem chave).");
+        }
+        services.AddSingleton<IOtpHasher>(new HmacOtpHasher(otpSecret));
+
         // WhatsApp/SMS (Zenvia) — ADR-0013
         services.Configure<ZenviaOptions>(configuration.GetSection(ZenviaOptions.SectionName));
         services.AddHttpClient<ZenviaSmsSender>();

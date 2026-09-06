@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FluentAssertions;
 using Revoa.Abstractions;
 using Revoa.Identity.Domain.Aggregates.UserAggregate;
@@ -10,6 +12,13 @@ namespace Revoa.Domain.Tests;
 public class UserStateMachineTests
 {
     private static User NewUser() => User.Create("Marina Costa", "marina@revoa.dev", "+5511900000001", idadeOk: true);
+
+    // O domínio não faz cripto: recebe o hash pronto (mesma forma do HmacOtpHasher de
+    // produção — HMAC-SHA256 sobre chave derivada por HKDF). Chave de teste fixa.
+    private static string Hash(string otp) => Convert.ToHexString(HMACSHA256.HashData(
+        HKDF.DeriveKey(HashAlgorithmName.SHA256, Encoding.UTF8.GetBytes("test-key-user-state-machine"), 32,
+            Encoding.UTF8.GetBytes("revoa.otp.v1"), info: null),
+        Encoding.UTF8.GetBytes(otp)));
 
     // --- Cadastro ---
 
@@ -86,9 +95,9 @@ public class UserStateMachineTests
     public void VerifyPhone_OtpCorreto_VerificaELimpaHash()
     {
         var user = NewUser();
-        user.SetPhoneVerification("654321", DateTime.UtcNow.AddMinutes(10));
+        user.SetPhoneVerification(Hash("654321"), DateTime.UtcNow.AddMinutes(10));
 
-        var ok = user.VerifyPhone("654321");
+        var ok = user.VerifyPhone(Hash("654321"));
 
         ok.Should().BeTrue();
         user.PhoneVerified.Should().BeTrue();
@@ -99,24 +108,24 @@ public class UserStateMachineTests
     public void VerifyPhone_OtpExpirado_RetornaFalse()
     {
         var user = NewUser();
-        user.SetPhoneVerification("654321", DateTime.UtcNow.AddMinutes(-1));
+        user.SetPhoneVerification(Hash("654321"), DateTime.UtcNow.AddMinutes(-1));
 
-        user.VerifyPhone("654321").Should().BeFalse();
+        user.VerifyPhone(Hash("654321")).Should().BeFalse();
     }
 
     [Fact]
     public void VerifyPhone_CincoErros_BloqueiaAteOCorreto()
     {
         var user = NewUser();
-        user.SetPhoneVerification("654321", DateTime.UtcNow.AddMinutes(10));
+        user.SetPhoneVerification(Hash("654321"), DateTime.UtcNow.AddMinutes(10));
 
         for (var i = 0; i < 5; i++)
         {
-            user.VerifyPhone("000000").Should().BeFalse($"tentativa {i + 1}");
+            user.VerifyPhone(Hash("000000")).Should().BeFalse($"tentativa {i + 1}");
         }
 
         // Bloqueado: nem o código certo passa mais.
-        user.VerifyPhone("654321").Should().BeFalse("OTP bloqueado após 5 tentativas");
+        user.VerifyPhone(Hash("654321")).Should().BeFalse("OTP bloqueado após 5 tentativas");
         user.PhoneVerified.Should().BeFalse();
     }
 
@@ -124,10 +133,10 @@ public class UserStateMachineTests
     public void VerifyPhone_ErrosContamMasNaoBloqueiamAntesDoLimite()
     {
         var user = NewUser();
-        user.SetPhoneVerification("654321", DateTime.UtcNow.AddMinutes(10));
+        user.SetPhoneVerification(Hash("654321"), DateTime.UtcNow.AddMinutes(10));
 
-        user.VerifyPhone("000000").Should().BeFalse();
-        user.VerifyPhone("654321").Should().BeTrue("4 tentativas restantes ainda");
+        user.VerifyPhone(Hash("000000")).Should().BeFalse();
+        user.VerifyPhone(Hash("654321")).Should().BeTrue("4 tentativas restantes ainda");
     }
 
     // --- Ativação (dupla verificação) ---
@@ -147,9 +156,9 @@ public class UserStateMachineTests
     {
         var user = NewUser();
         user.SetEmailVerification("tok", DateTime.UtcNow.AddHours(1));
-        user.SetPhoneVerification("654321", DateTime.UtcNow.AddMinutes(10));
+        user.SetPhoneVerification(Hash("654321"), DateTime.UtcNow.AddMinutes(10));
         user.VerifyEmail("tok");
-        user.VerifyPhone("654321");
+        user.VerifyPhone(Hash("654321"));
 
         user.Status.Should().Be(UserStatus.Active);
     }
@@ -185,36 +194,36 @@ public class UserStateMachineTests
     public void VerifyLoginCode_CodigoCorreto_SucessoEUsoUnico()
     {
         var user = NewUser();
-        user.SetLoginCode("999888", DateTime.UtcNow.AddMinutes(10));
+        user.SetLoginCode(Hash("999888"), DateTime.UtcNow.AddMinutes(10));
 
-        user.VerifyLoginCode("999888").Should().BeTrue();
+        user.VerifyLoginCode(Hash("999888")).Should().BeTrue();
         user.LoginCodeHash.Should().BeNull();
 
         // Uso único: segunda chamada falha (hash consumido).
-        user.VerifyLoginCode("999888").Should().BeFalse();
+        user.VerifyLoginCode(Hash("999888")).Should().BeFalse();
     }
 
     [Fact]
     public void VerifyLoginCode_Expirado_RetornaFalse()
     {
         var user = NewUser();
-        user.SetLoginCode("999888", DateTime.UtcNow.AddMinutes(-1));
+        user.SetLoginCode(Hash("999888"), DateTime.UtcNow.AddMinutes(-1));
 
-        user.VerifyLoginCode("999888").Should().BeFalse();
+        user.VerifyLoginCode(Hash("999888")).Should().BeFalse();
     }
 
     [Fact]
     public void VerifyLoginCode_CincoErros_Bloqueia()
     {
         var user = NewUser();
-        user.SetLoginCode("999888", DateTime.UtcNow.AddMinutes(10));
+        user.SetLoginCode(Hash("999888"), DateTime.UtcNow.AddMinutes(10));
 
         for (var i = 0; i < 5; i++)
         {
-            user.VerifyLoginCode("000000").Should().BeFalse();
+            user.VerifyLoginCode(Hash("000000")).Should().BeFalse();
         }
 
-        user.VerifyLoginCode("999888").Should().BeFalse("código bloqueado após 5 tentativas");
+        user.VerifyLoginCode(Hash("999888")).Should().BeFalse("código bloqueado após 5 tentativas");
     }
 
     // --- DevActivate (bypass DEV-only do /api/auth/dev-verify) ---

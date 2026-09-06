@@ -39,12 +39,13 @@ public class User : AggregateRoot
     public string? EmailToken { get; private set; }
     public DateTime? EmailTokenExpiry { get; private set; }
 
-    // Verificação de telefone (OTP hasheado)
+    // Verificação de telefone (hash HMAC do OTP, calculado pela Application via IOtpHasher)
     public string? PhoneOtpHash { get; private set; }
     public DateTime? PhoneOtpExpiry { get; private set; }
     public int PhoneOtpAttempts { get; private set; }
 
     // Login passwordless por código de e-mail (magic OTP). Prova posse do e-mail no login.
+    // Hash HMAC calculado fora do domínio (IOtpHasher) — aqui só se compara.
     public string? LoginCodeHash { get; private set; }
     public DateTime? LoginCodeExpiry { get; private set; }
     public int LoginCodeAttempts { get; private set; }
@@ -81,9 +82,9 @@ public class User : AggregateRoot
         EmailTokenExpiry = expiry;
     }
 
-    public void SetPhoneVerification(string otp, DateTime expiry)
+    public void SetPhoneVerification(string otpHash, DateTime expiry)
     {
-        PhoneOtpHash = HashOtp(otp);
+        PhoneOtpHash = otpHash ?? throw new ArgumentNullException(nameof(otpHash));
         PhoneOtpExpiry = expiry;
         PhoneOtpAttempts = 0;
     }
@@ -113,7 +114,7 @@ public class User : AggregateRoot
         return true;
     }
 
-    public bool VerifyPhone(string code)
+    public bool VerifyPhone(string otpHash)
     {
         if (PhoneVerified)
         {
@@ -133,7 +134,7 @@ public class User : AggregateRoot
         }
 
         if (!CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(PhoneOtpHash), Encoding.UTF8.GetBytes(HashOtp(code ?? string.Empty))))
+            Encoding.UTF8.GetBytes(PhoneOtpHash), Encoding.UTF8.GetBytes(otpHash ?? string.Empty)))
         {
             PhoneOtpAttempts++;
             return false;
@@ -161,14 +162,14 @@ public class User : AggregateRoot
     public void SetRole(UserRole role) => Role = role;
 
     // --- Login passwordless por código de e-mail ---
-    public void SetLoginCode(string code, DateTime expiry)
+    public void SetLoginCode(string codeHash, DateTime expiry)
     {
-        LoginCodeHash = HashOtp(code);
+        LoginCodeHash = codeHash ?? throw new ArgumentNullException(nameof(codeHash));
         LoginCodeExpiry = expiry;
         LoginCodeAttempts = 0;
     }
 
-    public bool VerifyLoginCode(string code)
+    public bool VerifyLoginCode(string codeHash)
     {
         if (LoginCodeAttempts >= OtpMaxAttempts)
         {
@@ -183,7 +184,7 @@ public class User : AggregateRoot
         }
 
         if (!CryptographicOperations.FixedTimeEquals(
-            Encoding.UTF8.GetBytes(LoginCodeHash), Encoding.UTF8.GetBytes(HashOtp(code ?? string.Empty))))
+            Encoding.UTF8.GetBytes(LoginCodeHash), Encoding.UTF8.GetBytes(codeHash ?? string.Empty)))
         {
             LoginCodeAttempts++;
             return false;
@@ -209,7 +210,4 @@ public class User : AggregateRoot
         PhoneOtpAttempts = 0;
         TryActivate();
     }
-
-    private static string HashOtp(string otp) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(otp)));
 }

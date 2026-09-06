@@ -17,17 +17,20 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
     private readonly IIntegrationEventBus _eventBus;
     private readonly IEmailSender _emailSender;
     private readonly ISmsSender _smsSender;
+    private readonly IOtpHasher _otpHasher;
 
     public RegisterUserCommandHandler(
         IUserRepository users,
         IIntegrationEventBus eventBus,
         IEmailSender emailSender,
-        ISmsSender smsSender)
+        ISmsSender smsSender,
+        IOtpHasher otpHasher)
     {
         _users = users;
         _eventBus = eventBus;
         _emailSender = emailSender;
         _smsSender = smsSender;
+        _otpHasher = otpHasher;
     }
 
     public async Task<Result<RegisterUserResult>> Handle(RegisterUserCommand request, CancellationToken ct)
@@ -65,7 +68,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         var emailToken = GenerateToken();
         var otp = GenerateOtp();
         user.SetEmailVerification(emailToken, now.AddHours(24));
-        user.SetPhoneVerification(otp, now.AddMinutes(10));
+        user.SetPhoneVerification(_otpHasher.Hash(otp), now.AddMinutes(10));
 
         try
         {

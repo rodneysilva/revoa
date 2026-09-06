@@ -19,11 +19,13 @@ public class LoginRequestCommandHandler : IRequestHandler<LoginRequestCommand, R
 {
     private readonly IUserRepository _users;
     private readonly IEmailSender _emailSender;
+    private readonly IOtpHasher _otpHasher;
 
-    public LoginRequestCommandHandler(IUserRepository users, IEmailSender emailSender)
+    public LoginRequestCommandHandler(IUserRepository users, IEmailSender emailSender, IOtpHasher otpHasher)
     {
         _users = users;
         _emailSender = emailSender;
+        _otpHasher = otpHasher;
     }
 
     public async Task<Result> Handle(LoginRequestCommand request, CancellationToken ct)
@@ -34,7 +36,7 @@ public class LoginRequestCommandHandler : IRequestHandler<LoginRequestCommand, R
             if (user is { Status: UserStatus.Active })
             {
                 var code = GenerateCode();
-                user.SetLoginCode(code, DateTime.UtcNow.AddMinutes(10));
+                user.SetLoginCode(_otpHasher.Hash(code), DateTime.UtcNow.AddMinutes(10));
                 await _users.UpdateAsync(user, ct);
                 await _emailSender.SendLoginCodeAsync(user.Email, code, ct);
             }
@@ -53,10 +55,12 @@ public sealed record LoginConfirmCommand(string Email, string Code) : IRequest<R
 public class LoginConfirmCommandHandler : IRequestHandler<LoginConfirmCommand, Result<LoginClaims>>
 {
     private readonly IUserRepository _users;
+    private readonly IOtpHasher _otpHasher;
 
-    public LoginConfirmCommandHandler(IUserRepository users)
+    public LoginConfirmCommandHandler(IUserRepository users, IOtpHasher otpHasher)
     {
         _users = users;
+        _otpHasher = otpHasher;
     }
 
     public async Task<Result<LoginClaims>> Handle(LoginConfirmCommand request, CancellationToken ct)
@@ -67,7 +71,7 @@ public class LoginConfirmCommandHandler : IRequestHandler<LoginConfirmCommand, R
         }
 
         var user = await _users.GetByEmailAsync(request.Email.Trim(), ct);
-        if (user is null || user.Status != UserStatus.Active || !user.VerifyLoginCode(request.Code.Trim()))
+        if (user is null || user.Status != UserStatus.Active || !user.VerifyLoginCode(_otpHasher.Hash(request.Code.Trim())))
         {
             return Result<LoginClaims>.Fail("Código inválido ou expirado.");
         }
