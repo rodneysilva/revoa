@@ -120,7 +120,15 @@ if (-not $beUp) {
 # ── 8) Seed mocks ───────────────────────────────────────────────
 Step '8) Seed mocks (catálogo)'
 try {
-    $s = Invoke-RestMethod 'http://localhost:8000/api/dev/seed-catalog' -Method Post -TimeoutSec 120
+    # seed-catalog exige admin (Policy Admin): garante o usuário admin e emite JWT via dev-verify
+    # (endpoint dev-only; o register pode falhar se o usuário já existe — ignorado de propósito).
+    $admin = $testUsers[0]
+    try { Invoke-RestMethod 'http://localhost:8000/api/auth/register' -Method Post -ContentType 'application/json' `
+        -Body ('{"Nome":"' + $admin.Nome + '","Email":"' + $admin.Email + '","Telefone":"' + $admin.Tel + '","BirthDate":"' + $admin.Nasc + '"}') | Out-Null } catch {}
+    $login = Invoke-RestMethod 'http://localhost:8000/api/auth/dev-verify' -Method Post -ContentType 'application/json' `
+        -Body ('{"Email":"' + $admin.Email + '"}')
+    $s = Invoke-RestMethod 'http://localhost:8000/api/dev/seed-catalog' -Method Post -TimeoutSec 120 `
+        -Headers @{ Authorization = 'Bearer ' + $login.Token }
     Ok "Seed: $($s.total) listings ($($s.produtos) produtos + $($s.servicos) servicos), $($s.categorias) categorias."
 } catch { Warn "Seed falhou: $($_.Exception.Message)" }
 

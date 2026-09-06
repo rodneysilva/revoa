@@ -209,7 +209,8 @@ public class NethereumExchangeEscrowService : IExchangeEscrowService
 
     public async Task<string> ClaimArbitratorAsync(long onChainTradeId, bool releaseToSeller, CancellationToken ct = default)
     {
-        var (account, web3) = BuildFaucetWeb3();
+        // Assina com a chave dedicada do árbitro quando configurada (fallback: faucet, dev/anvil).
+        var (account, web3) = BuildArbitratorWeb3();
         var escrow = web3.Eth.GetContract(EscrowAbi, _options.Contracts.EscrowVault);
 
         var fn = escrow.GetFunction("claimArbitrator");
@@ -242,6 +243,12 @@ public class NethereumExchangeEscrowService : IExchangeEscrowService
     }
 
     private (Account account, Web3 web3) BuildFaucetWeb3() => BuildWeb3(_options.FaucetPrivateKey);
+
+    // Árbitro com chave própria (Chain:ArbitratorPrivateKey); vazia → faucet (dev/anvil).
+    private (Account account, Web3 web3) BuildArbitratorWeb3() => BuildWeb3(
+        string.IsNullOrWhiteSpace(_options.ArbitratorPrivateKey)
+            ? _options.FaucetPrivateKey
+            : _options.ArbitratorPrivateKey);
 
     // Padrão uniforme: estimate → send → checa status 0. Estimate lança se a tx for reverter.
     private static async Task<TransactionReceipt> SendAndGetReceiptAsync(

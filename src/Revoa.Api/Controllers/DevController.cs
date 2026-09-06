@@ -52,9 +52,10 @@ public class DevController : ControllerBase
     /// (Re)semeia o ambiente DEV completo: 10 usuários mock (+carteiras), catálogo vinculado aos
     /// mocks, 5 comunidades com membros e posts, e ~22 reviews (+reputação acumulada). Idempotente
     /// (limpa tudo por chaves determinísticas antes de re-inserir). Em produção retorna 404.
+    /// Requer admin (não é mais anônimo — repovoar o banco é ação destrutiva).
     /// </summary>
     [HttpPost("seed-catalog")]
-    [AllowAnonymous]
+    [Authorize(Policy = "Admin")]
     public async Task<ActionResult> SeedCatalog(CancellationToken ct)
     {
         if (!_env.IsDevelopment())

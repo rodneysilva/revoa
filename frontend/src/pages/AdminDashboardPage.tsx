@@ -317,26 +317,28 @@ export function AdminDashboardPage() {
           )}
         </Card>
 
-        <Card title="Catálogo demo">
-          <p className="text-silver text-sm mb-3">
-            Re-semear produtos e serviços de demonstração (ambiente de dev).
-          </p>
-          <button
-            type="button"
-            onClick={seed}
-            disabled={seedBusy}
-            className="bg-brand text-ink font-semibold px-4 py-1.5 rounded-lg text-sm disabled:opacity-60"
-          >
-            {seedBusy ? "Semeando…" : "Re-semear catálogo"}
-          </button>
-          {seedResult && (
-            <p className="text-silver text-xs mt-2">
-              {seedResult.total} anúncio(s) · {seedResult.produtos} produtos · {seedResult.servicos}{" "}
-              serviços · {seedResult.categorias} categoria(s).
+        {import.meta.env.DEV && (
+          <Card title="Catálogo demo">
+            <p className="text-silver text-sm mb-3">
+              Re-semear produtos e serviços de demonstração (ambiente de dev; endpoint dev-only).
             </p>
-          )}
-          {seedError && <p className="text-rosa text-xs mt-2">{seedError}</p>}
-        </Card>
+            <button
+              type="button"
+              onClick={seed}
+              disabled={seedBusy}
+              className="bg-brand text-ink font-semibold px-4 py-1.5 rounded-lg text-sm disabled:opacity-60"
+            >
+              {seedBusy ? "Semeando…" : "Re-semear catálogo"}
+            </button>
+            {seedResult && (
+              <p className="text-silver text-xs mt-2">
+                {seedResult.total} anúncio(s) · {seedResult.produtos} produtos · {seedResult.servicos}{" "}
+                serviços · {seedResult.categorias} categoria(s).
+              </p>
+            )}
+            {seedError && <p className="text-rosa text-xs mt-2">{seedError}</p>}
+          </Card>
+        )}
       </div>
     </div>
   );

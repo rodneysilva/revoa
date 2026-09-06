@@ -183,7 +183,10 @@ public class AuthController : ControllerBase
     private string IssueJwt(
         Guid userId, string name, string email, bool emailVerified, bool phoneVerified, string[] roles)
     {
-        var key = _config["Jwt:Key"] ?? "revoa-dev-key-do-not-use-in-prod-min-32-chars!!";
+        // Sem fallback hardcoded: o fail-fast do Program.cs (startup) garante a chave; se chegou
+        // aqui sem Jwt:Key, é bug de configuração — falha explícita em vez de assinar com default.
+        var key = _config["Jwt:Key"]
+            ?? throw new InvalidOperationException("Jwt:Key ausente (fail-fast do Program.cs deveria ter capturado).");
         var issuer = _config["Jwt:Issuer"] ?? "revoa";
         var audience = _config["Jwt:Audience"] ?? "revoa";
 

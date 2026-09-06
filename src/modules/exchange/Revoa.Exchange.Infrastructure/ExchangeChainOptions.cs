@@ -13,6 +13,11 @@ public class ExchangeChainOptions
 
     public string FaucetPrivateKey { get; set; } = string.Empty;
 
+    // Chave dedicada do árbitro (resolve de disputas assina claimArbitrator). Opcional: vazia →
+    // fallback para a faucet (comportamento dev/anvil). Em chain real, usar chave separada
+    // (Chain__ArbitratorPrivateKey) — quem resolve disputas não deveria controlar o faucet.
+    public string ArbitratorPrivateKey { get; set; } = string.Empty;
+
     public ExchangeChainContracts Contracts { get; set; } = new();
 }
 
