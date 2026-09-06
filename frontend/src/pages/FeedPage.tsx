@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
+import { OnboardingChecklist } from "../components/OnboardingChecklist";
 import { ApiError, api } from "../api/client";
 import type { Category, Community, FeedItem, Kind, Mode, Post } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
@@ -291,6 +292,9 @@ export function FeedPage() {
           </div>
         </div>
       </div>
+
+      {/* Conta nova — checklist das primeiras ações (some ao completar) */}
+      <OnboardingChecklist />
 
       {error && (
         <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
