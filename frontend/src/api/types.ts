@@ -255,6 +255,13 @@ export interface Membership {
   JoinedAt: string;
 }
 
+// GET /api/communities/mine — vínculo do usuário com cada comunidade dele.
+export interface MyCommunity {
+  Community: Community;
+  Role: MembershipRole;
+  JoinedAt: string;
+}
+
 export interface ChatMessage {
   Id: string;
   CommunityId: string;

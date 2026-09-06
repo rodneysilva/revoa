@@ -21,6 +21,7 @@ import type {
   Listing,
   LoginResult,
   Membership,
+  MyCommunity,
   Post,
   PriceReference,
   RegisterBody,
@@ -248,6 +249,9 @@ export const api = {
     ),
   community: (id: string): Promise<Community> =>
     apiGet<Community>(`/api/communities/${encodeURIComponent(id)}`),
+  // Comunidades do usuário autenticado (401 se anônimo).
+  myCommunities: (): Promise<MyCommunity[]> =>
+    apiGet<MyCommunity[]>("/api/communities/mine"),
   createCommunity: (body: CreateCommunityBody): Promise<string> =>
     apiPost<{ Id: string }>(`/api/communities`, body).then((r) => r.Id),
   joinCommunity: (id: string, password?: string): Promise<{ Id: string }> =>
