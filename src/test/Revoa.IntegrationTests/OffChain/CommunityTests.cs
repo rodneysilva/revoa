@@ -67,4 +67,43 @@ public class CommunityTests : IntegrationTestBase
         membersArr!.Select(m => m!["UsuarioId"]!.GetValue<Guid>())
             .Should().Contain(creator.UserId);
     }
+
+    // Privada: senha hasheada com PBKDF2 (salt por hash) — entra só com a senha correta.
+    [Fact]
+    public async Task Private_community_join_requires_password()
+    {
+        var creator = await CreateUserAsync();
+        var client = AuthedClient(creator);
+
+        var create = await client.PostAsync("/api/communities", JsonBody(new
+        {
+            Nome = "Comunidade Privada E2E",
+            Descricao = "Só com senha",
+            Tipo = "User",
+            Eixo = "Interesse",
+            Visibilidade = "Private",
+            Password = "senha-secreta-e2e",
+            Lat = (double?)null,
+            Lng = (double?)null,
+            Bairro = (string?)null,
+            Cidade = (string?)null,
+            Estado = (string?)null,
+        }));
+        create.IsSuccessStatusCode.Should().BeTrue(
+            $"esperado 2xx ao criar comunidade privada: {await create.Content.ReadAsStringAsync()}");
+        var communityId = Guid.Parse((await create.Content.ReadAsStringAsync()).Trim('"'));
+
+        var other = await CreateUserAsync();
+        var otherClient = AuthedClient(other);
+
+        // Senha errada → 400.
+        var wrong = await otherClient.PostAsync(
+            $"/api/communities/{communityId}/join", JsonBody(new { Password = "errada" }));
+        wrong.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // Senha correta → 200.
+        var ok = await otherClient.PostAsync(
+            $"/api/communities/{communityId}/join", JsonBody(new { Password = "senha-secreta-e2e" }));
+        ok.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }

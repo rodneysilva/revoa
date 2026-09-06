@@ -6,9 +6,9 @@ using Revoa.Exchange.Domain.Repositories;
 namespace Revoa.Exchange.Application.Queries;
 
 // Detalhe de uma troca (GET /api/trades/{id}). Anônimo vê.
-public sealed record GetTradeQuery(Guid Id) : IRequest<Result<TradeDto>>;
+public sealed record GetTradeQuery(Guid Id) : IRequest<Result<TradeSummaryDto>>;
 
-public class GetTradeQueryHandler : IRequestHandler<GetTradeQuery, Result<TradeDto>>
+public class GetTradeQueryHandler : IRequestHandler<GetTradeQuery, Result<TradeSummaryDto>>
 {
     private readonly ITradeRepository _tradeRepo;
 
@@ -17,14 +17,14 @@ public class GetTradeQueryHandler : IRequestHandler<GetTradeQuery, Result<TradeD
         _tradeRepo = tradeRepo;
     }
 
-    public async Task<Result<TradeDto>> Handle(GetTradeQuery request, CancellationToken ct)
+    public async Task<Result<TradeSummaryDto>> Handle(GetTradeQuery request, CancellationToken ct)
     {
         var trade = await _tradeRepo.GetByIdAsync(request.Id, ct);
         if (trade is null)
         {
-            return Result<TradeDto>.Fail("Troca não encontrada.");
+            return Result<TradeSummaryDto>.Fail("Troca não encontrada.");
         }
 
-        return Result<TradeDto>.Ok(TradeDtoMapper.From(trade));
+        return Result<TradeSummaryDto>.Ok(TradeDtoMapper.From(trade));
     }
 }

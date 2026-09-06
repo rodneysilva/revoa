@@ -91,8 +91,6 @@ export interface Trade {
   ReleasedAt?: string;
   VoucherRedeemed: boolean;
   IsDonation: boolean;
-  OnChainTradeId?: string;
-  LastTxHash?: string;
 }
 
 export interface HelpRequest {

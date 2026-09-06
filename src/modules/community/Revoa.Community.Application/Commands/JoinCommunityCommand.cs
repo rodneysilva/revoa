@@ -44,6 +44,14 @@ public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand,
             return Result<string>.Fail("Senha incorreta.");
         }
 
+        // Upgrade transparente: senha legada (SHA256+salt estático) confirmada → rehash PBKDF2.
+        if (community.Visibilidade == CommunityVisibilidade.Private
+            && PasswordHasher.IsLegacy(community.PasswordHash))
+        {
+            community.SetPasswordHash(PasswordHasher.Hash(request.Password!));
+            await _communities.UpdateAsync(community, ct);
+        }
+
         var existing = await _memberships.GetByUsuarioEComunidadeAsync(request.UsuarioId, request.ComunidadeId, ct);
         if (existing is not null)
         {

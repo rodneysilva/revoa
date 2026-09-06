@@ -22,7 +22,7 @@ public class ExchangeController : ControllerBase
     // Detalhe de uma troca (anônimo vê — UF-11/12).
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
-    public async Task<ActionResult<TradeDto>> GetById(Guid id, CancellationToken ct)
+    public async Task<ActionResult<TradeSummaryDto>> GetById(Guid id, CancellationToken ct)
     {
         var result = await _mediator.Send(new GetTradeQuery(id), ct);
         return result.IsFailure ? NotFound(new { error = result.Error }) : Ok(result.Value);
@@ -31,7 +31,7 @@ public class ExchangeController : ControllerBase
     // Histórico de trocas (anônimo vê). Filtro opcional por buyer/seller, paginado.
     [HttpGet]
     [AllowAnonymous]
-    public async Task<ActionResult<IReadOnlyList<TradeDto>>> History(
+    public async Task<ActionResult<IReadOnlyList<TradeSummaryDto>>> History(
         [FromQuery] Guid? buyerId,
         [FromQuery] Guid? sellerId,
         [FromQuery] int page = 1,
