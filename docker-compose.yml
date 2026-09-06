@@ -61,9 +61,14 @@ services:
       - Ollama__Endpoint=http://ollama:11434
       - Bundler__Rpc=http://bundler:4337
       - Paymaster__Rpc=http://paymaster:3000
-      - Email__Host=mail                # MailKit entrega ao Postfix local (ADR-0014)
-      - Email__Port=25
-      - Email__From=no-reply@revoa.me
+      # E-mail (ADR-0014): default = Postfix interno. P/ ENTREGA real, relay autenticado
+      # no .env (EMAIL_RELAY_HOST=smtp.gmail.com etc. + App Password) — IP residencial
+      # não entrega direto nos grandes MX.
+      - Email__Host=${EMAIL_RELAY_HOST:-mail}
+      - Email__Port=${EMAIL_RELAY_PORT:-25}
+      - Email__From=${EMAIL_RELAY_FROM:-no-reply@revoa.me}
+      - Email__Username=${EMAIL_RELAY_USERNAME:-}
+      - Email__Password=${EMAIL_RELAY_PASSWORD:-}
       - Zenvia__Token=${ZENVIA_TOKEN:-} # WhatsApp/SMS OTP (anti-farming via secrets)
       - Jwt__Key=${JWT_KEY:-}           # chave de assinatura JWT (fail-fast em Production se vazio)
       - Jwt__Audience=revoa
@@ -221,13 +226,14 @@ services:
       - Chain__Contracts__EscrowVault=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
       - Chain__Contracts__CouponRedeemer=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
       - Admin__Emails=${ADMIN_EMAILS:-}
-      # SMTP real não entrega de IP residencial: o Postfix aceita na fila mas o
-      # Gmail não recebe. Em homologação o código de login fica visível no log
-      # do container (`docker logs revoa-app-dev`) — self-service do dono.
-      # NUNCA ativar no serviço `app` (artefato de produção).
-      - Email__Host=mail
-      - Email__Port=25
-      - Email__From=no-reply@revoa.me
+      # Mesmo relay de e-mail do .env (default = Postfix interno). Com relay configurado
+      # o código CHEGA na caixa real. O log abaixo continua como plano B de homologação
+      # (self-service do dono) — NUNCA ativar no serviço `app` (artefato de produção).
+      - Email__Host=${EMAIL_RELAY_HOST:-mail}
+      - Email__Port=${EMAIL_RELAY_PORT:-25}
+      - Email__From=${EMAIL_RELAY_FROM:-no-reply@revoa.me}
+      - Email__Username=${EMAIL_RELAY_USERNAME:-}
+      - Email__Password=${EMAIL_RELAY_PASSWORD:-}
       - Email__LogVerificationTokenInDev=true
       - Zenvia__Token=${ZENVIA_TOKEN:-}
       - Jwt__Key=${JWT_KEY:-}

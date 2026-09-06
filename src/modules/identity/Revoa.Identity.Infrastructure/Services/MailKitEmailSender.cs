@@ -37,6 +37,7 @@ public class MailKitEmailSender : IEmailSender
             // TLS oportunístico: usa STARTTLS se o servidor oferecer (produção); em rede interna
             // (Postfix local) cai para plaintext. Evita token de verificação capturável por MITM em prod.
             await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, ct);
+            await AuthenticateAsync(client, ct);
             await client.SendAsync(message, ct);
             await client.DisconnectAsync(true, ct);
         }
@@ -70,6 +71,7 @@ public class MailKitEmailSender : IEmailSender
         try
         {
             await client.ConnectAsync(_options.Host, _options.Port, SecureSocketOptions.Auto, ct);
+            await AuthenticateAsync(client, ct);
             await client.SendAsync(message, ct);
             await client.DisconnectAsync(true, ct);
         }
@@ -86,6 +88,16 @@ public class MailKitEmailSender : IEmailSender
         if (_options.LogVerificationTokenInDev)
         {
             _logger.LogWarning("[MailKit DEV] Código de login {Code} -> {Email}", code, toEmail);
+        }
+    }
+
+    // Relay autenticado (ex.: smtp.gmail.com:587). Sem usuário configurado = Postfix
+    // interno sem auth (rede interna do compose).
+    private async Task AuthenticateAsync(SmtpClient client, CancellationToken ct)
+    {
+        if (!string.IsNullOrEmpty(_options.Username))
+        {
+            await client.AuthenticateAsync(_options.Username, _options.Password, ct);
         }
     }
 }
