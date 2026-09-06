@@ -27,10 +27,10 @@ public class ModerationController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Create([FromBody] CreateReportRequest request, CancellationToken ct)
     {
-        var (reporterId, nome, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         if (!Enum.TryParse<ReportTarget>(request.TargetType, ignoreCase: true, out var targetType)
@@ -45,7 +45,7 @@ public class ModerationController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new CreateReportCommand(reporterId, nome, targetType, targetId, reason, request.Details), ct);
+            new CreateReportCommand(user.UserId, user.Nome, targetType, targetId, reason, request.Details), ct);
 
         return result.IsFailure
             ? BadRequest(new { error = result.Error })
@@ -88,22 +88,6 @@ public class ModerationController : ControllerBase
             new ResolveReportCommand(resolvedBy, id, action, request.Note), ct);
 
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok();
-    }
-
-    // ReporterId/Nome vêm do token (claim sub/name), nunca do body.
-    private (Guid reporterId, string nome, object? unauthorized) ReadUser()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var reporterId))
-        {
-            return (Guid.Empty, "Usuário", new { error = "Token sem claim 'sub'." });
-        }
-
-        var nome = User.FindFirst("name")?.Value
-                   ?? User.FindFirst("nickname")?.Value
-                   ?? "Usuário";
-
-        return (reporterId, nome, null);
     }
 }
 

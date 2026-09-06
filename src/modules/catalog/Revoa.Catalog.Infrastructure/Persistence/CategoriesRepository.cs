@@ -49,7 +49,8 @@ public class CategoriesRepository : MongoRepositoryBase<Category>, ICategoryRepo
     }
 
     /// <summary>
-    /// Popula categorias padrão se a coleção estiver vazia (dev/onboarding). Idempotente.
+    /// Popula as categorias canônicas (CategorySeed) se a coleção estiver vazia (dev/onboarding).
+    /// Idempotente.
     /// </summary>
     public async Task EnsureSeedAsync(CancellationToken ct = default)
     {
@@ -58,24 +59,11 @@ public class CategoriesRepository : MongoRepositoryBase<Category>, ICategoryRepo
             return;
         }
 
-        var defaults = new[]
-        {
-            ("Geral", "geral"),
-            ("Eletrônicos", "eletronicos"),
-            ("Móveis e Decoração", "moveis-decoracao"),
-            ("Roupas e Acessórios", "roupas-acessorios"),
-            ("Casa e Cozinha", "casa-cozinha"),
-            ("Livros e Mídia", "livros-midia"),
-            ("Esporte e Lazer", "esporte-lazer"),
-            ("Serviços", "servicos"),
-            ("Ajuda e Voluntariado", "ajuda-voluntariado"),
-        };
-
-        foreach (var (nome, slug) in defaults)
+        foreach (var (nome, slug, descricao) in CategorySeed.All)
         {
             try
             {
-                await Collection.InsertOneAsync(Category.Create(nome, slug), cancellationToken: ct);
+                await Collection.InsertOneAsync(Category.Create(nome, slug, descricao), cancellationToken: ct);
             }
             catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
             {

@@ -27,18 +27,15 @@ public class CatalogController : ControllerBase
         [FromBody] CreateListingRequest request, CancellationToken ct)
     {
         // Ownership: VendedorId/Nome/Avatar vêm do token (claim sub + name), NUNCA do body.
-        var vendedorId = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(vendedorId) || !Guid.TryParse(vendedorId, out var vendedorGuid))
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
             return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        // TODO: claim de nome/avatar será populada pelo Identity via evento/read model; enquanto
-        // ausente, usamos placeholder "Usuário".
-        var vendedorNome = User.FindFirst("name")?.Value
-                           ?? User.FindFirst("nickname")?.Value
-                           ?? "Usuário";
-        var avatar = User.FindFirst("avatar")?.Value;
+        var vendedorGuid = user.UserId;
+        var vendedorNome = user.Nome;
+        var avatar = user.AvatarUrl;
 
         if (!TryParse(request.Kind, out ListingKind kind))
         {
@@ -160,30 +157,16 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<string>> CreateComment(
         Guid id, [FromBody] CreateCommentRequest request, CancellationToken ct)
     {
-        var (autorId, nome, avatar, unauthorized) = ReadActor();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new CreateCommentCommand(autorId, nome, avatar, id, request.ParentId, request.Conteudo), ct);
+            new CreateCommentCommand(user.UserId, user.Nome, user.AvatarUrl, id, request.ParentId, request.Conteudo), ct);
 
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
-    }
-
-    // Ownership: lê claims sub/name/avatar do token (compartilhado por Create + CreateComment).
-    private (Guid autorId, string nome, string? avatar, object? unauthorized) ReadActor()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var autorId))
-        {
-            return (Guid.Empty, "Usuário", null, new { error = "Token sem claim 'sub'." });
-        }
-
-        var nome = User.FindFirst("name")?.Value ?? User.FindFirst("nickname")?.Value ?? "Usuário";
-        var avatar = User.FindFirst("avatar")?.Value;
-        return (autorId, nome, avatar, null);
     }
 
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum

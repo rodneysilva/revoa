@@ -73,13 +73,13 @@ public class CouponsController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Redeem([FromBody] RedeemCouponRequest request, CancellationToken ct)
     {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
             return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new RedeemCouponCommand(userId, request.Code ?? string.Empty), ct);
+        var result = await _mediator.Send(new RedeemCouponCommand(user.UserId, request.Code ?? string.Empty), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok();
     }
 }

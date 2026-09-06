@@ -56,10 +56,10 @@ public class CommunityController : ControllerBase
     public async Task<ActionResult<string>> Create(
         [FromBody] CreateCommunityRequest request, CancellationToken ct)
     {
-        var (usuarioId, nome, avatar, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         if (!TryParse(request.Tipo, out CommunityTipo tipo))
@@ -78,7 +78,7 @@ public class CommunityController : ControllerBase
         }
 
         var command = new CreateCommunityCommand(
-            usuarioId, nome, avatar,
+            user.UserId, user.Nome, user.AvatarUrl,
             request.Nome, request.Descricao, tipo, eixo, visibilidade, request.Password,
             request.Lat, request.Lng, request.Bairro, request.Cidade, request.Estado);
 
@@ -96,14 +96,14 @@ public class CommunityController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Join(Guid id, [FromBody] JoinCommunityRequest? request, CancellationToken ct)
     {
-        var (usuarioId, nome, avatar, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new JoinCommunityCommand(usuarioId, nome, avatar, id, request?.Password), ct);
+            new JoinCommunityCommand(user.UserId, user.Nome, user.AvatarUrl, id, request?.Password), ct);
 
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
@@ -113,13 +113,13 @@ public class CommunityController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Leave(Guid id, CancellationToken ct)
     {
-        var (usuarioId, _, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new LeaveCommunityCommand(usuarioId, id), ct);
+        var result = await _mediator.Send(new LeaveCommunityCommand(user.UserId, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
     }
 
@@ -142,14 +142,14 @@ public class CommunityController : ControllerBase
     public async Task<ActionResult<string>> CreatePost(
         Guid id, [FromBody] CreatePostRequest request, CancellationToken ct)
     {
-        var (usuarioId, nome, avatar, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new CreatePostCommand(usuarioId, nome, avatar, id, request.ParentId, request.Conteudo), ct);
+            new CreatePostCommand(user.UserId, user.Nome, user.AvatarUrl, id, request.ParentId, request.Conteudo), ct);
 
         if (result.IsFailure)
         {
@@ -164,13 +164,13 @@ public class CommunityController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> HidePost(Guid id, Guid postId, CancellationToken ct)
     {
-        var (usuarioId, nome, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new HidePostCommand(postId, nome, usuarioId), ct);
+        var result = await _mediator.Send(new HidePostCommand(postId, user.Nome, user.UserId), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
     }
 
@@ -181,23 +181,6 @@ public class CommunityController : ControllerBase
     {
         var result = await _mediator.Send(new GetMembersQuery(id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
-    }
-
-    // Ownership: lê claims sub/name/avatar do token. Nunca do body.
-    private (Guid usuarioId, string nome, string? avatar, object? unauthorized) ReadUser()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var usuarioId))
-        {
-            return (Guid.Empty, "Usuário", null, new { error = "Token sem claim 'sub'." });
-        }
-
-        var nome = User.FindFirst("name")?.Value
-                   ?? User.FindFirst("nickname")?.Value
-                   ?? "Usuário";
-        var avatar = User.FindFirst("avatar")?.Value;
-
-        return (usuarioId, nome, avatar, null);
     }
 
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum

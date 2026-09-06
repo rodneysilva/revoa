@@ -25,14 +25,14 @@ public class ReviewsController : ControllerBase
     public async Task<ActionResult<string>> Create(
         Guid id, [FromBody] CreateReviewRequest request, CancellationToken ct)
     {
-        var (reviewerId, nome, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new CreateReviewCommand(reviewerId, nome, id, request.Rating, request.Comment), ct);
+            new CreateReviewCommand(user.UserId, user.Nome, id, request.Rating, request.Comment), ct);
 
         return result.IsFailure
             ? BadRequest(new { error = result.Error })
@@ -47,22 +47,6 @@ public class ReviewsController : ControllerBase
     {
         var result = await _mediator.Send(new GetUserReviewsQuery(userId, limit), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
-    }
-
-    // Ownership: reviewerId/nome vêm do token, nunca do body.
-    private (Guid reviewerId, string nome, object? unauthorized) ReadUser()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var reviewerId))
-        {
-            return (Guid.Empty, "Usuário", new { error = "Token sem claim 'sub'." });
-        }
-
-        var nome = User.FindFirst("name")?.Value
-                   ?? User.FindFirst("nickname")?.Value
-                   ?? "Usuário";
-
-        return (reviewerId, nome, null);
     }
 }
 

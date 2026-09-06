@@ -47,14 +47,14 @@ public class ExchangeController : ControllerBase
     public async Task<ActionResult<string>> Purchase(
         [FromBody] PurchaseRequest request, CancellationToken ct)
     {
-        var (buyerId, nome, avatar, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new PurchaseCommand(buyerId, nome, avatar, request.ListingId), ct);
+            new PurchaseCommand(user.UserId, user.Nome, user.AvatarUrl, request.ListingId), ct);
 
         return result.IsFailure
             ? BadRequest(new { error = result.Error })
@@ -66,13 +66,13 @@ public class ExchangeController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Redeem(Guid id, CancellationToken ct)
     {
-        var (buyerId, _, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new RedeemVoucherCommand(buyerId, id), ct);
+        var result = await _mediator.Send(new RedeemVoucherCommand(user.UserId, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
@@ -81,13 +81,13 @@ public class ExchangeController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Release(Guid id, CancellationToken ct)
     {
-        var (actorId, _, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new ReleaseTradeCommand(actorId, id), ct);
+        var result = await _mediator.Send(new ReleaseTradeCommand(user.UserId, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
@@ -96,13 +96,13 @@ public class ExchangeController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Dispute(Guid id, CancellationToken ct)
     {
-        var (actorId, nome, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new OpenDisputeCommand(actorId, nome, id), ct);
+        var result = await _mediator.Send(new OpenDisputeCommand(user.UserId, user.Nome, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
@@ -122,13 +122,13 @@ public class ExchangeController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> Cancel(Guid id, CancellationToken ct)
     {
-        var (actorId, _, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new CancelTradeCommand(actorId, id), ct);
+        var result = await _mediator.Send(new CancelTradeCommand(user.UserId, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
@@ -148,14 +148,14 @@ public class ExchangeController : ControllerBase
     public async Task<ActionResult<string>> RequestHelp(
         [FromBody] RequestHelpRequest request, CancellationToken ct)
     {
-        var (authorId, nome, avatar, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new RequestHelpCommand(authorId, nome, avatar, request.ListingId, request.Mensagem), ct);
+            new RequestHelpCommand(user.UserId, user.Nome, user.AvatarUrl, request.ListingId, request.Mensagem), ct);
 
         return result.IsFailure
             ? BadRequest(new { error = result.Error })
@@ -167,34 +167,17 @@ public class ExchangeController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult<string>> SelectRecipient(Guid id, CancellationToken ct)
     {
-        var (doadorId, _, _, unauthorized) = ReadUser();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new SelectRecipientCommand(doadorId, id), ct);
+        var result = await _mediator.Send(new SelectRecipientCommand(user.UserId, id), ct);
 
         return result.IsFailure
             ? BadRequest(new { error = result.Error })
             : CreatedAtAction(nameof(GetById), new { id = result.Value }, result.Value);
-    }
-
-    // Ownership: lê claims sub/name/avatar do token. Nunca do body.
-    private (Guid usuarioId, string nome, string? avatar, object? unauthorized) ReadUser()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var usuarioId))
-        {
-            return (Guid.Empty, "Usuário", null, new { error = "Token sem claim 'sub'." });
-        }
-
-        var nome = User.FindFirst("name")?.Value
-                   ?? User.FindFirst("nickname")?.Value
-                   ?? "Usuário";
-        var avatar = User.FindFirst("avatar")?.Value;
-
-        return (usuarioId, nome, avatar, null);
     }
 }
 

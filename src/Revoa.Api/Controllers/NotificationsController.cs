@@ -28,13 +28,13 @@ public class NotificationsController : ControllerBase
         [FromQuery] int page = 1,
         CancellationToken ct = default)
     {
-        var (userId, unauthorized) = ReadUserId();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new GetNotificationsQuery(userId, unreadOnly, page), ct);
+        var result = await _mediator.Send(new GetNotificationsQuery(user.UserId, unreadOnly, page), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
 
@@ -43,13 +43,13 @@ public class NotificationsController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult<int>> UnreadCount(CancellationToken ct = default)
     {
-        var (userId, unauthorized) = ReadUserId();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var count = await _mediator.Send(new GetUnreadCountQuery(userId), ct);
+        var count = await _mediator.Send(new GetUnreadCountQuery(user.UserId), ct);
         return Ok(count);
     }
 
@@ -58,13 +58,13 @@ public class NotificationsController : ControllerBase
     [Authorize(Policy = "Verified")]
     public async Task<ActionResult> MarkRead(Guid id, CancellationToken ct = default)
     {
-        var (userId, unauthorized) = ReadUserId();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
-        var result = await _mediator.Send(new MarkNotificationReadCommand(userId, id), ct);
+        var result = await _mediator.Send(new MarkNotificationReadCommand(user.UserId, id), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
     }
 
@@ -74,14 +74,14 @@ public class NotificationsController : ControllerBase
     public async Task<ActionResult<string>> SubscribePush(
         [FromBody] SubscribePushRequest request, CancellationToken ct = default)
     {
-        var (userId, unauthorized) = ReadUserId();
-        if (unauthorized is not null)
+        var user = User.GetRevoaUser();
+        if (user is null)
         {
-            return Unauthorized(unauthorized);
+            return Unauthorized(new { error = "Token sem claim 'sub'." });
         }
 
         var result = await _mediator.Send(
-            new SubscribePushCommand(userId, request.Endpoint, request.P256dh, request.Auth), ct);
+            new SubscribePushCommand(user.UserId, request.Endpoint, request.P256dh, request.Auth), ct);
 
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(result.Value);
     }
@@ -102,18 +102,6 @@ public class NotificationsController : ControllerBase
 
         var result = await _mediator.Send(new UnsubscribePushCommand(ep), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
-    }
-
-    // Ownership: lê claim sub do token. Nunca do body.
-    private (Guid userId, object? unauthorized) ReadUserId()
-    {
-        var sub = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(sub) || !Guid.TryParse(sub, out var userId))
-        {
-            return (Guid.Empty, new { error = "Token sem claim 'sub'." });
-        }
-
-        return (userId, null);
     }
 }
 
