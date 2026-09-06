@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthContext";
 import { isAdminUser } from "../lib/admin";
 import { GlobalSearch } from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
+import { refreshUnread, useUnread } from "../lib/unread";
 
 const navItems = [
   { to: "/feed", label: "Feed" },
@@ -24,6 +25,14 @@ export function Layout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const admin = isAdminUser(user);
+  const unread = useUnread();
+
+  // Badge de não-lidas no sino — re-busca a cada rota (a página de Notificações
+  // zera via store ao abrir). Degrada em silêncio, como o saldo.
+  useEffect(() => {
+    if (!user) return;
+    void refreshUnread();
+  }, [user, location.pathname]);
 
   // Saldo RM$ no header (VISUAL_IDENTITY §8). Degrada em silêncio: sem carteira
   // ou chain offline → "—" (nunca bloqueia a barra). Re-busca a cada rota (o saldo
@@ -104,11 +113,18 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/notifications"
-                  className="hidden sm:inline-flex items-center justify-center text-lg leading-none text-silver hover:text-cream"
+                  className="hidden sm:inline-flex items-center justify-center relative text-lg leading-none text-silver hover:text-cream"
                   title="Notificações"
-                  aria-label="Notificações"
+                  aria-label={
+                    unread > 0 ? `Notificações (${unread} não lidas)` : "Notificações"
+                  }
                 >
                   🔔
+                  {unread > 0 && (
+                    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rosa text-ink text-[10px] font-bold rounded-full border-2 border-ink">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
                 </Link>
                 {user.verified && (
                   <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-esmeralda bg-esmeralda/10 px-2 py-1 rounded-full">
@@ -217,9 +233,14 @@ export function Layout() {
                   </Link>
                   <Link
                     to="/notifications"
-                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream flex items-center gap-2"
                   >
                     🔔 Notificações
+                    {unread > 0 && (
+                      <span className="bg-rosa text-ink text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        {unread > 9 ? "9+" : unread}
+                      </span>
+                    )}
                   </Link>
                   <Link
                     to="/trades"
