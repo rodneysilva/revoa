@@ -18,6 +18,7 @@ import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 import { WalletPage } from "./pages/WalletPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { UserPage } from "./pages/UserPage";
 import { TransparencyPage } from "./pages/TransparencyPage";
 import { TermsPage } from "./pages/TermsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="/feed" element={<FeedPage />} />
           <Route path="/explore" element={<ExplorePage />} />
           <Route path="/listings/:id" element={<ListingDetailPage />} />
+          <Route path="/users/:id" element={<UserPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/community" element={<CommunityPage />} />

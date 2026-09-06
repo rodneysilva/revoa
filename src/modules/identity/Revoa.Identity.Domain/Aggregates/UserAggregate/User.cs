@@ -35,6 +35,10 @@ public class User : AggregateRoot
     public bool EmailVerified { get; private set; }
     public bool PhoneVerified { get; private set; }
 
+    // Data de criação (perfil público "membro desde"). Documentos anteriores ao
+    // campo ficam com default — o DTO converte default em null.
+    public DateTime CreatedAt { get; private set; }
+
     // Verificação de e-mail (token de uso único)
     public string? EmailToken { get; private set; }
     public DateTime? EmailTokenExpiry { get; private set; }
@@ -72,6 +76,7 @@ public class User : AggregateRoot
             Status = UserStatus.PendingVerification,
             EmailVerified = false,
             PhoneVerified = false,
+            CreatedAt = DateTime.UtcNow,
             Version = 1
         };
     }

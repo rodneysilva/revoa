@@ -26,6 +26,7 @@ import type {
   SocialFeedItem,
   Post,
   PriceReference,
+  PublicProfile,
   RegisterBody,
   RegisterResult,
   Reputation,
@@ -254,6 +255,15 @@ export const api = {
   userReviews: (userId: string, limit = 20): Promise<Review[]> =>
     apiGet<Review[]>(
       `/api/users/${encodeURIComponent(userId)}/reviews${qs({ limit })}`
+    ),
+  // Perfil público + atividade social do usuário.
+  publicProfile: (userId: string): Promise<PublicProfile> =>
+    apiGet<PublicProfile>(`/api/users/${encodeURIComponent(userId)}`),
+  userCommunities: (userId: string): Promise<Community[]> =>
+    apiGet<Community[]>(`/api/users/${encodeURIComponent(userId)}/communities`),
+  userPosts: (userId: string, limit = 12): Promise<SocialFeedItem[]> =>
+    apiGet<SocialFeedItem[]>(
+      `/api/users/${encodeURIComponent(userId)}/posts${qs({ limit })}`
     ),
   reputation: (userId: string): Promise<Reputation> =>
     apiGet<Reputation>(`/api/users/${encodeURIComponent(userId)}/reputation`),

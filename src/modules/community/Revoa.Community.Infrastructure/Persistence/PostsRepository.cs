@@ -42,6 +42,20 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Post>> GetByAutorAsync(Guid autorId, int limit, CancellationToken ct)
+    {
+        var fb = Builders<Post>.Filter;
+        var query = fb.Eq(p => p.AutorId, autorId)
+                    & fb.Eq(p => p.Status, PostStatus.Visible);
+
+        var safeLimit = limit > 0 ? limit : 20;
+
+        return await Collection.Find(query)
+            .SortByDescending(p => p.CreatedAt)
+            .Limit(safeLimit)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyDictionary<Guid, int>> GetChildrenCountsAsync(
         IReadOnlyCollection<Guid> parentIds, CancellationToken ct)
     {
@@ -111,7 +125,12 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
                 new CreateIndexOptions { Name = "ix_Path" }),
             new CreateIndexModel<Post>(
                 Builders<Post>.IndexKeys.Ascending(p => p.Status),
-                new CreateIndexOptions { Name = "ix_Status" })
+                new CreateIndexOptions { Name = "ix_Status" }),
+            new CreateIndexModel<Post>(
+                Builders<Post>.IndexKeys
+                    .Ascending(p => p.AutorId)
+                    .Descending(p => p.CreatedAt),
+                new CreateIndexOptions { Name = "ix_Autor_CreatedAt" })
         }, ct);
     }
 }

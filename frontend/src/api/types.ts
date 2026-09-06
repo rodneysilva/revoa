@@ -269,6 +269,14 @@ export interface SocialFeedItem {
   Community: Community;
 }
 
+// GET /api/users/{id} — perfil público. Só nome e "membro desde";
+// e-mail/telefone jamais saem do backend.
+export interface PublicProfile {
+  Id: string;
+  Name: string;
+  MemberSince?: string;
+}
+
 // GET /api/wallet/balance — saldo RVM do usuário logado. Rvm null = saldo
 // indisponível (chain offline ou carteira ainda não criada); a UI degrada em silêncio.
 export interface WalletBalance {

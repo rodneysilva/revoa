@@ -251,8 +251,11 @@ export function ListingDetailPage() {
             )}
           </dl>
 
-          {/* Vendedor */}
-          <div className="mt-6 flex items-center gap-3 bg-smoke rounded-xl p-3">
+          {/* Vendedor — link para o perfil público */}
+          <Link
+            to={`/users/${listing.SellerId}`}
+            className="mt-6 flex items-center gap-3 bg-smoke rounded-xl p-3 hover:border-esmeralda border border-transparent transition"
+          >
             <Avatar
               name={listing.SellerName}
               src={listing.SellerAvatarUrl}
@@ -261,10 +264,10 @@ export function ListingDetailPage() {
             <div>
               <div className="text-cream font-medium">{listing.SellerName}</div>
               <div className="text-xs text-silver">
-                {MODO_META[listing.Mode].emoji} {MODO_META[listing.Mode].label}
+                {MODO_META[listing.Mode].emoji} {MODO_META[listing.Mode].label} · ver perfil →
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Avaliações do vendedor (recebidas em trocas concluídas — UF-23) */}
           <SellerReviews vendedorId={listing.SellerId} />
