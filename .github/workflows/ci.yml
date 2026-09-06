@@ -21,9 +21,9 @@ jobs:
           dotnet-version: "10.0.x"
       - name: Build
         run: dotnet build src/Revoa.sln -c Release --nologo
-      - name: Test (off-chain integration)
+      - name: Test (off-chain integration + domain)
         # Testcontainers precisa do Docker (disponível no ubuntu-latest). On-chain pulam (sem anvil).
-        run: dotnet test src/Revoa.sln -c Release --no-build --filter "FullyQualifiedName~OffChain" --nologo
+        run: dotnet test src/Revoa.sln -c Release --no-build --filter "FullyQualifiedName~OffChain|FullyQualifiedName~Domain.Tests" --nologo
 
   # ── Frontend: typecheck + build ──
   frontend:
