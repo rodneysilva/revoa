@@ -19,8 +19,10 @@
 # e só sobem com `docker compose --profile <nome> up -d`. Assim este arquivo é
 # o contrato-vivo da topologia completa, enquanto mongo/minio já rodam hoje.
 #   app, frontend            → profile:app        (Fase 1+)
+#   mongo-dev, app-dev       → profile:dev        (dev.revoa.me)
 #   anvil, avalanche, bundler,
 #   paymaster, ollama        → profile:chain      (Fase 1)
+#   mongo, minio, mail       → base (sem profile; sempre no projeto)
 # ═══════════════════════════════════════════════════════════════
 
 services:
@@ -151,9 +153,9 @@ services:
   # E-mail transacional do domínio revoa.me (verificação de cadastro,
   # notificações). MailKit (.NET) entrega aqui. SÓ na rede interna.
   # DNS revoa.me: MX + SPF + DKIM + DMARC (ver ADR-0014).
+  # Serviço base (sem profile): compartilhado por app e app-dev, como mongo/minio.
   # ═══════════════════════════════════════════════════════════
   mail:
-    profiles: ["app"]
     image: mwader/postfix-relay:latest
     container_name: revoa-mail
     environment:
@@ -169,6 +171,74 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  # ═══════════════════════════════════════════════════════════
+  # DEV (dev.revoa.me, profile:dev) — ambiente de homologação ISOLADO
+  # ═══════════════════════════════════════════════════════════
+  # Contrato do dono: dados de demonstração vivem SEMPRE na instância dev e são
+  # populados ANTES de cada release (scripts/seed-dev.py); a instância de
+  # produção NUNCA é populada via script (containers distintos = impossível por
+  # engano). O app-dev roda em PRODUCTION (endpoints dev 404) lendo o banco dev:
+  # o que se valida em dev.revoa.me é exatamente o artefato que sobe p/ produção.
+
+  mongo-dev:
+    profiles: ["dev"]
+    image: mongo:7
+    container_name: revoa-mongo-dev
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    volumes:
+      - revoa-mongo-dev-data:/data/db
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.hello().isWritablePrimary === true ? quit(0) : quit(1)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  app-dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: src/Revoa.Api/Dockerfile
+    container_name: revoa-app-dev     # router traefik rt-dev-revoa-me aponta aqui
+    environment:
+      - ASPNETCORE_URLS=http://0.0.0.0:8000
+      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
+      - Mongo__ConnectionString=mongodb://mongo-dev:27017/?replicaSet=rs0
+      - Mongo__Database=revoa_dev
+      - Minio__Endpoint=minio:9000
+      - Chain__RpcUrl=${CHAIN_RPC_URL:-http://anvil:8545}
+      - Chain__ChainId=${CHAIN_CHAIN_ID:-31337}
+      - Chain__FaucetPrivateKey=${CHAIN_FAUCET_KEY:-}
+      - Chain__FundWalletGasOnCreate=true
+      - Chain__FundWalletGasEther=1.0
+      - Chain__Contracts__RVM=0x5FbDB2315678afecb367f032d93F642f64180aa3
+      - Chain__Contracts__Treasury=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+      - Chain__Contracts__ProductNFT=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - Chain__Contracts__ServiceVoucher=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+      - Chain__Contracts__EscrowVault=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+      - Chain__Contracts__CouponRedeemer=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+      - Admin__Emails=${ADMIN_EMAILS:-}
+      - Smtp__Host=mail
+      - Smtp__Port=25
+      - Smtp__From=no-reply@revoa.me
+      - Zenvia__Token=${ZENVIA_TOKEN:-}
+      - Jwt__Key=${JWT_KEY:-}
+      - Jwt__Audience=revoa
+    depends_on:
+      mongo-dev: { condition: service_healthy }
+      minio: { condition: service_healthy }
+      mail: { condition: service_started }
+    networks: [internal, traefik_net]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
   # ═══════════════════════════════════════════════════════════
   # CHAIN STACK (Fase 1, profile:chain) — TODOS só na rede interna
@@ -280,6 +350,7 @@ networks:
 volumes:
   revoa-app-data:
   revoa-mongo-data:
+  revoa-mongo-dev-data:
   revoa-minio-data:
   revoa-anvil-data:
   revoa-chain-data:
