@@ -3,6 +3,7 @@
 
 import type {
   AdminParameter,
+  AppNotification,
   BrlRate,
   Category,
   Comment,
@@ -302,6 +303,22 @@ export const api = {
       Action: action,
       Note: note,
     }),
+
+  // Notificações pessoais (UF-32; ownership pelo token do usuário logado)
+  notifications: (p?: {
+    unreadOnly?: boolean;
+    page?: number;
+  }): Promise<AppNotification[]> =>
+    apiGet<AppNotification[]>(
+      `/api/notifications${qs({
+        unreadOnly: p?.unreadOnly ? "true" : undefined,
+        page: p?.page,
+      })}`
+    ),
+  unreadCount: (): Promise<number> =>
+    apiGet<number>(`/api/notifications/unread-count`),
+  markNotificationRead: (id: string): Promise<void> =>
+    apiPost<void>(`/api/notifications/${encodeURIComponent(id)}/read`),
 
   // Cupom on-chain (UF-29)
   coupons: (page = 1): Promise<Coupon[]> =>

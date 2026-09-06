@@ -399,3 +399,26 @@ export interface PriceReference {
   SourcesUsed: string;
   UpdatedAt: string;
 }
+
+// Notificações pessoais (UF-32; GET /api/notifications, gate Verified, ownership via token).
+export type NotificationType =
+  | "EscrowUpdate"
+  | "Offer"
+  | "Transfer"
+  | "Post"
+  | "Chat"
+  | "Donation"
+  | "Price"
+  | "Help"
+  | "System";
+
+export interface AppNotification {
+  Id: string;
+  Type: NotificationType | string;
+  Title: string;
+  Body: string;
+  Payload?: string | null;
+  Read: boolean;
+  ReadAt?: string | null;
+  CreatedAt: string;
+}
