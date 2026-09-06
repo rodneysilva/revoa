@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
+import { CommunityCard } from "../components/CommunityCard";
 import { useAuth } from "../auth/AuthContext";
 import {
   EIXO_EMOJI,
@@ -15,6 +16,7 @@ import type {
   CreateCommunityBody,
   CommunityAxis,
   CommunityVisibility,
+  MyCommunity,
 } from "../api/types";
 
 type EixoFilter = (typeof EIXO_FILTERS)[number];
@@ -32,6 +34,29 @@ export function CommunityPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<EixoFilter>("Todos");
   const [showCreate, setShowCreate] = useState(false);
+  const [busca, setBusca] = useState("");
+
+  // "Minhas comunidades" (GET /mine) — só faz sentido para quem está logado.
+  const [mine, setMine] = useState<MyCommunity[] | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      setMine(null);
+      return;
+    }
+    let active = true;
+    api
+      .myCommunities()
+      .then((m) => {
+        if (active) setMine(m);
+      })
+      .catch(() => {
+        if (active) setMine([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -54,6 +79,17 @@ export function CommunityPage() {
     };
   }, [filter]);
 
+  // Busca client-side sobre a lista carregada (a API de comunidades ainda não
+  // tem `q` — filtro simples por nome/descrição/local).
+  const termo = busca.trim().toLowerCase();
+  const visiveis = termo
+    ? items.filter((c) =>
+        `${c.Name} ${c.Description ?? ""} ${c.Neighborhood ?? ""} ${c.City ?? ""}`
+          .toLowerCase()
+          .includes(termo)
+      )
+    : items;
+
   return (
     <div className="app-container">
       <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-5">
@@ -74,61 +110,96 @@ export function CommunityPage() {
         )}
       </div>
 
-      <div className="flex gap-2 flex-wrap mb-6">
-        {EIXO_FILTERS.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
-              filter === f
-                ? "bg-community text-ink border-transparent"
-                : "border-smoke text-silver hover:text-cream"
-            }`}
-          >
-            {f === "Todos" ? "Todos" : `${EIXO_EMOJI[f]} ${EIXO_LABEL[f]}`}
-          </button>
-        ))}
-      </div>
-
-      {error && (
-        <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
-          {error}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-44 bg-smoke rounded-xl animate-pulse" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
-          <div className="text-4xl mb-2" aria-hidden>
-            🫂
+      {/* ══ Minhas comunidades (vínculo do usuário) ══ */}
+      {mine !== null && mine.length > 0 && (
+        <section className="mb-10">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-3">
+            Minhas comunidades
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {mine.map((m) => (
+              <CommunityCard key={m.Community.Id} c={m.Community} role={m.Role} />
+            ))}
           </div>
-          <p className="text-silver">
-            Ainda não há comunidades por aqui —{" "}
-            {user?.verified
-              ? "crie a primeira!"
-              : "seja a primeira pessoa a criar uma."}
-          </p>
-          {user?.verified && (
-            <button
-              onClick={() => setShowCreate(true)}
-              className="mt-4 inline-block bg-community text-ink font-semibold px-5 py-2.5 rounded-xl"
-            >
-              Criar comunidade
-            </button>
-          )}
+        </section>
+      )}
+
+      {/* ══ Descobrir ══ */}
+      <section>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <h2 className="text-lg font-bold text-cream">
+            {mine && mine.length > 0 ? "Descobrir comunidades" : "Comunidades"}
+          </h2>
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome, bairro ou cidade…"
+            className="sm:ml-auto sm:max-w-xs w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2 outline-none text-sm"
+          />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {items.map((c) => (
-            <CommunityCard key={c.Id} c={c} />
+
+        <div className="flex gap-2 flex-wrap mb-6">
+          {EIXO_FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                filter === f
+                  ? "bg-community text-ink border-transparent"
+                  : "border-smoke text-silver hover:text-cream"
+              }`}
+            >
+              {f === "Todos" ? "Todos" : `${EIXO_EMOJI[f]} ${EIXO_LABEL[f]}`}
+            </button>
           ))}
         </div>
-      )}
+
+        {error && (
+          <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-44 bg-smoke rounded-xl animate-pulse" />
+            ))}
+          </div>
+        ) : visiveis.length === 0 ? (
+          <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
+            <div className="text-4xl mb-2" aria-hidden>
+              🫂
+            </div>
+            <p className="text-silver">
+              {busca
+                ? "Nenhuma comunidade encontrada com essa busca."
+                : items.length === 0
+                  ? `Ainda não há comunidades por aqui — ${
+                      user?.verified
+                        ? "crie a primeira!"
+                        : "seja a primeira pessoa a criar uma."
+                    }`
+                  : "Nenhuma comunidade neste eixo."}
+            </p>
+            {!busca && items.length === 0 && user?.verified && (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="mt-4 inline-block bg-community text-ink font-semibold px-5 py-2.5 rounded-xl"
+              >
+                Criar comunidade
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {visiveis.map((c) => (
+              <CommunityCard key={c.Id} c={c} />
+            ))}
+          </div>
+        )}
+      </section>
 
       {showCreate && (
         <CreateCommunityModal
@@ -137,51 +208,6 @@ export function CommunityPage() {
         />
       )}
     </div>
-  );
-}
-
-function CommunityCard({ c }: { c: Community }) {
-  const local = [c.Neighborhood, c.City, c.State].filter(Boolean).join(", ");
-  return (
-    <Link
-      to={`/community/${c.Id}`}
-      className="group block bg-charcoal rounded-2xl border border-smoke overflow-hidden hover:border-amber/60 hover:shadow-lg transition"
-    >
-      <div className="bg-community relative h-16 flex items-center px-4">
-        <span className="text-2xl drop-shadow" aria-hidden>
-          {EIXO_EMOJI[c.Axis]}
-        </span>
-        <div className="ml-auto flex items-center gap-1.5">
-          {c.Type === "Default" && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm text-white">
-              Oficial
-            </span>
-          )}
-          {c.Visibility === "Private" && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white">
-              🔒
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="p-4">
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber/15 text-amber">
-          {EIXO_LABEL[c.Axis]}
-        </span>
-        <h3 className="mt-2 font-semibold text-cream group-hover:text-amber line-clamp-1">
-          {c.Name}
-        </h3>
-        <p className="mt-1 text-sm text-silver line-clamp-2 min-h-[2.5rem]">
-          {c.Description || "Sem descrição."}
-        </p>
-        <div className="mt-3 flex items-center gap-2 text-xs text-silver">
-          <span>
-            👥 {c.MembersCount} {c.MembersCount === 1 ? "membro" : "membros"}
-          </span>
-          {local && <span className="truncate">· 📍 {local}</span>}
-        </div>
-      </div>
-    </Link>
   );
 }
 
