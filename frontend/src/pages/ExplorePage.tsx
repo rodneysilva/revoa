@@ -28,6 +28,35 @@ const inputCls =
   "w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm";
 const labelCls = "block text-xs font-medium text-silver mb-1.5";
 
+// Ícone por categoria (Baymard: categorias com thumbnail na exploração).
+// Match por nome/slug — categorias novas caem no fallback ♻️.
+const CATEGORY_EMOJI: [RegExp, string][] = [
+  [/mobili|sofá|sofa|cadeira|mesa|estante|cama/i, "🪑"],
+  [/roupa|vestu|moda|tênis|tenis|sapato/i, "👕"],
+  [/livro|leitura|revista/i, "📚"],
+  [/eletr|celular|notebook|tv|áudio|audio|fone/i, "🔌"],
+  [/ferrament|obra|constru/i, "🔧"],
+  [/brinquedo|jogo/i, "🧸"],
+  [/esporte|bicicleta|bike|fit|academia/i, "⚽"],
+  [/comida|aliment|horta|comida|cozinha/i, "🍲"],
+  [/jardin|planta|flores/i, "🪴"],
+  [/músic|musica|instrument|aula|curso|idioma|ensino/i, "🎓"],
+  [/bebê|bebe|criança|crianca|infantil/i, "🍼"],
+  [/pet|animal|cachorro|gato/i, "🐾"],
+  [/saúde|saude|bem-estar|beleza|cabelo|estética|estetica/i, "💊"],
+  [/reforma|reparo|manuten|elétric|eletric|encanador|pintura/i, "🔨"],
+  [/tecnologia|inform|comput|program|design/i, "💻"],
+  [/doação|doacao|caridade|ajuda/i, "🎁"],
+];
+
+function categoryEmoji(c: Category): string {
+  const s = `${c.Name} ${c.Slug ?? ""}`;
+  for (const [rx, emoji] of CATEGORY_EMOJI) {
+    if (rx.test(s)) return emoji;
+  }
+  return "♻️";
+}
+
 export function ExplorePage() {
   const { user } = useAuth();
 
@@ -40,6 +69,46 @@ export function ExplorePage() {
   const [precoMax, setPrecoMax] = useState("");
   const [doarApenas, setDoarApenas] = useState(false);
   const [sort, setSort] = useState<SortKey>("recente");
+
+  // Proximidade (hiperlocal, UF-06): coords lembradas entre visitas; o raio é
+  // sempre escolha explícita do usuário.
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(() => {
+    try {
+      const raw = localStorage.getItem("revoa.geo");
+      return raw ? (JSON.parse(raw) as { lat: number; lng: number }) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [raio, setRaio] = useState<number | null>(null);
+  const [geoErro, setGeoErro] = useState<string | null>(null);
+
+  function pedirLocalizacao() {
+    setGeoErro(null);
+    if (!navigator.geolocation) {
+      setGeoErro("Seu navegador não suporta geolocalização.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const g = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        localStorage.setItem("revoa.geo", JSON.stringify(g));
+        setGeo(g);
+        setRaio((r) => r ?? 10);
+      },
+      () =>
+        setGeoErro(
+          "Não foi possível obter sua localização — verifique a permissão do navegador."
+        ),
+      { timeout: 10_000 }
+    );
+  }
+
+  function limparGeo() {
+    localStorage.removeItem("revoa.geo");
+    setGeo(null);
+    setRaio(null);
+  }
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<FeedItem[]>([]);
@@ -71,8 +140,11 @@ export function ExplorePage() {
         priceMax: precoMax ? Number(precoMax) : undefined,
         donationOnly: doarApenas || undefined,
         sort,
+        radius: geo && raio ? raio : undefined,
+        lat: geo && raio ? geo.lat : undefined,
+        lng: geo && raio ? geo.lng : undefined,
       }),
-    [debouncedQ, kind, modo, categoriaId, precoMin, precoMax, doarApenas, sort]
+    [debouncedQ, kind, modo, categoriaId, precoMin, precoMax, doarApenas, sort, geo, raio]
   );
 
   useEffect(() => {
@@ -125,6 +197,7 @@ export function ExplorePage() {
     setPrecoMax("");
     setDoarApenas(false);
     setSort("recente");
+    limparGeo();
   }
 
   const activeCount =
@@ -134,7 +207,8 @@ export function ExplorePage() {
     (precoMin || precoMax ? 1 : 0) +
     (doarApenas ? 1 : 0) +
     (sort !== "recente" ? 1 : 0) +
-    (debouncedQ ? 1 : 0);
+    (debouncedQ ? 1 : 0) +
+    (geo && raio ? 1 : 0);
 
   const Filters = (
     <div className="bg-charcoal rounded-xl border border-smoke p-4 space-y-4">
@@ -258,9 +332,40 @@ export function ExplorePage() {
       </div>
 
       <div className="pt-1 border-t border-smoke">
-        <span className="block text-xs text-silver/70 pt-3">
-          📍 Filtro por proximidade (raio) — em breve
+        <span className="block text-xs font-medium text-silver pt-3 mb-1.5">
+          📍 Proximidade
         </span>
+        {!geo ? (
+          <button
+            onClick={pedirLocalizacao}
+            className="w-full text-left text-sm text-esmeralda hover:underline"
+          >
+            Usar minha localização
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <select
+              value={raio ?? ""}
+              onChange={(e) => setRaio(e.target.value ? Number(e.target.value) : null)}
+              className={inputCls}
+              aria-label="Raio de busca"
+            >
+              <option value="">Sem raio (tudo)</option>
+              <option value="2">2 km</option>
+              <option value="5">5 km</option>
+              <option value="10">10 km</option>
+              <option value="25">25 km</option>
+              <option value="50">50 km</option>
+            </select>
+            <button
+              onClick={limparGeo}
+              className="text-xs text-silver hover:text-cream"
+            >
+              Esquecer localização
+            </button>
+          </div>
+        )}
+        {geoErro && <p className="text-xs text-rosa mt-1">{geoErro}</p>}
       </div>
 
       {activeCount > 0 && (
@@ -276,10 +381,14 @@ export function ExplorePage() {
 
   return (
     <div className="app-container">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-cream">Explorar</h1>
         <span className="text-sm text-silver sm:ml-1">
-          {loading ? "Buscando…" : `${items.length} anúncio${items.length === 1 ? "" : "s"}`}
+          {loading
+            ? "Buscando…"
+            : `${items.length} anúncio${items.length === 1 ? "" : "s"}${
+                geo && raio ? ` · 📍 até ${raio} km` : ""
+              }`}
         </span>
         {user?.verified && (
           <Link
@@ -290,6 +399,48 @@ export function ExplorePage() {
           </Link>
         )}
       </div>
+
+      {/* Categorias em destaque (Baymard: subcategorias com ícone no topo da
+          exploração; clicar na ativa limpa) */}
+      {categories.length > 0 && (
+        <div className="flex gap-3 overflow-x-auto pb-3 mb-4">
+          <button
+            onClick={() => setCategoriaId("")}
+            className={`shrink-0 w-24 h-24 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition ${
+              !categoriaId
+                ? "border-esmeralda bg-esmeralda/10"
+                : "border-smoke bg-charcoal hover:border-esmeralda/60"
+            }`}
+          >
+            <span className="text-2xl" aria-hidden>
+              ♻️
+            </span>
+            <span className="text-xs font-medium text-cream px-1">Tudo</span>
+          </button>
+          {categories.map((c) => {
+            const active = categoriaId === c.Id;
+            return (
+              <button
+                key={c.Id}
+                onClick={() => setCategoriaId(active ? "" : c.Id)}
+                title={c.Description || c.Name}
+                className={`shrink-0 w-24 h-24 rounded-xl border flex flex-col items-center justify-center gap-1.5 transition ${
+                  active
+                    ? "border-esmeralda bg-esmeralda/10"
+                    : "border-smoke bg-charcoal hover:border-esmeralda/60"
+                }`}
+              >
+                <span className="text-2xl" aria-hidden>
+                  {categoryEmoji(c)}
+                </span>
+                <span className="text-xs font-medium text-cream leading-tight line-clamp-2 px-1.5 text-center">
+                  {c.Name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="hidden lg:block">
