@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Avatar } from "./Avatar";
+import { ReportButton } from "./ReportButton";
 import { timeAgo } from "../lib/time";
-import type { Post } from "../api/types";
+import type { Post, ReportTarget } from "../api/types";
 
 const MAX_DEPTH = 6;
 
@@ -11,6 +12,8 @@ interface ThreadHandlers {
   canPost: boolean;
   currentUserId?: string;
   loadingId?: string;
+  // O que esta thread denuncia: "Post" (comunidade) ou "Comment" (anúncio).
+  reportTarget?: ReportTarget;
 }
 
 interface PostThreadProps extends ThreadHandlers {
@@ -39,6 +42,7 @@ function PostItem({
   canPost,
   currentUserId,
   loadingId,
+  reportTarget,
 }: ItemProps) {
   const [showReply, setShowReply] = useState(false);
   const [text, setText] = useState("");
@@ -124,6 +128,11 @@ function PostItem({
                 {open ? "Ocultar respostas" : repliesLabel}
               </button>
             )}
+            <ReportButton
+              targetType={reportTarget ?? "Post"}
+              targetId={post.Id}
+              ownContent={currentUserId === post.AutorId}
+            />
           </div>
 
           {showReply && canReply && (
@@ -169,6 +178,7 @@ function PostItem({
                     canPost={canPost}
                     currentUserId={currentUserId}
                     loadingId={loadingId}
+                    reportTarget={reportTarget}
                   />
                 ))
               ) : (

@@ -335,6 +335,7 @@ export function ListingDetailPage() {
             loadChildren={(parentId) => api.listingComments(id!, parentId)}
             canPost={canComment}
             currentUserId={user?.userId}
+            reportTarget="Comment"
           />
         )}
       </section>
