@@ -2,7 +2,7 @@ using Revoa.Community.Domain.Aggregates.CommunityAggregate;
 
 namespace Revoa.Community.Application.DTOs;
 
-// Item do feed / detalhe de comunidade. MembrosCount vem de agregação (anti-N+1 via batch count).
+// Item do feed / detalhe de comunidade. MembersCount vem de agregação (anti-N+1 via batch count).
 public sealed record CommunityDto(
     Guid Id,
     string Name,
@@ -18,7 +18,7 @@ public sealed record CommunityDto(
     Guid CreatorId,
     string CreatorName,
     string? CreatorAvatarUrl,
-    int MembrosCount);
+    int MembersCount);
 
 public static class CommunityDtoMapper
 {

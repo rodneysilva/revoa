@@ -176,7 +176,7 @@ function CommunityCard({ c }: { c: Community }) {
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-silver">
           <span>
-            👥 {c.MembrosCount} {c.MembrosCount === 1 ? "membro" : "membros"}
+            👥 {c.MembersCount} {c.MembersCount === 1 ? "membro" : "membros"}
           </span>
           {local && <span className="truncate">· 📍 {local}</span>}
         </div>

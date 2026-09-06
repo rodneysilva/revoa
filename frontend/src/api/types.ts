@@ -220,7 +220,7 @@ export interface Community {
   CreatorId: string;
   CreatorName: string;
   CreatorAvatarUrl?: string;
-  MembrosCount: number;
+  MembersCount: number;
 }
 
 export interface Post {

@@ -290,8 +290,8 @@ export function CommunityDetailPage() {
               onClick={() => selectTab("membros")}
               className="text-white/90 hover:text-white"
             >
-              👥 {community.MembrosCount}{" "}
-              {community.MembrosCount === 1 ? "membro" : "membros"}
+              👥 {community.MembersCount}{" "}
+              {community.MembersCount === 1 ? "membro" : "membros"}
             </button>
             {local && <span className="text-white/90">📍 {local}</span>}
           </div>
