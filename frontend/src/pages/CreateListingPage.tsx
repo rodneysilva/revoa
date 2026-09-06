@@ -8,11 +8,10 @@ import type {
   CreateListingBody,
   Kind,
   Mode,
-  Visibility,
+  MyCommunity,
 } from "../api/types";
 
 const KINDS: Kind[] = ["Product", "Service"];
-const VISIBILIDADES: Visibility[] = ["Global"];
 
 const inputCls =
   "mt-1 w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none";
@@ -44,7 +43,10 @@ export function CreateListingPage() {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
-  const [visibilidade, setVisibilidade] = useState<Visibility>("Global");
+  // Escopo do anúncio: "" = toda a Revoa (Global); senão o Id da comunidade
+  // (Visibility Community — o backend revalida o vínculo Active).
+  const [minhasComunidades, setMinhasComunidades] = useState<MyCommunity[]>([]);
+  const [escopo, setEscopo] = useState("");
 
   useEffect(() => {
     api
@@ -65,6 +67,17 @@ export function CreateListingPage() {
     const valid = modosForKind(kind);
     if (!valid.includes(modo)) setModo(valid[0]);
   }, [kind, modo]);
+
+  // Escopo: só oferece comunidades com vínculo (mesma regra validada no backend).
+  useEffect(() => {
+    if (!user) return;
+    api
+      .myCommunities()
+      .then(setMinhasComunidades)
+      .catch(() => {
+        /* sem vínculos → anúncio global */
+      });
+  }, [user]);
 
   const isFree = modo === "Donate" || modo === "Volunteer";
 
@@ -95,7 +108,8 @@ export function CreateListingPage() {
       Description: descricao.trim(),
       Imagens: imagens,
       PriceRvm: precoNum,
-      Visibility: visibilidade,
+      Visibility: escopo ? "Community" : "Global",
+      CommunityId: escopo || undefined,
       CategoryId: categoriaId,
       Neighborhood: bairro.trim() || undefined,
       City: cidade.trim() || undefined,
@@ -350,21 +364,24 @@ export function CreateListingPage() {
           </select>
         </label>
 
-        {/* Visibilidade */}
-        <label className={labelCls}>
-          <span className={labelTxtCls}>Visibilidade</span>
-          <select
-            value={visibilidade}
-            onChange={(e) => setVisibilidade(e.target.value as Visibility)}
-            className={inputCls}
-          >
-            {VISIBILIDADES.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+        {/* Escopo — onde o anúncio aparece (só quem participa de comunidades vê) */}
+        {minhasComunidades.length > 0 && (
+          <label className={labelCls}>
+            <span className={labelTxtCls}>Onde aparece</span>
+            <select
+              value={escopo}
+              onChange={(e) => setEscopo(e.target.value)}
+              className={inputCls}
+            >
+              <option value="">Toda a Revoa (feed geral e comunidades)</option>
+              {minhasComunidades.map((m) => (
+                <option key={m.Community.Id} value={m.Community.Id}>
+                  Só em {m.Community.Name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {/* Localização (opcional) */}
         <details className="bg-charcoal rounded-xl border border-smoke p-4">

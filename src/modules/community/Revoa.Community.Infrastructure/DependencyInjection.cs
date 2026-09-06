@@ -6,6 +6,8 @@ using Revoa.Application;
 using Revoa.Community.Application.Commands;
 using Revoa.Community.Domain.Repositories;
 using Revoa.Community.Infrastructure.Persistence;
+using Revoa.Community.Infrastructure.Services;
+using Revoa.IntegrationContracts.Communities;
 using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Community.Infrastructure;
@@ -44,6 +46,9 @@ public static class DependencyInjection
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateCommunityCommandHandler).Assembly);
+
+        // Porta cross-módulo: Catalog valida vínculo Active antes de escopar anúncio.
+        services.AddScoped<IMembershipStatusChecker, MembershipStatusChecker>();
 
         return services;
     }
