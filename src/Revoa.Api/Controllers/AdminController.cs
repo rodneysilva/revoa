@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Revoa.Admin.Application.Commands;
 using Revoa.Admin.Application.DTOs;
 using Revoa.Admin.Application.Queries;
+using Revoa.Identity.Application.Commands;
+using Revoa.Identity.Domain.Aggregates.UserAggregate;
 
 namespace Revoa.Api.Controllers;
 
@@ -55,7 +57,24 @@ public class AdminController : ControllerBase
             ? BadRequest(new { error = result.Error })
             : Ok(new { ok = true });
     }
+
+    // Altera a role de um usuário (User/Mod/Admin/Arbitrator). Única via de escrita de UserRole;
+    // alimenta a claim "role" do próximo JWT (policy "Arbitrator" do resolve de disputas).
+    [HttpPut("users/{id:guid}/role")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult> SetUserRole(Guid id, [FromBody] SetUserRoleRequest body, CancellationToken ct)
+    {
+        var updatedBy = User.FindFirst("email")?.Value
+                        ?? User.FindFirst("sub")?.Value
+                        ?? "admin";
+
+        var result = await _mediator.Send(new SetUserRoleCommand(id, body.Role, updatedBy), ct);
+        return result.IsFailure ? BadRequest(new { error = result.Error }) : NoContent();
+    }
 }
+
+// Body do PUT /api/admin/users/{id}/role. Role = nome do enum (bind via JsonStringEnumConverter).
+public sealed record SetUserRoleRequest(UserRole Role);
 
 // Body do PUT /api/admin/parameters/{key}. Value é o valor cru (number/bool/string).
 public sealed record SetParameterRequest(JsonElement Value);

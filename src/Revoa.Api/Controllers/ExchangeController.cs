@@ -106,13 +106,14 @@ public class ExchangeController : ControllerBase
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 
-    // Árbitro/admin resolve disputa (move fundos do escrow). Gate Admin (interino) até a policy
-    // dedicada ARBITRATOR — claim role no JWT — substituir o allowlist por e-mail.
+    // Árbitro/admin resolve disputa (move fundos do escrow). Gate policy "Arbitrator":
+    // role ARBITRATOR (claim role no JWT) ou Admin. ResolvedBy = e-mail do token (auditoria).
     [HttpPost("{id:guid}/resolve")]
-    [Authorize(Policy = "Admin")]
+    [Authorize(Policy = "Arbitrator")]
     public async Task<ActionResult> Resolve(Guid id, [FromBody] ResolveRequest request, CancellationToken ct)
     {
-        var result = await _mediator.Send(new ResolveDisputeCommand(id, request.ReleaseToSeller), ct);
+        var resolvedBy = User.FindFirst("email")?.Value ?? User.FindFirst("sub")?.Value;
+        var result = await _mediator.Send(new ResolveDisputeCommand(id, request.ReleaseToSeller, resolvedBy), ct);
         return result.IsFailure ? BadRequest(new { error = result.Error }) : Ok(new { id });
     }
 

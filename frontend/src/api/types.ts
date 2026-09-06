@@ -141,6 +141,7 @@ export interface LoginResult {
   UserId: string;
   Nome: string;
   Email: string;
+  Roles: string[];
 }
 
 // Corpos de requisição.

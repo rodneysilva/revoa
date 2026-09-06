@@ -8,7 +8,10 @@ public enum UserRole
 {
     User,
     Mod,
-    Admin
+    Admin,
+    // Árbitro de disputas de escrow (BUSINESS_RULES: role ARBITRATOR on-chain do EscrowVault).
+    // Append no FIM do enum: persiste como int32 no Mongo — inserir no meio corromperia roles existentes.
+    Arbitrator
 }
 
 public enum UserStatus
@@ -153,6 +156,9 @@ public class User : AggregateRoot
     }
 
     public void Ban() => Status = UserStatus.Banned;
+
+    // Role atribuída apenas por admin (PUT /api/admin/users/{id}/role). Não muda Status.
+    public void SetRole(UserRole role) => Role = role;
 
     // --- Login passwordless por cÃ³digo de e-mail ---
     public void SetLoginCode(string code, DateTime expiry)

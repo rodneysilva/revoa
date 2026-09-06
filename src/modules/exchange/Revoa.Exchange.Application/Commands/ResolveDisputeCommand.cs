@@ -7,12 +7,14 @@ using Revoa.IntegrationContracts.Events;
 
 namespace Revoa.Exchange.Application.Commands;
 
-// Árbitro/admin resolve disputa: claimArbitrator on-chain (faucet tem ARBITRATOR_ROLE).
+// Árbitro/admin resolve disputa: claimArbitrator on-chain (chave dedicada tem ARBITRATOR_ROLE).
 // releaseToSeller=true → libera ao vendedor (doação publica DonationCompletedEvent); false → reembolsa.
-// TODO: gatear por role ARBITRATOR (Policy/claim) — MVP usa Policy "Verified" (endpoint admin).
+// Gate: policy "Arbitrator" no endpoint (role ARBITRATOR ou Admin). ResolvedBy = e-mail do árbitro
+// (claim do token) para auditoria — espelha DisputeOpenedBy.
 public sealed record ResolveDisputeCommand(
     Guid TradeId,
-    bool ReleaseToSeller) : IRequest<Result>;
+    bool ReleaseToSeller,
+    string? ResolvedBy) : IRequest<Result>;
 
 public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeCommand, Result>
 {
@@ -62,11 +64,11 @@ public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeComman
         {
             if (request.ReleaseToSeller)
             {
-                trade.MarkLiberada(txHash);
+                trade.MarkLiberada(txHash, request.ResolvedBy);
             }
             else
             {
-                trade.MarkReembolsada(txHash);
+                trade.MarkReembolsada(txHash, request.ResolvedBy);
             }
         }
         catch (DomainException ex)

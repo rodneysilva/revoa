@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { isAdminEmail } from "../lib/admin";
+import { isAdminUser } from "../lib/admin";
 import type { Report, ReportStatus } from "../api/types";
 
 const REPORT_PAGE_SIZE = 50;
@@ -89,7 +89,7 @@ export function AdminReportsPage() {
   }
 
   useEffect(() => {
-    if (isAdminEmail(user?.email)) load();
+    if (isAdminUser(user)) load();
     else {
       setLoading(false);
       setForbidden(true);

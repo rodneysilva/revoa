@@ -14,6 +14,7 @@ export interface AuthUser {
   nome: string;
   email: string;
   verified: boolean;
+  roles: string[];
 }
 
 interface AuthState {
@@ -31,6 +32,7 @@ interface JwtClaims {
   email?: string;
   email_verified?: string | boolean;
   phone_verified?: string | boolean;
+  role?: string | string[];
 }
 
 // Decodifica o payload do JWT (base64url → JSON) sem validar assinatura.
@@ -67,6 +69,7 @@ function userFromToken(token: string): AuthUser | null {
     nome: claims.name ?? "",
     email: claims.email ?? "",
     verified: toBool(claims.email_verified) && toBool(claims.phone_verified),
+    roles: Array.isArray(claims.role) ? claims.role : claims.role ? [claims.role] : [],
   };
 }
 

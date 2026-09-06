@@ -9,7 +9,7 @@ import type {
   SeedCatalogResult,
 } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { isAdminEmail } from "../lib/admin";
+import { isAdminUser } from "../lib/admin";
 
 type FormValue = number | boolean | string;
 
@@ -88,7 +88,7 @@ export function AdminDashboardPage() {
     loadRuns();
   }, [loadParams, loadRuns]);
 
-  if (!isAdminEmail(user?.email)) {
+  if (!isAdminUser(user)) {
     return (
       <div className="app-container text-center py-16">
         <h1 className="text-2xl font-bold text-cream mb-3">Acesso restrito a administradores</h1>

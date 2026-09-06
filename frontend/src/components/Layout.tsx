@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { isAdminEmail } from "../lib/admin";
+import { isAdminUser } from "../lib/admin";
 import { ThemeToggle } from "./ThemeToggle";
 
 const navItems = [
@@ -21,7 +21,7 @@ export function Layout() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
-  const admin = isAdminEmail(user?.email);
+  const admin = isAdminUser(user);
 
   useEffect(() => {
     setOpen(false);

@@ -100,8 +100,9 @@ public class AuthController : ControllerBase
         }
 
         var c = result.Value;
-        var token = IssueJwt(c.UserId, c.Nome, c.Email, c.EmailVerified, c.PhoneVerified);
-        return Ok(new LoginResult(token, c.UserId, c.Nome, c.Email));
+        var roles = RolesFor(c.Email, c.Role);
+        var token = IssueJwt(c.UserId, c.Nome, c.Email, c.EmailVerified, c.PhoneVerified, roles);
+        return Ok(new LoginResult(token, c.UserId, c.Nome, c.Email, roles));
     }
 
     // DEV-ONLY: emite JWT para um usuário já verificado (Status=Active). A auth real é passkey/AA
@@ -127,8 +128,9 @@ public class AuthController : ControllerBase
             return BadRequest(new { error = "Usuário não encontrado ou não verificado." });
         }
 
-        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified);
-        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
+        var roles = RolesFor(user.Email, user.Role);
+        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified, roles);
+        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email, roles));
     }
 
     // DEV-ONLY: verifica e-mail + telefone e ativa o usuário automaticamente (Status=Active).
@@ -157,25 +159,43 @@ public class AuthController : ControllerBase
         user.DevActivate();
         await _users.UpdateAsync(user, ct);
 
-        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified);
-        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email));
+        var roles = RolesFor(user.Email, user.Role);
+        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified, roles);
+        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email, roles));
     }
 
-    // JWT com as claims que a policy "Verified" exige (email_verified + phone_verified).
-    private string IssueJwt(Guid userId, string name, string email, bool emailVerified, bool phoneVerified)
+    // Roles do JWT: role do aggregate + "Admin" quando o e-mail está no allowlist Admin:Emails.
+    // A policy "Arbitrator" aceita RequireRole("Arbitrator", "Admin") — admins são árbitros por padrão.
+    private string[] RolesFor(string email, UserRole role)
+    {
+        var roles = new List<string> { role.ToString() };
+        var adminEmails = _config.GetSection("Admin:Emails").Get<string[]>() ?? Array.Empty<string>();
+        if (adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase))
+        {
+            roles.Add("Admin");
+        }
+
+        return roles.Distinct().ToArray();
+    }
+
+    // JWT com as claims que a policy "Verified" exige (email_verified + phone_verified) e as
+    // claims "role" que alimentam as policies baseadas em role (Arbitrator).
+    private string IssueJwt(
+        Guid userId, string name, string email, bool emailVerified, bool phoneVerified, string[] roles)
     {
         var key = _config["Jwt:Key"] ?? "revoa-dev-key-do-not-use-in-prod-min-32-chars!!";
         var issuer = _config["Jwt:Issuer"] ?? "revoa";
         var audience = _config["Jwt:Audience"] ?? "revoa";
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim("sub", userId.ToString()),
-            new Claim("name", name),
-            new Claim("email", email),
-            new Claim("email_verified", emailVerified.ToString().ToLowerInvariant()),
-            new Claim("phone_verified", phoneVerified.ToString().ToLowerInvariant()),
+            new("sub", userId.ToString()),
+            new("name", name),
+            new("email", email),
+            new("email_verified", emailVerified.ToString().ToLowerInvariant()),
+            new("phone_verified", phoneVerified.ToString().ToLowerInvariant()),
         };
+        claims.AddRange(roles.Select(r => new Claim("role", r)));
 
         var creds = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
@@ -209,4 +229,4 @@ public sealed record LoginConfirmRequest(string Email, string Code);
 
 public sealed record ResendRequest(string Email);
 
-public sealed record LoginResult(string Token, Guid UserId, string Nome, string Email);
+public sealed record LoginResult(string Token, Guid UserId, string Nome, string Email, string[] Roles);

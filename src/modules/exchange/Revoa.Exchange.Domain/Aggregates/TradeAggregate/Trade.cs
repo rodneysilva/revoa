@@ -61,6 +61,9 @@ public class Trade : AggregateRoot
     public DateTime? ReleasedAt { get; private set; }
     public string? DisputeOpenedBy { get; private set; }
 
+    // Auditoria: quem resolveu a disputa (e-mail do árbitro). Espelha DisputeOpenedBy.
+    public string? ResolvedBy { get; private set; }
+
     // ServiÃ§o: voucher foi redeemado (confirmaÃ§Ã£o de prestaÃ§Ã£o).
     public bool VoucherRedeemed { get; private set; }
 
@@ -154,7 +157,7 @@ public class Trade : AggregateRoot
     }
 
     // LiberaÃ§Ã£o cooperativa (seller OU buyer) ou por Ã¡rbitro (resolve dispute).
-    public void MarkLiberada(string? tx)
+    public void MarkLiberada(string? tx, string? resolvedBy = null)
     {
         if (State is not (TradeState.Financiada or TradeState.Disputada))
         {
@@ -164,6 +167,10 @@ public class Trade : AggregateRoot
         State = TradeState.Liberada;
         ReleasedAt = DateTime.UtcNow;
         LastTxHash = tx ?? LastTxHash;
+        if (!string.IsNullOrWhiteSpace(resolvedBy))
+        {
+            ResolvedBy = resolvedBy;
+        }
     }
 
     public void MarkDisputada(string openedBy)
@@ -178,7 +185,7 @@ public class Trade : AggregateRoot
     }
 
     // Reembolso (cancelamento cooperativo ou Ã¡rbitro decide a favor do comprador).
-    public void MarkReembolsada(string? tx)
+    public void MarkReembolsada(string? tx, string? resolvedBy = null)
     {
         if (State is not (TradeState.Financiada or TradeState.Disputada))
         {
@@ -187,6 +194,10 @@ public class Trade : AggregateRoot
 
         State = TradeState.Reembolsada;
         LastTxHash = tx ?? LastTxHash;
+        if (!string.IsNullOrWhiteSpace(resolvedBy))
+        {
+            ResolvedBy = resolvedBy;
+        }
     }
 
     public void MarkCancelada(string? tx)

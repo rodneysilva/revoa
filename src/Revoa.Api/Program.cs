@@ -161,7 +161,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            NameClaimType = "sub"
+            NameClaimType = "sub",
+            // Claims "role" (emitidas pelo AuthController) alimentam as policies baseadas em role.
+            RoleClaimType = "role"
         };
 
         // JWT via query string para SignalR (WebSocket não envia header Authorization).
@@ -199,6 +201,10 @@ builder.Services.AddAuthorization(options =>
         // Sem admins configurados: policy sempre nega (mais seguro que permitir tudo).
         options.AddPolicy("Admin", policy => policy.RequireUserName("__no_admin_configured__"));
     }
+
+    // Policy "Arbitrator": resolve disputas de escrow (move fundos). Role ARBITRATOR dedicada
+    // (UserRole do Identity, claim role no JWT) OU Admin — admins são árbitros por padrão.
+    options.AddPolicy("Arbitrator", policy => policy.RequireRole("Arbitrator", "Admin"));
 });
 
 // Forwarded headers (por trás de Traefik + Cloudflared)

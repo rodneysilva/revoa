@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { isAdminEmail } from "../lib/admin";
+import { isAdminUser } from "../lib/admin";
 import type { Coupon } from "../api/types";
 
 const COUPON_PAGE_SIZE = 50;
@@ -75,7 +75,7 @@ export function AdminCouponsPage() {
   }
 
   useEffect(() => {
-    if (isAdminEmail(user?.email)) load();
+    if (isAdminUser(user)) load();
     else {
       setLoading(false);
       setForbidden(true);
