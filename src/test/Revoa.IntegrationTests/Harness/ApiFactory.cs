@@ -29,8 +29,15 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithImage("mongo:7")
         .Build();
 
-    // MinIO isolado p/ os testes de mídia (mesmo container do deploy local, credenciais default).
-    private readonly MinioContainer _minio = new MinioBuilder().Build();
+    // MinIO isolado p/ os testes de mídia (credenciais explícitas — o default do
+    // módulo Testcontainers pode mudar entre versões; aqui e no UseSetting abaixo).
+    private const string MinioUser = "minioadmin";
+    private const string MinioPass = "minioadmin";
+
+    private readonly MinioContainer _minio = new MinioBuilder()
+        .WithUsername(MinioUser)
+        .WithPassword(MinioPass)
+        .Build();
 
     public string MongoConnectionString => _mongo.GetConnectionString();
 
@@ -40,9 +47,10 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseEnvironment("Development");
 
         // Minio override: o host é construído lazy (primeiro CreateClient), já com o container no ar.
-        builder.UseSetting("Minio:Endpoint", _minio.GetConnectionString());
-        builder.UseSetting("Minio:AccessKey", "minioadmin");
-        builder.UseSetting("Minio:SecretKey", "minioadmin");
+        // GetConnectionString vem com esquema (http://…) e o client Minio exige host:port.
+        builder.UseSetting("Minio:Endpoint", new Uri(_minio.GetConnectionString()).Authority);
+        builder.UseSetting("Minio:AccessKey", MinioUser);
+        builder.UseSetting("Minio:SecretKey", MinioPass);
 
         builder.ConfigureTestServices(services =>
         {

@@ -3,10 +3,14 @@
   <ItemGroup>
     <ProjectReference Include="..\Revoa.Abstractions\Revoa.Abstractions.csproj" />
     <ProjectReference Include="..\Revoa.IntegrationContracts\Revoa.IntegrationContracts.csproj" />
+    <!-- Portas de aplicação (IMediaStore): o adapter MinIO vive aqui. -->
+    <ProjectReference Include="..\Revoa.Application\Revoa.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
     <PackageReference Include="Minio" Version="7.0.0" />
     <PackageReference Include="MongoDB.Driver" Version="2.28.0" />
   </ItemGroup>

@@ -2,6 +2,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Minio;
+using Minio.DataModel.Args;
+using Minio.Exceptions;
 using Revoa.Application.Media;
 
 namespace Revoa.Infrastructure.Media;
@@ -24,7 +26,7 @@ public sealed class MinioMediaStore : IMediaStore
 {
     private static readonly string[] AllowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
-    private readonly MinioClient _client;
+    private readonly IMinioClient _client;
     private readonly string _bucket;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _initialized;
@@ -59,11 +61,11 @@ public sealed class MinioMediaStore : IMediaStore
         var key = $"{prefix}/{Guid.NewGuid():N}{ext}";
         await _client.PutObjectAsync(
             new PutObjectArgs()
-                .Bucket(_bucket)
-                .Object(key)
-                .StreamData(content)
-                .ObjectSize(content.Length)
-                .ContentType(contentType),
+                .WithBucket(_bucket)
+                .WithObject(key)
+                .WithStreamData(content)
+                .WithObjectSize(content.Length)
+                .WithContentType(contentType),
             ct);
 
         return $"/api/media/{key}";
@@ -81,21 +83,28 @@ public sealed class MinioMediaStore : IMediaStore
 
         try
         {
+            // Stat primeiro: existência + ContentType. O GetObject entrega o stream via
+            // callback — no SDK 7.x o stream só é válido DENTRO do callback, então copia
+            // p/ memória (imagens ≤ 5 MB) antes de devolver ao caller.
             var stat = await _client.StatObjectAsync(
-                new StatObjectArgs().Bucket(_bucket).Object(key), ct);
+                new StatObjectArgs().WithBucket(_bucket).WithObject(key), ct);
 
-            var obj = await _client.GetObjectAsync(
-                new GetObjectArgs().Bucket(_bucket).Object(key), ct);
-            if (obj is null)
-            {
-                return null;
-            }
+            var buffer = new MemoryStream();
+            await _client.GetObjectAsync(
+                new GetObjectArgs().WithBucket(_bucket).WithObject(key)
+                    .WithCallbackStream(s => s.CopyTo(buffer)),
+                ct);
 
-            return (obj, stat.ContentType);
+            buffer.Position = 0;
+            return (buffer, stat.ContentType);
         }
         catch (ObjectNotFoundException)
         {
             return null;
+        }
+        catch (BucketNotFoundException)
+        {
+            return null; // bucket ainda não criado = nada publicado
         }
     }
 
@@ -115,11 +124,11 @@ public sealed class MinioMediaStore : IMediaStore
             }
 
             var exists = await _client.BucketExistsAsync(
-                new BucketExistsArgs().Bucket(_bucket), ct);
+                new BucketExistsArgs().WithBucket(_bucket), ct);
             if (!exists)
             {
                 await _client.MakeBucketAsync(
-                    new MakeBucketArgs().Bucket(_bucket), ct);
+                    new MakeBucketArgs().WithBucket(_bucket), ct);
             }
 
             _initialized = true;

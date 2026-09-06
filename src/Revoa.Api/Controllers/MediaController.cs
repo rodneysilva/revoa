@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Revoa.Abstractions;
 using Revoa.Application.Media;
 
 namespace Revoa.Api.Controllers;
