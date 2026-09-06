@@ -101,6 +101,20 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
             .ToListAsync(ct);
     }
 
+    // Vários por id, só ativos (lista de Salvos — join com bookmarks do usuário).
+    public async Task<IReadOnlyList<Listing>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Listing>();
+        }
+
+        var fb = Builders<Listing>.Filter;
+        return await Collection
+            .Find(fb.In(l => l.Id, ids) & fb.Eq(l => l.Status, ListingStatus.Active))
+            .ToListAsync(ct);
+    }
+
     // Todos os anúncios ativos (sem paginação/geo). Usado pelo adapter de Pricing (mediana comunitária).
     public async Task<IReadOnlyList<Listing>> GetActiveAsync(CancellationToken ct)
     {

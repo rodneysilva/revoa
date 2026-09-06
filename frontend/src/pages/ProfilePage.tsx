@@ -8,6 +8,7 @@ import {
   ProfileCommunities,
   ProfileListings,
   ProfileReputation,
+  ProfileSaved,
 } from "../components/ProfileActivity";
 import type { ReactNode } from "react";
 
@@ -79,6 +80,7 @@ export function ProfilePage() {
 
       {/* Atividade pública — o que o resto da Revoa vê em /users/{id}. */}
       <ProfileListings userId={user.userId} self />
+      <ProfileSaved />
       <ProfileCommunities userId={user.userId} />
       <ProfileActivity userId={user.userId} />
 

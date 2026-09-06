@@ -197,6 +197,13 @@ export const api = {
     ),
   search: (q: string): Promise<SearchResults> =>
     apiGet<SearchResults>(`/api/search${qs({ q })}`),
+  // Salvos (bookmark pessoal): toggle idempotente + lista/ids do token.
+  saveListing: (id: string): Promise<boolean> =>
+    apiPost<{ Saved: boolean }>(`/api/listings/${encodeURIComponent(id)}/save`).then(
+      (r) => r.Saved
+    ),
+  savedListings: (): Promise<FeedItem[]> => apiGet<FeedItem[]>("/api/listings/saved"),
+  savedListingIds: (): Promise<string[]> => apiGet<string[]>("/api/listings/saved/ids"),
   listing: (id: string): Promise<Listing> =>
     apiGet<Listing>(`/api/listings/${encodeURIComponent(id)}`),
   listingComments: (listingId: string, parentId?: string): Promise<Comment[]> =>

@@ -24,6 +24,9 @@ public interface IListingRepository
 {
     Task<Listing?> GetByIdAsync(Guid id, CancellationToken ct);
 
+    // Vários por id, só ativos (usado pela lista de Salvos — join com bookmark).
+    Task<IReadOnlyList<Listing>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken ct);
+
     Task<IReadOnlyList<Listing>> GetFeedAsync(FeedFilter filter, CancellationToken ct);
 
     // Todos os anúncios ativos (sem paginação/geo). Usado pelo adapter de Pricing (mediana comunitária).

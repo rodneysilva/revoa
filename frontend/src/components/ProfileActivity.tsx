@@ -71,6 +71,47 @@ export function ProfileListings({ userId, self }: { userId: string; self?: boole
   );
 }
 
+// Anúncios salvos (bookmark privado — só no perfil próprio).
+export function ProfileSaved() {
+  const [items, setItems] = useState<FeedItem[] | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .savedListings()
+      .then((r) => active && setItems(r))
+      .catch(() => active && setItems([]));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (items === null) return null;
+
+  return (
+    <Section title="Salvos" hint="Anúncios que você guardou para depois">
+      {items.length === 0 ? (
+        <EmptyState
+          icon="🔖"
+          title="Nenhum anúncio salvo"
+          hint="Use o botão Salvar em um anúncio para achá-lo aqui."
+          action={
+            <Link to="/feed" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
+              Explorar o feed
+            </Link>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {items.map((i) => (
+            <ListingCard key={i.Id} item={i} />
+          ))}
+        </div>
+      )}
+    </Section>
+  );
+}
+
 export function ProfileCommunities({ userId }: { userId: string }) {
   const [items, setItems] = useState<Community[] | null>(null);
 

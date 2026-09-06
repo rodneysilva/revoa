@@ -131,6 +131,53 @@ public class CatalogController : ControllerBase
         return result.IsFailure ? NotFound(new ApiError(result.Error)) : Ok(result.Value);
     }
 
+    // Salvar/dessalvar anúncio (bookmark pessoal — toggle idempotente). Login.
+    [HttpPost("{id:guid}/save")]
+    [Authorize]
+    public async Task<ActionResult> ToggleSave(Guid id, CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(new ToggleSaveListingCommand(user.UserId, id), ct);
+        return result.IsFailure
+            ? NotFound(new ApiError(result.Error))
+            : Ok(new { Saved = result.Value });
+    }
+
+    // Anúncios salvos do usuário do token (cards prontos). Privado.
+    [HttpGet("saved")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<FeedItemDto>>> Saved(CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(new GetSavedListingsQuery(user.UserId), ct);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
+    }
+
+    // Ids dos anúncios salvos (estado inicial do botão salvar no FE). Privado.
+    [HttpGet("saved/ids")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<Guid>>> SavedIds(CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var ids = await _mediator.Send(new GetSavedListingIdsQuery(user.UserId), ct);
+        return Ok(ids);
+    }
+
     // Categorias ativas (dropdown do Criar Anúncio + filtros). Anônimo.
     [HttpGet("/api/categories")]
     [AllowAnonymous]

@@ -277,6 +277,9 @@ export function ListingDetailPage() {
             <ListingActions listing={listing} user={user} />
           </div>
 
+          {/* Salvar (bookmark pessoal) — qualquer usuário logado, inclusive o dono */}
+          <SaveButton listingId={listing.Id} user={user} />
+
           {/* Denunciar anúncio (UF-24) */}
           <ReportListing listingId={listing.Id} user={user} />
         </div>
@@ -336,6 +339,58 @@ export function ListingDetailPage() {
         )}
       </section>
     </div>
+  );
+}
+
+// Salvar/dessalvar anúncio (bookmark pessoal). Estado inicial via saved/ids
+// (uma chamada, não uma por card). Login apenas — salvar não exige verificação.
+function SaveButton({ listingId, user }: { listingId: string; user: AuthUser | null }) {
+  const [saved, setSaved] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    api
+      .savedListingIds()
+      .then((ids) => {
+        if (active) setSaved(ids.includes(listingId));
+      })
+      .catch(() => {
+        if (active) setSaved(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, listingId]);
+
+  if (!user) return null;
+
+  async function toggle() {
+    setBusy(true);
+    try {
+      setSaved(await api.saveListing(listingId));
+    } catch {
+      /* mantém o estado atual — feedback opcional */
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={busy || saved === null}
+      className={`mt-3 w-full border rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${
+        saved
+          ? "border-amber/60 text-amber bg-amber/10"
+          : "border-smoke text-silver hover:text-cream hover:border-esmeralda"
+      }`}
+      aria-pressed={saved ?? false}
+    >
+      {saved ? "🔖 Salvo" : "🔖 Salvar anúncio"}
+    </button>
   );
 }
 
