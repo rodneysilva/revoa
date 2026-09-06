@@ -36,14 +36,15 @@ public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, R
         var candidates = await _communities.GetPublicAsync(
             new PublicFilter(request.Axis, null, CandidateCap), ct);
 
-        // Busca textual (busca global): nome/descrição, case-insensitive, sobre os
-        // candidatos públicos do cap — mesmo universo que o feed de comunidades.
+        // Busca textual (busca global): nome/descrição, case-insensitive E sem acento
+        // ("vila nacoes" acha "Vila Nações"), sobre os candidatos públicos do cap.
         if (!string.IsNullOrWhiteSpace(request.Q))
         {
-            var termo = request.Q.Trim();
+            var termo = Texto.SemAcento(request.Q.Trim());
             candidates = candidates
-                .Where(c => c.Name.Contains(termo, StringComparison.OrdinalIgnoreCase)
-                    || (c.Description?.Contains(termo, StringComparison.OrdinalIgnoreCase) ?? false))
+                .Where(c => Texto.SemAcento(c.Name).Contains(termo, StringComparison.OrdinalIgnoreCase)
+                    || (c.Description != null
+                        && Texto.SemAcento(c.Description).Contains(termo, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
         }
 

@@ -13,6 +13,11 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       injectRegister: "auto",
+      workbox: {
+        // Ativa o SW novo imediatamente (o controllerchange no main.tsx recarrega).
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       manifest: {
         name: "revoa.me",
         short_name: "revoa",

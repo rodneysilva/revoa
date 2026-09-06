@@ -1,6 +1,8 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using Revoa.Abstractions;
 using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
 using Revoa.Catalog.Domain.Repositories;
 using Revoa.Infrastructure.Persistence;
@@ -68,7 +70,7 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
 
         if (!string.IsNullOrWhiteSpace(filter.Q))
         {
-            var rx = new BsonRegularExpression(Regex.Escape(filter.Q.Trim()), "i");
+            var rx = new BsonRegularExpression(AccentInsensitivePattern(filter.Q.Trim()), "i");
             query &= fb.Regex(l => l.Title, rx) | fb.Regex(l => l.Description, rx);
         }
 
@@ -121,6 +123,34 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
         return await Collection
             .Find(l => l.Status == ListingStatus.Active)
             .ToListAsync(ct);
+    }
+
+    /// <summary>
+    /// Padrão de regex amigável ao pt-BR: cada vogal vira classe com variantes acentuadas
+    /// ("violao" casa "violão", "coracao" casa "coração") e o termo digitado com acento
+    /// também casa o texto sem acento. Demais caracteres são escapados literalmente.
+    /// </summary>
+    private static string AccentInsensitivePattern(string termo)
+    {
+        var classes = new Dictionary<char, string>
+        {
+            ['a'] = "[aàáâãä]",
+            ['e'] = "[eèéêë]",
+            ['i'] = "[iìíîï]",
+            ['o'] = "[oòóôõö]",
+            ['u'] = "[uùúûü]",
+            ['c'] = "[cç]",
+            ['n'] = "[nñ]",
+        };
+
+        var sb = new StringBuilder();
+        foreach (var ch in Texto.SemAcento(termo))
+        {
+            var c = char.ToLowerInvariant(ch);
+            sb.Append(classes.TryGetValue(c, out var classe) ? classe : Regex.Escape(c.ToString()));
+        }
+
+        return sb.ToString();
     }
 
     /// <summary>

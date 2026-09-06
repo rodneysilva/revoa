@@ -14,6 +14,45 @@ public class SearchTests : IntegrationTestBase
     public SearchTests(ApiFactory factory) : base(factory) { }
 
     [Fact]
+    public async Task Search_is_accent_insensitive()
+    {
+        var user = await CreateUserAsync();
+        var client = AuthedClient(user);
+        var categoryId = await GetFirstCategoryIdAsync();
+
+        // Título com acento; termo digitado SEM acento (hábito comum de digitação).
+        var listing = await client.PostAsync("/api/listings", JsonBody(new
+        {
+            Kind = "Service",
+            Mode = "Trade",
+            Title = "Manutenção de bicicleta urbana",
+            Description = "descrição",
+            Imagens = Array.Empty<string>(),
+            PriceRvm = 5L,
+            Lat = (double?)null,
+            Lng = (double?)null,
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            PostalCode = (string?)null,
+            CategoryId = categoryId,
+            CommunityId = (Guid?)null,
+            Visibility = "Global",
+            Condition = (string?)null,
+            Stock = (int?)null,
+            UnitType = "PerService",
+            Duration = 1,
+            VoucherExpiryDays = 30,
+        }));
+        listing.IsSuccessStatusCode.Should().BeTrue(
+            $"{await listing.Content.ReadAsStringAsync()}");
+
+        var resp = await Http.GetAsync("/api/search?q=manutencao");
+        var json = await resp.Content.ReadFromJsonAsync<JsonNode>();
+        json!["Listings"]!.AsArray()
+            .Should().Contain(l => l!["Title"]!.GetValue<string>().Contains("Manutenção"));
+    }
+
+    [Fact]
     public async Task Short_term_returns_empty_groups()
     {
         var resp = await Http.GetAsync("/api/search?q=x");
