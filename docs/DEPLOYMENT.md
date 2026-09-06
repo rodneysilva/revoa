@@ -5,7 +5,7 @@
 > dependem de código de aplicação — MongoDB (replica set `rs0`), MinIO (bucket
 > `revoa-assets`) e Postfix (MTA `mail`, e-mail transacional).
 >
-> **Stack central / produção:** ver `projetosia/infra/README.md` (Traefik + Cloudflared)
+> **Stack central / produção:** ver `C:\Users\rodne\infra\README.md` (Traefik + Cloudflared, env-driven)
 > e o contrato de deploy em [`../docker-compose.yml`](../docker-compose.yml).
 
 ---
@@ -20,7 +20,7 @@
 | Node | 24+ | Só necessário para o frontend (Fase 2) |
 
 **Rede externa:** o MinIO (e, em produção, app/frontend) usa a rede `traefik_net`
-(external). Ela costuma já existir se a infra central (`projetosia/infra`) subiu.
+(external). Ela costuma já existir se a infra central (`C:\Users\rodne\infra`) subiu.
 Se não existir, crie uma vez:
 
 ```powershell

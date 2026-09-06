@@ -3,14 +3,14 @@
 # Plataforma DeFi de troca de produtos e serviços (token RVM, self-custody)
 # ═══════════════════════════════════════════════════════════════
 #
-# Contrato de deploy: segue o protocolo `projetosia/infra/README.md`.
+# Contrato de deploy: segue o protocolo da infra central `rodne/infra` (C:\Users\rodne\infra).
 #   - NENHUMA porta exposta no host (TUDO via Traefik)
 #   - NENHUM docker socket montado
 #   - Redes: `internal` (bridge isolada) + `traefik_net` (external)
 #   - Públicos (app/frontend/minio) na traefik_net; demais SÓ na interna
 #
-# Roteamento revoa.me: definido por file-provider em
-#   `infra/traefik/dynamic/routers-revoa.yml` → http://revoa-app:8000
+# Roteamento revoa.me: routers Traefik gerados do `.env` da infra central
+#   (scripts/render.py) → http://revoa-app:8000
 # O container `app` DEVE se chamar `revoa-app` e escutar em 0.0.0.0:8000.
 # No cutover (Fase 4) o container Python do trocadeira é removido e o
 # `revoa-app` (.NET) assume revoa.me automaticamente (mesmo nome + porta).

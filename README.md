@@ -4,9 +4,9 @@
 > **auto-custódia** (carteira invisível) e **ajuda mútua** hiperlocal. Sem fins lucrativos.
 > Sucessor/sunset do `trocadeira` (Python). Herdeira digital das moedas sociais brasileiras (Banco Palmas).
 
-**Domínios:** `revoa.me` (app) · `revoa.org` (blog/transparência/impacto)
-**Stack:** Backend único **.NET 10** · Frontend único **React + TypeScript** · Solidity/Foundry · Avalanche Subnet-EVM · MongoDB · MinIO · Traefik+Cloudflared
-**Status:** ✅ **Fase 0 concluída** (documentação viva, OOUX, pesquisa, identidade visual, ADRs) → próximo: **Fase 1** (infra de chain + foundation).
+**Domínios:** `revoa.me` (app) · `revoa.org` (blog/transparência/impacto) · `dev.revoa.org` (deploy público de desenvolvimento)
+**Stack:** Backend único **.NET 10** · Frontend único **React + TypeScript** · Solidity/Foundry · Subnet-EVM · MongoDB · MinIO · Traefik+Cloudflared
+**Status:** ✅ **Fases 0–3 do roadmap entregues** — monólito modular com **13 módulos**, 6 contratos Solidity (67 testes Foundry), SPA React/PWA completa, CI (dotnet+npm+forge), integração on-chain ponta a ponta e deploy público em `dev.revoa.org`. Em curso: **refactoração de coerência** (segurança, shared kernel, contrato PascalCase+ApiError, docs re-sincronizadas — ADRs 0015–0018).
 
 ---
 
@@ -27,7 +27,7 @@
 | **Roadmap / Fases (0–4 detalhadas)** | [`docs/ROADMAP.md`](docs/ROADMAP.md) |
 | Decisões (ADRs) | [`docs/decisions/README.md`](docs/decisions/README.md) |
 | Memória do projeto (padrões, armadilhas, stack) | [`AGENTS.md`](AGENTS.md) |
-| Deploy/containers | [`docker-compose.yml`](docker-compose.yml) + `projetosia/infra/README.md` |
+| Deploy/containers | [`docker-compose.yml`](docker-compose.yml) + infra central `C:\Users\rodne\infra\README.md` |
 
 ---
 
@@ -47,23 +47,25 @@
 ## Estrutura do projeto (limpa — sem pastas vazias)
 
 ```
-revoa/                           ← estado atual (limpo; pastas de código entram com conteúdo nas fases)
+revoa/
 ├─ README.md                     ← este arquivo (índice central)
-├─ AGENTS.md                     ← memória do projeto (stack, padrões, armadilhas)
+├─ AGENTS.md                     ← memória do projeto (stack real, padrões, armadilhas)
 ├─ docker-compose.yml            ← contrato de deploy (traefik_net + interna; profiles app/chain)
-├─ .gitignore
-├─ .kilo/skills/ooux/SKILL.md    ← skill OOUX (objects-first / ORCA)
+├─ src/                          ← backend .NET 10 (Revoa.sln)
+│  ├─ Revoa.Api/                 ← host único: controllers, hubs SignalR, Program.cs
+│  ├─ modules/                   ← 13 bounded contexts (Domain/Application/Infrastructure cada)
+│  ├─ shared/                    ← Abstractions · Application (CQRS kernel) · Infrastructure (MongoRepositoryBase)
+│  └─ test/                      ← Revoa.IntegrationTests (OffChain no CI; OnChain com anvil local)
+├─ contracts/                    ← Solidity + Foundry (RVM, EscrowVault, ProductNFT, ServiceVoucher, CouponRedeemer, Faucet)
+├─ frontend/                     ← React + TypeScript (Vite SPA) + PWA
+├─ scripts/                      ← utilitários de operação (ex.: migração de campos Mongo)
 ├─ docs/                         ← TODA a documentação viva (ver mapa abaixo)
 │  ├─ BUSINESS.md  TOKENOMICS.md  ARCHITECTURE.md  BUSINESS_RULES.md
 │  ├─ OOUX.md  USER_FLOWS.md  MARKET_RESEARCH.md  ROADMAP.md
 │  ├─ VISUAL_IDENTITY.md  VISUAL_EXPLORATIONS.md
-│  ├─ decisions/                 ← ADR-0001 … ADR-0014 (+ README índice)
-│  └─ visual-explorations/       ← 12 PNGs + 2 scripts de render (render_*.py)
-├─ src/                          ← (Fase 1) Clean Architecture + Modular Monolith + DDD (Revoa.sln, Revoa.Api, modules/, shared/)
-├─ contracts/                    ← (Fase 1, com código) Solidity + Foundry
-├─ chain/                        ← (Fase 1, com código) config Avalanche Subnet-EVM
-├─ frontend/                     ← (Fase 2) React + TypeScript (Vite SPA) + PWA
-└─ tests/  .github/workflows/    ← (Fase 1+) xUnit + Testcontainers + CI
+│  ├─ decisions/                 ← ADR-0001 … ADR-0018 (+ README índice)
+│  └─ visual-explorations/
+└─ .github/workflows/            ← CI: dotnet (build+testes OffChain) · npm (build+typecheck) · forge (testes de contratos)
 ```
 
 > **Princípio de limpeza:** pastas de código só existem no repo **quando têm conteúdo** (sem placeholders
@@ -83,8 +85,8 @@ revoa/                           ← estado atual (limpo; pastas de código entr
 | `docs/MARKET_RESEARCH.md` | C2C + economia solidária + moedas sociais + plataformas sem FLP + Lei 14.478 + benchmark cadastro |
 | `docs/VISUAL_IDENTITY.md` | Marca, 5 elementos (logo/slogan/ícone/favicon/RM$), slogans, aplicações web/mobile |
 | `docs/VISUAL_EXPLORATIONS.md` | 6 logos comunidade + 6 Web3/híbridas (arquivo) |
-| `docs/decisions/README.md` | Índice dos 14 ADRs |
-| `docs/decisions/ADR-0001…0014.md` | Decisões de arquitetura/negócio (chain, AA, monólito, utility token, mint, React, MinIO, OOUX, sem FLP, doação, domínios, .NET, cadastro, e-mail) |
+| `docs/decisions/README.md` | Índice dos 18 ADRs |
+| `docs/decisions/ADR-0001…0018.md` | Decisões de arquitetura/negócio (chain, AA, monólito, utility token, mint, React, MinIO, OOUX, sem FLP, doação, domínios, .NET, cadastro, e-mail, EOA-desvio, shared kernel, contrato ApiError, role ARBITRATOR) |
 
 ### ADRs (decisões)
 | ADR | Decisão |
@@ -103,6 +105,10 @@ revoa/                           ← estado atual (limpo; pastas de código entr
 | 0012 | Backend único .NET; frontend único React/TypeScript |
 | 0013 | Cadastro: campos, verificação dupla (e-mail+WhatsApp/Zenvia), Google+Apple |
 | 0014 | E-mail auto-hospedado (MailKit + Postfix, domínio revoa.me) |
+| 0015 | Carteiras EOA plaintext — desvio temporário da AA (blocker pré-público) |
+| 0016 | Shared kernel de CQRS e persistência (duplicação sistêmica eliminada) |
+| 0017 | Contrato HTTP PascalCase + envelope único `ApiError` + identificadores EN |
+| 0018 | Role ARBITRATOR para resolução de disputas de escrow |
 
 ---
 
@@ -110,35 +116,33 @@ revoa/                           ← estado atual (limpo; pastas de código entr
 
 ```powershell
 # 1) Infra central (uma vez por boot)
-cd C:\Users\rodne\projetosia\infra
+cd C:\Users\rodne\infra
 docker network create traefik_net   # só na 1ª vez
-docker compose up -d                # Traefik + cloudflared
+docker compose up -d                # Traefik + Portal (+ túneis: docker-compose.tunnels.yml)
 
-# 2) revoa — infra-base (mongo + minio) já roda hoje
+# 2) revoa — infra-base (mongo + minio)
 cd C:\Users\rodne\projetosia\revoa
 docker compose up -d                # serviços sem profile
 
-# 3) Fase 1+ (com Dockerfiles): app + mail
+# 3) app + mail + chain
 docker compose --profile app up -d --build
-# Fase 1: chain
 docker compose --profile chain up -d
 ```
 
-> Roteamento `revoa.me`: file-provider `projetosia/infra/traefik/dynamic/routers-revoa.yml` → `revoa-app:8000`.
+> Roteamento `revoa.me`: routers Traefik gerados do `.env` da infra central (`rodne/infra`) → `revoa-app:8000`.
 > No cutover (Fase 4), o container Python do trocadeira é removido e o `revoa-app` (.NET) assume — sem mudança de DNS.
 
 ---
 
-## Próximos passos — Fase 1 (infra de chain + foundation)
+## Próximos passos
 
-Conforme o plano-fonte-de-verdade (`~/.local/share/kilo/plans/1785722983643-revoa-defi-platform.md` §11):
-1. `contracts/` Foundry: `RVM`, EntryPoint canônico, Safe+4337+recovery+Coinbase webauthn-solidity, Paymaster, `CouponRedeemer`. `forge test`.
-2. Bundler Stackup + Paymaster (ativar `profile:chain`).
-3. `Revoa.sln` + `shared/` + `Revoa.Api` (host único + SignalR + `/health`) + isolamento por módulo (teste que falha em query cross-coleção).
-4. **Identity** (cupom opcional, verificação e-mail+WhatsApp, login Google+Apple, MailKit+Postfix), **Account** (Safe, saldo), **Indexer** (idempotente), **Token** (faucet R$20→mint; cupom on-chain).
+1. **Refactoração de coerência (em curso):** cobertura de testes (domínio + endpoints sem teste + CI OnChain/Playwright) e limpeza final (duplicatas FE, mojibake, DevController).
+2. **Pré-público:** sair do desvio EOA plaintext (ADR-0015) — AA/Safe (ADR-0002) ou no mínimo KMS; rotação de chaves de dev.
+3. **Cutover `revoa.me`:** trocadeira (Python) → revoa-app (.NET) sem mudança de DNS (ver AGENTS.md).
+4. **Indexer dedicado** (roadmap): projeção idempotente de eventos on-chain.
 
 > Em toda feature nova: partir do mapa [`docs/OOUX.md`](docs/OOUX.md) (skill `ooux`) e documentar regras em [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md). Commitar ao final de cada tarefa.
 
 ---
 
-*Última atualização: Fase 0 (03/08/2026) — rodada v3.1 (cadastro + email + acesso).*
+*Última atualização: 06/09/2026 — refactoração de coerência (docs re-sincronizadas com o código; ADRs 0015–0018).*

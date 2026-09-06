@@ -21,6 +21,6 @@ planejada: `tokenURI` como indireção para permitir troca de storage sem quebra
 
 ## Consequências
 - **+:** controle total, baixa latência, sem dependência de pinners, S3-compatible (portável).
-- **+:** roteado pelo Traefik existente (consistência com a infra `projetosia/infra`).
+- **+:** roteado pelo Traefik existente (consistência com a infra central `rodne/infra`).
 - **−:** centralizado agora (ponto único da plataforma) — aceitável no privado; migrar a IPFS no público.
 - **−:** `tokenURI` deve ser projetado como **indireção** (resolver → storage) para permitir migração sem quebrar NFTs.

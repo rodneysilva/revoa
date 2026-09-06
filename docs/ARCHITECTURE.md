@@ -12,7 +12,7 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 ```
                          ┌──────────────────────────────────────┐
-                         │        Cloudflare + Traefik          │  (infra projetosia/infra)
+                         │        Cloudflare + Traefik          │  (infra rodne/infra)
                          │   revoa.me → revoa-app:8000          │
                          └───────────────────┬──────────────────┘
                                              │ HTTPS / X-Forwarded-*
@@ -21,9 +21,9 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
                          │   endpoints + JWT + SignalR hub      │
                          │   /health                            │
                          └──┬────────────────────────────────┬──┘
-            eventos in-process (MediatR)        │   user-ops (Safe) / RPC
+            eventos in-process (MediatR)        │   txs assinadas (Nethereum/RPC)
         ┌─────────────────────────────────────┐ │
-        ▼  12 módulos (bounded contexts)       ▼ ▼
+        ▼  13 módulos (bounded contexts)       ▼ ▼
   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐        ┌──────────────────┐
   │Identity  │ │Account   │ │Catalog   │ │Exchange  │ …      │ BlockchainIndexer│
   │(JWT/Auth)│ │(Safe 4337)│ │(Listings)│ │(Escrow)  │        │ (source of truth │
@@ -41,7 +41,12 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
    MinIO (metadata/imagens NFT) · Ollama Qwen 7B (preços) · bundler Stackup · paymaster
 ```
 
-### Containers (compose revoa — segue template `projetosia/infra`)
+> **Situação atual vs roadmap:** o Indexer dedicado e a integração bundler/paymaster (AA) são
+> **roadmap** — hoje o backend assina com EOAs managed (ADR-0015) e consulta a chain diretamente
+> via Nethereum. Os containers `bundler`/`paymaster` já existem no compose (`profile: chain`)
+> como contrato de infra prontos para uso.
+
+### Containers (compose revoa — segue o protocolo da infra central `rodne/infra`)
 | Container | Rede | Perfil | Observação |
 |-----------|------|--------|------------|
 | `revoa-app` (.NET) | internal + traefik_net | app | host único; `revoa.me` via file-provider |
@@ -68,21 +73,23 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 
 ---
 
-## 3. Bounded Contexts (12 módulos)
+## 3. Bounded Contexts (13 módulos — `src/modules/`)
 
 | Módulo | Responsabilidade | Coleções |
 |--------|------------------|----------|
-| **Identity** | Registro (cupom **opcional** + confirmação **e-mail e WhatsApp/telefone**), login WebAuthn/passkeys + **Google/Apple**, JWT, roles, recuperação admin+timelock. **E-mail via MailKit→Postfix** (ADR-0014); **WhatsApp/SMS via Zenvia** | `Users` |
-| **Account (Wallet)** | Smart accounts (Safe) 4337, saldo (read model), transfer P2P, Paymaster/Bundler | `Accounts` |
-| **Catalog** | Anúncios (`kind`+VOs), categorias, **modo**, **visibilidade**, mint on-chain, metadata (MinIO), busca, comparativo, **feed por geolocalização** | `Listings`, `Categories` |
-| **Exchange** | 3 fluxos + máquina de estados escrow (atomic swap) + disputa | `Trades` |
-| **Token (Treasury / Fundo Comunitário)** | RVM mint/burn, faucet R$20, demurrage (IPCA), taxa 2%→Fundo Comunitário (sem FLP), cupom on-chain, **bônus de doação (admin-configurável)** | ledger mirror |
-| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path depth 6); chat SignalR; membership | `Communities`, `Posts`, `Memberships` |
-| **PricingIntelligence** | Quartz semanal → API ML + admin seed + comunidade + IPCA/IBGE → Ollama Qwen 7B → ref BRL; mediana RVM; sugestão justa | `PriceReferences` |
-| **Moderation** | Árbitro de disputas, denúncias, bans, auditoria. Mods de comunidade (escopo) + admins (global) | `Reports` |
-| **Notifications** | Push (Web Push/PWA) + in-app SignalR | `Notifications` |
-| **Reputation** | Avaliações 1–5, média, níveis/badges | `Reviews` |
-| **BlockchainIndexer** | Sync eventos on-chain → read models **idempotentes** (`txHash+logIndex`). Source of truth on-chain | projeções em `Accounts`/`Trades` |
+| **Identity** | Registro (cupom **opcional** + verificação **e-mail e telefone**), JWT passwordless, roles (User/Arbitrator/Admin — ADR-0018), recuperação. **E-mail via MailKit→Postfix** (ADR-0014) | `Users` |
+| **Account (Wallet)** | Carteiras EOA por usuário (managed — desvio ADR-0015), saldo, transfer P2P | `Accounts` |
+| **Catalog** | Anúncios (`kind`+VOs), categorias (seed canônico `CategorySeed`), **modo**, **visibilidade**, comentários recursivos, busca, comparativo, **feed por geolocalização** | `Listings`, `Categories`, `Comments` |
+| **Exchange** | Máquina de estados escrow (purchase/redeem/release/dispute/cancel/resolve) + fila de doação/voluntariado | `Trades`, `HelpRequests` |
+| **Token (Treasury / Fundo Comunitário)** | Faucet R$20, mint/burn RVM, taxa 2%→Fundo Comunitário (sem FLP) | (on-chain; sem coleção) |
+| **Coupon** | Cupom on-chain: criação admin, resgate (mint RVM), revogação | `Coupons` |
+| **Demurrage** | Demurrage IPCA-trimestral (preview/run, queima) | `DemurrageRuns` |
+| **Community** | Default + user-created; criador+moderadores+membros; posts recursivos (materialized path depth 6); chat SignalR | `Communities`, `Memberships`, `Posts`, `Chats` |
+| **Pricing** | Referência de preço justo por categoria (mediana comunitária + BRL seed + IPCA/IBGE + Ollama) | `PriceReferences` |
+| **Moderation** | Denúncias + resolução admin (ban via evento → Identity) | `Reports` |
+| **Notifications** | In-app + Web Push | `Notifications`, `PushSubscriptions` |
+| **Reputation** | Avaliações 1–5 pós-troca, agregados por usuário | `Reviews`, `Reputations` |
+| **Admin** | Parâmetros runtime tipados compartilhados entre módulos | `SystemParameters` |
 
 > **Host:** API ASP.NET única (endpoints + auth + SignalR hub). Sem YARP. Reverse proxy: Traefik + Cloudflared.
 
@@ -93,32 +100,32 @@ Referências: Plano-fonte-de-verdade §2–§7 · blueprint `equivale/dev/AGENTS
 > eShopOnContainers (DDD/CQRS). As pastas são criadas **com conteúdo** na Fase 1 (não há pastas vazias no repo).
 
 ```
-revoa/                                 ← raiz (limpa: docs/ .kilo/ config + src/ quando houver código)
+revoa/
 ├─ src/
 │  ├─ Revoa.sln
 │  ├─ Revoa.Api/                        ← UI/composition root (host único)
-│  │   ├─ Controllers/  Filters/  Middleware/  Hubs/(SignalR)  ViewModels?  Program.cs
+│  │   ├─ Controllers/  Filters/  Middleware/  Hubs/(SignalR)  Program.cs
 │  │   └─ /health, JWT, DI wiring (referencia módulos + Infrastructure; SEM lógica de negócio)
-│  ├─ modules/                          ← 12 bounded contexts (monólito modular)
-│  │   └─ <context>/                    ← ex.: identity, account, catalog, exchange, token,
-│  │       ├─ Domain/                      community, pricing, moderation, notifications,
-│  │       │   ├─ Aggregates/<Aggregate>/   reputation, indexer
+│  ├─ modules/                          ← 13 bounded contexts (monólito modular)
+│  │   └─ <context>/                    ← identity, account, catalog, exchange, token, coupon,
+│  │       ├─ Domain/                      demurrage, community, pricing, moderation,
+│  │       │   ├─ Aggregates/<Aggregate>/   notifications, reputation, admin
 │  │       │   │   ├─ <Entity>.cs  <ValueObject>.cs  (aggregate root + VOs)
 │  │       │   │   └─ Events/  Exceptions/  Specifications/
 │  │       │   ├─ Repositories/ (interfaces — contratos de persistência)  IUnitOfWork
 │  │       │   └─ SeedWork/ (Entity, ValueObject, AggregateRoot base — sem redundância)
-│  │       ├─ Application/              ← CQRS (MediatR): Commands/Queries/Handlers/DTOs/Validators(FluentValidation)/Mapster
-│  │       └─ Infrastructure/           ← MongoDB (coleção PRÓPRIA do módulo), serviços (MailKit/Zenvia/Nethereum), integrações
+│  │       ├─ Application/              ← CQRS (MediatR): Commands/Queries/Handlers/DTOs/Validators(FluentValidation)
+│  │       └─ Infrastructure/           ← MongoDB (coleção PRÓPRIA do módulo), serviços (MailKit/Nethereum), integrações
 │  └─ shared/
-│     ├─ Abstractions/                  ← IAggregateRoot, IEntity, IIntegrationEventBus, Result, guards
+│     ├─ Abstractions/                  ← IIntegrationEventBus, Result, ApiError (contrato HTTP), guards
 │     ├─ IntegrationContracts/          ← eventos + DTOs de integração (versionados) entre módulos
-│     └─ Infrastructure/                ← cross-cutting: MongoDB base, OpenTelemetry, auth/JWT, exception middleware
-├─ contracts/                           ← (Fase 1, com código) Solidity + Foundry: RVM, ProductNFT, ServiceVoucher,
-│                                          EscrowVault, Treasury, CouponRedeemer, Safe+4337, Paymaster, webauthn-solidity
-├─ chain/                               ← (Fase 1, com código) config Avalanche Subnet-EVM (genesis, chainID fixo, parâmetros)
-├─ frontend/                            ← (Fase 2) React + TypeScript (Vite SPA) + PWA
-├─ tests/                               ← (Fase 1+) unit (xUnit) por handler/aggregate + Testcontainers (Mongo+anvil)
-└─ .github/workflows/                   ← (Fase 1+) CI: dotnet build/test + forge build/test + npm build/typecheck
+│     ├─ Application/                   ← kernel CQRS: ValidationBehavior + AddRevoaCQRS (ADR-0016)
+│     └─ Infrastructure/                ← MongoRepositoryBase (optimistic locking), IMongoIndexEnsurer
+├─ contracts/                           ← Solidity + Foundry: RVM, ProductNFT, ServiceVoucher,
+│                                          EscrowVault, Treasury, CouponRedeemer (forge test)
+├─ frontend/                            ← React + TypeScript (Vite SPA) + PWA
+├─ src/test/                            ← Revoa.IntegrationTests (OffChain no CI; OnChain com anvil)
+└─ .github/workflows/                   ← CI: dotnet build/test + forge build/test + npm build/typecheck
 ```
 
 **Regras de dependência (Clean Architecture):**
@@ -188,9 +195,9 @@ SERVIÇO:
 ```
 
 ### Consistência on/off-chain
-- **Estado financeiro autoritativo ON-CHAIN.** O Indexer projeta eventos → read models idempotentes.
-- **Ações do usuário = UserOperations** (assinadas pela Safe); **admin = ops autorizadas** (role `ARBITRATOR`/`MINTER`).
-- **Reorgs:** aguardar N confirmações antes de considerar final; Indexer reprocessa por `txHash+logIndex`.
+- **Estado financeiro autoritativo ON-CHAIN.** Hoje o backend consulta a chain diretamente (Nethereum); Indexer com read models idempotentes é roadmap.
+- **Ações do usuário = assinadas pelo backend com a EOA managed** (ADR-0015); **admin = role `ARBITRATOR`** (ADR-0018).
+- **Reorgs:** aguardar N confirmações antes de considerar final.
 - **Doação/voluntariado:** reusam o EscrowVault/voucher com **valor 0** (mesma atomicidade; sem RVM do receptor). Recompensa multi-eixo (reputação + bônus RVM admin + pontos) creditada off-chain ao doador/voluntário.
 
 ### Ferramental Foundry
@@ -198,11 +205,14 @@ SERVIÇO:
 
 ---
 
-## 6. Account Abstraction (carteira invisível)
+## 6. Account Abstraction (carteira invisível) — **roadmap** (ADR-0002)
 
-> Stack: **Safe + módulo 4337** + **EntryPoint canônico** + **bundler Stackup** + **verifying paymaster** + **Coinbase `webauthn-solidity`** (signer P-256).
+> **Hoje (ADR-0015):** carteiras **EOA plaintext managed** pelo backend — o usuário tem a mesma
+> UX (carteira invisível), mas quem assina é o backend via Nethereum. Sair disso (AA completa ou
+> KMS) é **blocker pré-público**. Alvo: **Safe + módulo 4337** + **EntryPoint canônico** +
+> **bundler Stackup** + **verifying paymaster** + **Coinbase `webauthn-solidity`** (signer P-256).
 
-### Onboarding UX (carteira invisível)
+### Onboarding UX alvo (carteira invisível)
 1. Usuário cria conta com **email + passkey (WebAuthn)** — **sem seed phrase**.
 2. Backend (via bundler) cria uma **Safe** com módulo 4337 + signer `webauthn-solidity`.
 3. **Faucet R$20** minta RVM na nova Safe.
@@ -210,13 +220,13 @@ SERVIÇO:
 5. **Gas invisível**: o Paymaster patrocina; o usuário só vê RVM.
 
 ### Interação com a chain
-- Toda ação on-chain do usuário é uma **UserOperation** (assm pela Safe, enviada ao bunder Stackup).
+- Alvo: toda ação on-chain do usuário é uma **UserOperation** (assinada pela Safe, enviada ao bundler Stackup).
 - O Paymaster assina off-chain (verifying); o contrato Paymaster verifica on-chain.
-- O **Indexer** escuta eventos do EntryPoint + contratos → atualiza saldos/estados off-chain.
+- **Indexer** (roadmap) escutaria eventos do EntryPoint + contratos → atualizaria saldos/estados off-chain.
 
 ---
 
-## 7. BlockchainIndexer (source of truth)
+## 7. BlockchainIndexer (source of truth) — **roadmap**
 
 - Consome eventos on-chain (`Transfer`, `Escrow*`, `Mint`, `Burn`, `Redeem`, `CouponRedeemed`...).
 - Projeção **idempotente**: chave composta `txHash + logIndex` (nunca aplica o mesmo evento 2×).
@@ -235,9 +245,9 @@ SERVIÇO:
 
 ## 8. Frontend (React + TypeScript SPA + PWA)
 
-> Stack: **React + TypeScript (Vite SPA) + Tailwind + `viem` + `permissionless.js` + Safe SDK + SignalR client + PWA.** (Único backend: .NET; único framework frontend: React/TypeScript.)
+> Stack: **React + TypeScript (Vite SPA) + Tailwind + SignalR client + PWA.** (Único backend: .NET; único framework frontend: React/TypeScript. `viem`/`permissionless.js`/Safe SDK entram junto com a AA — roadmap.)
 
-- **Carteira invisível:** passkey → cria Safe (permissão via Safe SDK + permissionless.js p/ UserOps; viem p/ assinar).
+- **Carteira invisível:** hoje managed pelo backend (ADR-0015); alvo: passkey → cria Safe (via Safe SDK + permissionless.js; viem p/ assinar).
 - **Feed dinâmico por `kind`:** um objeto Anúncio; o frontend renderiza campos conforme `kind` (ProductDetails vs ServiceDetails).
 - **Troca tracker:** acompanha estado do escrow em tempo real (SignalR + Indexer).
 - **Comunidade:** posts recursivos (materialized path, depth 6) + chat SignalR.
@@ -280,18 +290,18 @@ O frontend renderiza o formulário/detalhe **dinamicamente** conforme `kind` + `
 
 ## 11. PricingIntelligence (Fase 3)
 
-- **Quartz semanal:** API ML + seed admin + comunidade → normalização **Ollama Qwen 7B (GPU)** → referência BRL por categoria.
+- **Recálculo sob demanda:** endpoint admin (`POST /api/pricing/refresh`): API ML + seed admin + comunidade → normalização **Ollama Qwen 7B (GPU)** → referência BRL por categoria.
 - **Mediana RVM** dos listings + **sugestão justa** (faixa RVM).
 - **webfetcher trimestral:** IPCA/IBGE → reajusta parâmetros (faucet/cupom + base demurrage).
-- **Transparência:** página pública de preços/parâmetros (`PRICING.md`).
+- **Transparência:** página pública de preços/parâmetros (`/transparencia` no frontend).
 
 ---
 
 ## 12. Deploy & Cutover
 
-- **Stack central** `projetosia/infra`: 1 túnel Cloudflare + 1 Traefik. Protocolo `infra/README.md`.
+- **Stack central** `rodne/infra` (local `C:\Users\rodne\infra`): PaaS genérico env-driven (Traefik v3 + cloudflared + Portal; routers gerados do `.env` via `scripts/render.py`). Protocolo em `infra/README.md`.
 - **Dois domínios:** `revoa.me` = **app/plataforma** (este host); `revoa.org` = **blog/docs/painel de transparência/impacto** (site institucional sem fins lucrativos, servido como conteúdo estático/blog — pode ser o mesmo app com rota dedicada ou site separado na Fase 4).
-- **revoa.me** hoje roteia (file-provider `routers-revoa.yml`) para `revoa-app:8000` (atualmente o Python trocadeira).
+- **revoa.me** hoje roteia (routers Traefik da infra central) para `revoa-app:8000` (atualmente o Python trocadeira).
 - **Cutover (Fase 4):** parar/remover container trocadeira → o `.NET revoa-app` (mesmo nome + porta) assume `revoa.me`/`www.revoa.me`. `revoa.org`/`www.revoa.org` aponta para o app (rota `/transparencia`/blog) ou site institucional. **Sem mudança de DNS** (Cloudflare→túnel→Traefik→labels).
 - **Regras (NUNCA violar):** sem portas no host; sem docker socket; DB/chain só na rede `internal`; públicos na `traefik_net`; `/health` obrigatório; confiar em `X-Forwarded-*`; app em `0.0.0.0`.
 
@@ -299,7 +309,7 @@ O frontend renderiza o formulário/detalhe **dinamicamente** conforme `kind` + `
 
 ## 13. Observabilidade & Testes
 
-- **OpenTelemetry + Serilog.** Tracing distribuído (API → Indexer → chain).
+- **OpenTelemetry + Serilog.** Tracing distribuído (API → chain).
 - **Testes:** xUnit + FluentAssertions + Testcontainers (Mongo + anvil) por handler/módulo; isolamento de coleção enforced; optimistic locking (Concurrent→ConcurrencyException). Foundry (`forge test`/`coverage`). Playwright (e2e). `workers:1` p/ e2e autenticados.
 - **CI verde:** `dotnet build` + `dotnet test` + `forge build` + `forge test` + `npm run build` + `npm run typecheck`.
 

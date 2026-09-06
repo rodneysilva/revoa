@@ -24,6 +24,10 @@
 | [ADR-0012](ADR-0012-backend-dotnet-frontend-react.md) | Backend único .NET; frontend único React/TypeScript | Accepted |
 | [ADR-0013](ADR-0013-cadastro-campos-verificacao.md) | Cadastro: campos, verificação dupla (e-mail+WhatsApp), Zenvia, login Google+Apple | Accepted |
 | [ADR-0014](ADR-0014-email-auto-hospedado-mailkit-postfix.md) | E-mail transacional auto-hospedado (MailKit + Postfix, domínio revoa.me) | Accepted |
+| [ADR-0015](ADR-0015-carteiras-eoa-plaintext-desvio-da-aa.md) | Carteiras EOA plaintext — desvio temporário da AA (ADR-0002) | Accepted (desvio rastreado) |
+| [ADR-0016](ADR-0016-shared-kernel-cqrs-persistencia.md) | Shared kernel de CQRS e persistência (ValidationBehavior único, MongoRepositoryBase, IMongoIndexEnsurer) | Accepted |
+| [ADR-0017](ADR-0017-contrato-pascalcase-apierror.md) | Contrato HTTP PascalCase com envelope único ApiError + identificadores EN | Accepted |
+| [ADR-0018](ADR-0018-role-arbitrator-resolucao-disputas.md) | Role ARBITRATOR para resolução de disputas de escrow | Accepted |
 
 ## Como escrever um ADR
 
