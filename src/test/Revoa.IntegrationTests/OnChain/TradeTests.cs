@@ -46,7 +46,7 @@ public class TradeTests : IntegrationTestBase
             Duration = (int?)null,
             VoucherExpiryDays = (int?)null,
         }));
-        var listingId = await create.Content.ReadFromJsonAsync<Guid>();
+        var listingId = await ReadIdAsync(create);
 
         // B compra → trade nasce financiada.
         var purchase = await AuthedClient(buyer).PostAsync("/api/trades/purchase", JsonBody(new
@@ -54,7 +54,7 @@ public class TradeTests : IntegrationTestBase
             ListingId = listingId,
         }));
         purchase.StatusCode.Should().Be(HttpStatusCode.Created);
-        var tradeId = await purchase.Content.ReadFromJsonAsync<Guid>();
+        var tradeId = await ReadIdAsync(purchase);
 
         await AssertStateAsync(tradeId, "Funded");
 

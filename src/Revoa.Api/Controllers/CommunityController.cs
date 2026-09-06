@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Revoa.Abstractions;
-using Revoa.Abstractions;
 using Revoa.Community.Application.Commands;
 using Revoa.Community.Application.DTOs;
 using Revoa.Community.Application.Queries;
@@ -54,7 +53,7 @@ public class CommunityController : ControllerBase
     // Cria comunidade (gate Verified). Ownership (criador) do token, nunca do body.
     [HttpPost]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> Create(
+    public async Task<ActionResult<ResourceId>> Create(
         [FromBody] CreateCommunityRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
@@ -89,7 +88,7 @@ public class CommunityController : ControllerBase
             return BadRequest(new ApiError(result.Error));
         }
 
-        return CreatedAtAction(nameof(Detail), new ResourceId(result.Value), result.Value);
+        return CreatedAtAction(nameof(Detail), new ResourceId(result.Value), new ResourceId(result.Value));
     }
 
     // Entra em comunidade (gate Verified).
@@ -140,7 +139,7 @@ public class CommunityController : ControllerBase
     // Cria post (gate Verified). Autor do token.
     [HttpPost("{id:guid}/posts")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> CreatePost(
+    public async Task<ActionResult<ResourceId>> CreatePost(
         Guid id, [FromBody] CreatePostRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
@@ -157,7 +156,7 @@ public class CommunityController : ControllerBase
             return BadRequest(new ApiError(result.Error));
         }
 
-        return Ok(result.Value);
+        return Ok(new ResourceId(result.Value));
     }
 
     // Oculta post em cascata (gate Verified; Moderador/Criador validado no handler).

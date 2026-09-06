@@ -72,7 +72,7 @@ public class NotificationsController : ControllerBase
     // Inscreve Web Push do dispositivo.
     [HttpPost("push/subscribe")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> SubscribePush(
+    public async Task<ActionResult<ResourceId>> SubscribePush(
         [FromBody] SubscribePushRequest request, CancellationToken ct = default)
     {
         var user = User.GetRevoaUser();
@@ -84,7 +84,7 @@ public class NotificationsController : ControllerBase
         var result = await _mediator.Send(
             new SubscribePushCommand(user.UserId, request.Endpoint, request.P256dh, request.Auth), ct);
 
-        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(new ResourceId(result.Value));
     }
 
     // Remove inscrição Web Push (logout/desinstalação). Endpoint via body ou query.

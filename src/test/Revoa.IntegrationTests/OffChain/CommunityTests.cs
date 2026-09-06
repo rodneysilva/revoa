@@ -35,7 +35,7 @@ public class CommunityTests : IntegrationTestBase
 
         create.IsSuccessStatusCode.Should().BeTrue(
             $"esperado 2xx ao criar comunidade: {await create.Content.ReadAsStringAsync()}");
-        var communityId = Guid.Parse((await create.Content.ReadAsStringAsync()).Trim('"'));
+        var communityId = await ReadIdAsync(create);
         communityId.Should().NotBeEmpty();
 
         // GET /api/communities → contém a comunidade criada.
@@ -91,7 +91,7 @@ public class CommunityTests : IntegrationTestBase
         }));
         create.IsSuccessStatusCode.Should().BeTrue(
             $"esperado 2xx ao criar comunidade privada: {await create.Content.ReadAsStringAsync()}");
-        var communityId = Guid.Parse((await create.Content.ReadAsStringAsync()).Trim('"'));
+        var communityId = await ReadIdAsync(create);
 
         var other = await CreateUserAsync();
         var otherClient = AuthedClient(other);

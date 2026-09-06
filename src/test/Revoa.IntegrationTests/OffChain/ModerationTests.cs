@@ -45,7 +45,7 @@ public class ModerationTests : IntegrationTestBase
         }));
         createListing.IsSuccessStatusCode.Should().BeTrue(
             $"esperado 2xx ao criar listing alvo: {await createListing.Content.ReadAsStringAsync()}");
-        var listingId = Guid.Parse((await createListing.Content.ReadAsStringAsync()).Trim('"'));
+        var listingId = await ReadIdAsync(createListing);
 
         // Denúncia (gate Verified).
         var reportResp = await reporterClient.PostAsync("/api/reports", JsonBody(new
@@ -56,7 +56,7 @@ public class ModerationTests : IntegrationTestBase
             Details = (string?)"Denúncia E2E",
         }));
         reportResp.StatusCode.Should().Be(HttpStatusCode.OK);
-        var reportId = (await reportResp.Content.ReadFromJsonAsync<JsonNode>())!["id"]!.GetValue<Guid>();
+        var reportId = await ReadIdAsync(reportResp);
 
         // Admin lista denúncias → contém a criada.
         var admin = await CreateAdminAsync();

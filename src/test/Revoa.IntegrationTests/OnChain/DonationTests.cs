@@ -46,7 +46,7 @@ public class DonationTests : IntegrationTestBase
             Duration = (int?)null,
             VoucherExpiryDays = (int?)null,
         }));
-        var listingId = await create.Content.ReadFromJsonAsync<Guid>();
+        var listingId = await ReadIdAsync(create);
 
         // B pede ajuda (entra na fila de doação).
         var request = await AuthedClient(receiver).PostAsync("/api/help", JsonBody(new
@@ -54,12 +54,12 @@ public class DonationTests : IntegrationTestBase
             ListingId = listingId,
             Message = "Preciso deste item E2E",
         }));
-        var helpRequestId = await request.Content.ReadFromJsonAsync<Guid>();
+        var helpRequestId = await ReadIdAsync(request);
 
         // A seleciona o receptor → cria trade de doação (total=0, Funded).
         var select = await donorClient.PostAsync($"/api/help/{helpRequestId}/select", content: null);
         select.StatusCode.Should().Be(HttpStatusCode.Created);
-        var tradeId = await select.Content.ReadFromJsonAsync<Guid>();
+        var tradeId = await ReadIdAsync(select);
 
         // A libera → doação concluída (publica DonationCompletedEvent → reputação do doador).
         var release = await donorClient.PostAsync($"/api/trades/{tradeId}/release", content: null);

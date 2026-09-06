@@ -23,7 +23,7 @@ public class CatalogController : ControllerBase
     // Ação exige login + verificação dupla (gate UF-01: aberto p/ navegar, fechado p/ agir).
     [HttpPost]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> Create(
+    public async Task<ActionResult<ResourceId>> Create(
         [FromBody] CreateListingRequest request, CancellationToken ct)
     {
         // Ownership: SellerId/Nome/Avatar vêm do token (claim sub + name), NUNCA do body.
@@ -77,7 +77,7 @@ public class CatalogController : ControllerBase
             return BadRequest(new ApiError(result.Error));
         }
 
-        return CreatedAtAction(nameof(GetById), new ResourceId(result.Value), result.Value);
+        return CreatedAtAction(nameof(GetById), new ResourceId(result.Value), new ResourceId(result.Value));
     }
 
     // Feed anônimo (UF-01). Filtros NxN (todos opcionais) via query string.
@@ -154,7 +154,7 @@ public class CatalogController : ControllerBase
     // Cria comentário/resposta (gate Verified). Autor do token; depth ≤ 6.
     [HttpPost("{id:guid}/comments")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> CreateComment(
+    public async Task<ActionResult<ResourceId>> CreateComment(
         Guid id, [FromBody] CreateCommentRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
@@ -166,7 +166,7 @@ public class CatalogController : ControllerBase
         var result = await _mediator.Send(
             new CreateCommentCommand(user.UserId, user.Name, user.AvatarUrl, id, request.ParentId, request.Content), ct);
 
-        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(new ResourceId(result.Value));
     }
 
     private static bool TryParse<T>(string? value, out T result) where T : struct, Enum

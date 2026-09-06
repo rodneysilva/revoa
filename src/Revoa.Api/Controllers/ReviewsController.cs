@@ -23,7 +23,7 @@ public class ReviewsController : ControllerBase
     // Cria avaliação (1–5) + comentário opcional sobre a contraparte da troca. Gate Verified.
     [HttpPost("api/trades/{id:guid}/reviews")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> Create(
+    public async Task<ActionResult<ResourceId>> Create(
         Guid id, [FromBody] CreateReviewRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();

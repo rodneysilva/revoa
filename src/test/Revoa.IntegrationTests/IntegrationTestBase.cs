@@ -57,6 +57,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         return node!;
     }
 
+    // Id do recurso criado: todo sucesso de criação/ação devolve o envelope { "Id": "<guid>" }
+    // (ResourceId, ADR-0017) — nunca um guid cru em text/plain. Leitura via JsonNode: o record
+    // tem 2 ctors e o System.Text.Json não desserializa ResourceId direto (sem [JsonConstructor]).
+    protected static async Task<Guid> ReadIdAsync(HttpResponseMessage resp)
+    {
+        var node = await resp.Content.ReadFromJsonAsync<JsonNode>();
+        node.Should().NotBeNull(
+            $"esperado envelope {{\"Id\":...}}: {await resp.Content.ReadAsStringAsync()}");
+        return node!["Id"]!.GetValue<Guid>();
+    }
+
     // ---- Auth ----
 
     // POST /api/auth/register (anônimo). Retorna o UserId do usuário recém-criado.

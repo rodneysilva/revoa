@@ -114,7 +114,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     try {
       data = JSON.parse(text);
     } catch {
-      data = text; // corpo não-JSON (ex.: id cru)
+      data = text; // corpo não-JSON (texto puro)
     }
   }
 
@@ -170,13 +170,13 @@ export const api = {
       `/api/listings/${encodeURIComponent(listingId)}/comments${qs({ parentId })}`
     ),
   createComment: (listingId: string, parentId: string | null, conteudo: string): Promise<string> =>
-    apiPost<string>(`/api/listings/${encodeURIComponent(listingId)}/comments`, {
+    apiPost<{ Id: string }>(`/api/listings/${encodeURIComponent(listingId)}/comments`, {
       ParentId: parentId,
       Content: conteudo,
-    }),
+    }).then((r) => r.Id),
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
-    apiPost<string>(`/api/listings`, body),
+    apiPost<{ Id: string }>(`/api/listings`, body).then((r) => r.Id),
   trades: (p: TradesParams): Promise<Trade[]> =>
     apiGet<Trade[]>(
       `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`
@@ -188,7 +188,7 @@ export const api = {
   trade: (id: string): Promise<Trade> =>
     apiGet<Trade>(`/api/trades/${encodeURIComponent(id)}`),
   purchase: (listingId: string): Promise<string> =>
-    apiPost<string>(`/api/trades/purchase`, { ListingId: listingId }),
+    apiPost<{ Id: string }>(`/api/trades/purchase`, { ListingId: listingId }).then((r) => r.Id),
   redeem: (tradeId: string): Promise<void> =>
     apiPost<void>(`/api/trades/${encodeURIComponent(tradeId)}/redeem`),
   release: (tradeId: string): Promise<void> =>
@@ -202,22 +202,22 @@ export const api = {
       ReleaseToSeller: releaseToSeller,
     }),
   requestHelp: (listingId: string, mensagem: string): Promise<string> =>
-    apiPost<string>(`/api/help`, { ListingId: listingId, Message: mensagem }),
+    apiPost<{ Id: string }>(`/api/help`, { ListingId: listingId, Message: mensagem }).then((r) => r.Id),
   helpQueue: (listingId: string): Promise<HelpRequest[]> =>
     apiGet<HelpRequest[]>(
       `/api/help${qs({ listingId })}`
     ),
   selectRecipient: (helpRequestId: string): Promise<string> =>
-    apiPost<string>(`/api/help/${encodeURIComponent(helpRequestId)}/select`),
+    apiPost<{ Id: string }>(`/api/help/${encodeURIComponent(helpRequestId)}/select`).then((r) => r.Id),
   createReview: (
     tradeId: string,
     rating: number,
     comment?: string
   ): Promise<string> =>
-    apiPost<string>(`/api/trades/${encodeURIComponent(tradeId)}/reviews`, {
+    apiPost<{ Id: string }>(`/api/trades/${encodeURIComponent(tradeId)}/reviews`, {
       Rating: rating,
       Comment: comment,
-    }),
+    }).then((r) => r.Id),
   userReviews: (userId: string, limit = 20): Promise<Review[]> =>
     apiGet<Review[]>(
       `/api/users/${encodeURIComponent(userId)}/reviews${qs({ limit })}`
@@ -252,7 +252,7 @@ export const api = {
   community: (id: string): Promise<Community> =>
     apiGet<Community>(`/api/communities/${encodeURIComponent(id)}`),
   createCommunity: (body: CreateCommunityBody): Promise<string> =>
-    apiPost<string>(`/api/communities`, body),
+    apiPost<{ Id: string }>(`/api/communities`, body).then((r) => r.Id),
   joinCommunity: (id: string, password?: string): Promise<{ Id: string }> =>
     apiPost<{ Id: string }>(
       `/api/communities/${encodeURIComponent(id)}/join`,
@@ -273,10 +273,10 @@ export const api = {
     parentId: string | undefined,
     conteudo: string
   ): Promise<string> =>
-    apiPost<string>(
+    apiPost<{ Id: string }>(
       `/api/communities/${encodeURIComponent(communityId)}/posts`,
       { ParentId: parentId, Content: conteudo }
-    ),
+    ).then((r) => r.Id),
   communityMembers: (id: string): Promise<Membership[]> =>
     apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
 
@@ -287,12 +287,12 @@ export const api = {
     reason: ReportReason,
     details?: string
   ): Promise<string> =>
-    apiPost<string>(`/api/reports`, {
+    apiPost<{ Id: string }>(`/api/reports`, {
       TargetType: targetType,
       TargetId: targetId,
       Reason: reason,
       Details: details,
-    }),
+    }).then((r) => r.Id),
   reports: (status?: ReportStatus, page = 1): Promise<Report[]> =>
     apiGet<Report[]>(
       `/api/reports${qs({ status, page })}`

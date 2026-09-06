@@ -66,8 +66,7 @@ public class CatalogFeedTests : IntegrationTestBase
 
         create.IsSuccessStatusCode.Should().BeTrue(
             $"esperado 2xx ao criar listing: {await create.Content.ReadAsStringAsync()}");
-        var raw = await create.Content.ReadAsStringAsync();
-        var listingId = Guid.Parse(raw.Trim('"'));
+        var listingId = await ReadIdAsync(create);
 
         var detail = await client.GetAsync($"/api/listings/{listingId}");
         detail.StatusCode.Should().Be(HttpStatusCode.OK);

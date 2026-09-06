@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Revoa.Abstractions;
-using Revoa.Abstractions;
 using Revoa.Exchange.Application.Commands;
 using Revoa.Exchange.Application.DTOs;
 using Revoa.Exchange.Application.Queries;
@@ -45,7 +44,7 @@ public class ExchangeController : ControllerBase
     // Compra produto (trocar/repassar) / contrata serviço (trocar). Gate Verified. Buyer do token.
     [HttpPost("purchase")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> Purchase(
+    public async Task<ActionResult<ResourceId>> Purchase(
         [FromBody] PurchaseRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
@@ -59,7 +58,7 @@ public class ExchangeController : ControllerBase
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))
-            : CreatedAtAction(nameof(GetById), new ResourceId(result.Value), result.Value);
+            : CreatedAtAction(nameof(GetById), new ResourceId(result.Value), new ResourceId(result.Value));
     }
 
     // Serviço: comprador confirma prestação (redeem voucher). Gate Verified.
@@ -146,7 +145,7 @@ public class ExchangeController : ControllerBase
     // Pede ajuda (entra na fila de doação/voluntariado). Gate Verified. Autor do token.
     [HttpPost("~/api/help")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> RequestHelp(
+    public async Task<ActionResult<ResourceId>> RequestHelp(
         [FromBody] RequestHelpRequest request, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
@@ -160,13 +159,13 @@ public class ExchangeController : ControllerBase
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))
-            : CreatedAtAction(nameof(HelpQueue), new { listingId = request.ListingId }, result.Value);
+            : CreatedAtAction(nameof(HelpQueue), new { listingId = request.ListingId }, new ResourceId(result.Value));
     }
 
     // Doador seleciona receptor na fila. Gate Verified. Doador = claim sub.
     [HttpPost("~/api/help/{id:guid}/select")]
     [Authorize(Policy = "Verified")]
-    public async Task<ActionResult<string>> SelectRecipient(Guid id, CancellationToken ct)
+    public async Task<ActionResult<ResourceId>> SelectRecipient(Guid id, CancellationToken ct)
     {
         var user = User.GetRevoaUser();
         if (user is null)
@@ -178,7 +177,7 @@ public class ExchangeController : ControllerBase
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))
-            : CreatedAtAction(nameof(GetById), new ResourceId(result.Value), result.Value);
+            : CreatedAtAction(nameof(GetById), new ResourceId(result.Value), new ResourceId(result.Value));
     }
 }
 
