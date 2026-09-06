@@ -43,6 +43,8 @@ services:
       - Mongo__ConnectionString=mongodb://mongo:27017/?replicaSet=rs0
       - Mongo__Database=revoa
       - Minio__Endpoint=minio:9000
+      - Minio__AccessKey=${MINIO_ROOT_USER:-revoa}
+      - Minio__SecretKey=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD obrigatório (defina em .env)}
       # Chain: env-driven (Production não tem seção Chain no appsettings). Defaults = anvil
       # local (profile chain) com os endereços determinísticos do Deploy.s.sol (account[0]).
       # A chave real (CHAIN_FAUCET_KEY) vem do .env — nunca versionada.
@@ -214,6 +216,8 @@ services:
       - Mongo__ConnectionString=mongodb://mongo-dev:27017/?replicaSet=rs0
       - Mongo__Database=revoa_dev
       - Minio__Endpoint=minio:9000
+      - Minio__AccessKey=${MINIO_ROOT_USER:-revoa}
+      - Minio__SecretKey=${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD obrigatório (defina em .env)}
       - Chain__RpcUrl=${CHAIN_RPC_URL:-http://anvil:8545}
       - Chain__ChainId=${CHAIN_CHAIN_ID:-31337}
       - Chain__FaucetPrivateKey=${CHAIN_FAUCET_KEY:-}

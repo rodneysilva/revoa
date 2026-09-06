@@ -111,6 +111,32 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     );
   }
 
+  return parseResponse<T>(res);
+}
+
+// POST multipart (upload de imagem). SEM Content-Type manual — o browser precisa
+// gerar o boundary do multipart sozinho. Mesmo envelope de erro do request().
+export async function postForm<T>(path: string, form: FormData): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(path, { method: "POST", headers, body: form });
+  } catch {
+    throw new ApiError(
+      "Falha de rede — backend offline? Rode o servidor .NET na porta 8000.",
+      0
+    );
+  }
+
+  return parseResponse<T>(res);
+}
+
+// Converte a resposta em T ou lança ApiError (envelope do backend: ApiError
+// { Error, Errors? [{ Field, Message }] } em PascalCase).
+async function parseResponse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   const text = await res.text();
@@ -127,7 +153,6 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     let message = `Erro ${res.status}`;
     let fieldErrors: { Field: string; Message: string }[] | undefined;
     if (data && typeof data === "object") {
-      // Envelope único do backend: ApiError { Error, Errors? [{ Field, Message }] } (PascalCase).
       const obj = data as Record<string, unknown>;
       if (typeof obj.Error === "string") message = obj.Error;
       if (Array.isArray(obj.Errors)) {
@@ -182,6 +207,13 @@ export const api = {
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
     apiPost<{ Id: string }>(`/api/listings`, body).then((r) => r.Id),
+  // Upload de imagem do anúncio (multipart /api/media) → URL relativa pronta
+  // para <img src> (a API serve o objeto por stream; o bucket fica privado).
+  uploadImage: (file: File): Promise<string> => {
+    const form = new FormData();
+    form.append("file", file);
+    return postForm<{ Url: string }>("/api/media", form).then((r) => r.Url);
+  },
   tradeHistory: (p: TradesParams): Promise<Trade[]> =>
     apiGet<Trade[]>(
       `/api/trades${qs({ buyerId: p.buyerId, sellerId: p.sellerId, page: p.page })}`

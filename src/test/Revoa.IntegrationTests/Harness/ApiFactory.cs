@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using Revoa.Identity.Application.Services;
+using Testcontainers.Minio;
 using Testcontainers.MongoDb;
 using Xunit;
 
@@ -28,12 +29,20 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         .WithImage("mongo:7")
         .Build();
 
+    // MinIO isolado p/ os testes de mídia (mesmo container do deploy local, credenciais default).
+    private readonly MinioContainer _minio = new MinioBuilder().Build();
+
     public string MongoConnectionString => _mongo.GetConnectionString();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Development: appsettings.Development.json (Chain, Jwt:Key, Admin:Emails) + endpoints dev.
         builder.UseEnvironment("Development");
+
+        // Minio override: o host é construído lazy (primeiro CreateClient), já com o container no ar.
+        builder.UseSetting("Minio:Endpoint", _minio.GetConnectionString());
+        builder.UseSetting("Minio:AccessKey", "minioadmin");
+        builder.UseSetting("Minio:SecretKey", "minioadmin");
 
         builder.ConfigureTestServices(services =>
         {
@@ -49,11 +58,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         // Container Mongo deve estar pronto ANTES do host ser construído (índices/seed no startup).
         await _mongo.StartAsync();
+        await _minio.StartAsync();
     }
 
     public new async Task DisposeAsync()
     {
         await _mongo.DisposeAsync();
+        await _minio.DisposeAsync();
         await base.DisposeAsync();
     }
 

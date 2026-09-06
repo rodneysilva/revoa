@@ -17,6 +17,7 @@
     <PackageReference Include="FluentAssertions" Version="6.12.2" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0" />
     <PackageReference Include="Testcontainers.MongoDb" Version="3.10.0" />
+    <PackageReference Include="Testcontainers.Minio" Version="3.10.0" />
     <!-- Skip graceful de testes on-chain quando o anvil/contratos não estão acessíveis. -->
     <PackageReference Include="Xunit.SkippableFact" Version="1.5.23" />
     <PackageReference Include="coverlet.collector" Version="6.0.2" />

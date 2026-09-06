@@ -15,6 +15,7 @@ using Revoa.Demurrage.Infrastructure;
 using Revoa.Exchange.Infrastructure;
 using Revoa.Identity.Infrastructure;
 using Revoa.Infrastructure;
+using Revoa.Infrastructure.Media;
 using Revoa.Infrastructure.Persistence;
 using Revoa.Moderation.Infrastructure;
 using Revoa.Notifications.Infrastructure;
@@ -59,6 +60,9 @@ try
     // todos usam TryAddSingleton, logo este prevalece — sem precisar tocar cada bounded context.
     var mongoConn = builder.Configuration["Mongo:ConnectionString"] ?? "mongodb://localhost:27017";
     builder.Services.TryAddSingleton<IMongoClient>(_ => CreateMongoClient(mongoConn));
+
+    // Mídia (imagens de anúncio): MinIO privado, servido por stream em /api/media.
+    builder.Services.AddMediaInfrastructure(builder.Configuration);
 
 
 builder.Services.AddControllers()

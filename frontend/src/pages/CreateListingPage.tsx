@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { KIND_LABELS, MODO_META, ALL_MODOS, modosForKind } from "../lib/config";
@@ -13,6 +13,10 @@ import type {
 
 const KINDS: Kind[] = ["Product", "Service"];
 
+// Limites espelhados do backend (MediaController): máx. 6 fotos por anúncio, 5 MB cada.
+const MAX_FOTOS = 6;
+const MAX_BYTES = 5 * 1024 * 1024;
+
 const inputCls =
   "mt-1 w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none";
 const labelCls = "block";
@@ -23,14 +27,15 @@ export function CreateListingPage() {
   const { user } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [kind, setKind] = useState<Kind>("Product");
   const [modo, setModo] = useState<Mode>("Trade");
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [imagens, setImagens] = useState<string[]>([]);
-  const [imgInput, setImgInput] = useState("");
   const [preco, setPreco] = useState("0");
   const [condition, setCondition] = useState("Seminovo");
   const [stock, setStock] = useState("1");
@@ -81,11 +86,32 @@ export function CreateListingPage() {
 
   const isFree = modo === "Donate" || modo === "Volunteer";
 
-  function addImagem() {
-    const url = imgInput.trim();
-    if (!url) return;
-    setImagens((prev) => [...prev, url]);
-    setImgInput("");
+  // Upload real: cada arquivo vai p/ /api/media (MinIO) e o que entra no anúncio
+  // é a URL retornada — o preview já carrega do servidor, igual à exibição final.
+  async function onFiles(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // permite reselecionar o mesmo arquivo
+    if (files.length === 0) return;
+
+    setError(null);
+    setUploading(true);
+    try {
+      const vagas = MAX_FOTOS - imagens.length;
+      for (const f of files.slice(0, Math.max(vagas, 0))) {
+        if (f.size > MAX_BYTES) {
+          setError(`${f.name} está acima de 5 MB.`);
+          continue;
+        }
+        try {
+          const url = await api.uploadImage(f);
+          setImagens((prev) => [...prev, url]);
+        } catch (err) {
+          setError(err instanceof ApiError ? err.message : `Falha ao enviar ${f.name}.`);
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function submit(e: FormEvent) {
@@ -219,43 +245,39 @@ export function CreateListingPage() {
           />
         </label>
 
-        {/* Imagens (URLs) */}
+        {/* Fotos (upload real → /api/media; preview já carrega da URL servida) */}
         <div>
-          <span className={labelTxtCls}>Imagens (URLs)</span>
-          <div className="mt-1 flex gap-2">
-            <input
-              value={imgInput}
-              onChange={(e) => setImgInput(e.target.value)}
-              className={inputCls}
-              placeholder="https://…/foto.jpg"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addImagem();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={addImagem}
-              className="shrink-0 bg-charcoal text-cream border border-smoke rounded-lg px-4 hover:border-esmeralda"
-            >
-              +
-            </button>
-          </div>
+          <span className={labelTxtCls}>Fotos ({imagens.length}/{MAX_FOTOS})</span>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            multiple
+            hidden
+            onChange={onFiles}
+          />
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={imagens.length >= MAX_FOTOS || uploading}
+            className="mt-1 w-full bg-charcoal text-cream border border-dashed border-smoke rounded-lg px-4 py-3 hover:border-esmeralda transition disabled:opacity-50"
+          >
+            {uploading ? "Enviando…" : "📷 Adicionar fotos"}
+          </button>
           {imagens.length > 0 && (
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-2 grid grid-cols-3 gap-2">
               {imagens.map((url, i) => (
-                <li
-                  key={i}
-                  className="flex items-center gap-2 bg-smoke rounded-lg px-3 py-1.5 text-sm text-cream"
-                >
-                  <span className="truncate flex-1">{url}</span>
+                <li key={url} className="relative">
+                  <img
+                    src={url}
+                    alt={`Foto ${i + 1}`}
+                    className="w-full h-20 object-cover rounded-lg border border-smoke"
+                  />
                   <button
                     type="button"
                     onClick={() => setImagens((prev) => prev.filter((_, j) => j !== i))}
-                    className="text-silver hover:text-rosa"
-                    aria-label="Remover imagem"
+                    className="absolute -top-2 -right-2 bg-ink text-cream rounded-full w-6 h-6 text-xs border border-smoke hover:text-rosa"
+                    aria-label="Remover foto"
                   >
                     ✕
                   </button>
@@ -263,6 +285,7 @@ export function CreateListingPage() {
               ))}
             </ul>
           )}
+          <p className="mt-1 text-xs text-silver">JPEG, PNG, WebP ou GIF · até 5 MB cada.</p>
         </div>
 
         {/* Preço */}
@@ -416,7 +439,7 @@ export function CreateListingPage() {
 
         <div className="flex items-center gap-3">
           <button
-            disabled={loading}
+            disabled={loading || uploading}
             className="flex-1 bg-brand text-ink font-semibold px-6 py-3 rounded-xl disabled:opacity-60"
           >
             {loading ? "Publicando…" : "Publicar anúncio"}
