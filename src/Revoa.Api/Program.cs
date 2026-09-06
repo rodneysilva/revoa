@@ -217,6 +217,12 @@ var app = builder.Build();
 
 app.UseForwardedHeaders();
 
+// SPA estática (wwwroot): em Produção a UI é buildada no Docker (estágio `spa`) e
+// servida pela própria API — única origem, sem CORS. Em Development (sem wwwroot)
+// estes middlewares são no-op e a UI roda no Vite dev server.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 // Log de request HTTP condensado pelo Serilog (1 evento por request, com método/path/status/duração).
 app.UseSerilogRequestLogging();
 
@@ -241,6 +247,34 @@ app.MapHub<CommunityHub>("/hubs/community");
 app.MapHub<NotificationsHub>("/hubs/notifications");
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", ts = DateTime.UtcNow }));
+
+// Fallback da SPA: rotas de UI não-recognizadas caem no index.html (client-side
+// routing do React Router). Rotas de API/hub inexistentes seguem 404 — o FE espera
+// JSON, não HTML. (Feito à mão em vez de MapFallbackToFile para poder excluir /api;
+// MapWhen+UseEndpoints conflita com o endpoint middleware do WebApplication.)
+app.MapFallback(async context =>
+{
+    var path = context.Request.Path;
+    if (path.StartsWithSegments("/api") || path.StartsWithSegments("/hubs") || path.StartsWithSegments("/health"))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    var index = context.RequestServices
+        .GetRequiredService<IWebHostEnvironment>()
+        .WebRootFileProvider?
+        .GetFileInfo("index.html");
+    if (index is null || !index.Exists)
+    {
+        // Sem wwwroot (Development roda a UI no Vite dev server) → 404 normal.
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.SendFileAsync(index);
+});
 
 // Cria índices únicos (Email, Telefone no Identity; UserId no Account) — anti-sybil em nível de banco (idempotente).
     await EnsureIndexesAsync(app);

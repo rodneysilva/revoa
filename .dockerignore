@@ -1,0 +1,23 @@
+# Mantém o context de build enxuto (o Dockerfile copia src/ e frontend/).
+**/bin/
+**/obj/
+frontend/node_modules/
+frontend/dist/
+frontend/dev-dist/
+frontend/playwright-report/
+frontend/test-results/
+frontend/e2e-results/
+frontend/.vite/
+.git/
+.github/
+.vs/
+.idea/
+*.user
+docs/
+scripts/
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+.env
+.env.*
+!.env.example

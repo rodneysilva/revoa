@@ -19,7 +19,7 @@
 # e só sobem com `docker compose --profile <nome> up -d`. Assim este arquivo é
 # o contrato-vivo da topologia completa, enquanto mongo/minio já rodam hoje.
 #   app, frontend            → profile:app        (Fase 1+)
-#   avalanche, bundler,
+#   anvil, avalanche, bundler,
 #   paymaster, ollama        → profile:chain      (Fase 1)
 # ═══════════════════════════════════════════════════════════════
 
@@ -41,7 +41,21 @@ services:
       - Mongo__ConnectionString=mongodb://mongo:27017/?replicaSet=rs0
       - Mongo__Database=revoa
       - Minio__Endpoint=minio:9000
-      - Chain__Rpc=http://avalanche:9650/ext/bc/RVM/rpc
+      # Chain: env-driven (Production não tem seção Chain no appsettings). Defaults = anvil
+      # local (profile chain) com os endereços determinísticos do Deploy.s.sol (account[0]).
+      # A chave real (CHAIN_FAUCET_KEY) vem do .env — nunca versionada.
+      - Chain__RpcUrl=${CHAIN_RPC_URL:-http://anvil:8545}
+      - Chain__ChainId=${CHAIN_CHAIN_ID:-31337}
+      - Chain__FaucetPrivateKey=${CHAIN_FAUCET_KEY:-}
+      - Chain__FundWalletGasOnCreate=true
+      - Chain__FundWalletGasEther=1.0
+      - Chain__Contracts__RVM=0x5FbDB2315678afecb367f032d93F642f64180aa3
+      - Chain__Contracts__Treasury=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+      - Chain__Contracts__ProductNFT=0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+      - Chain__Contracts__ServiceVoucher=0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9
+      - Chain__Contracts__EscrowVault=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+      - Chain__Contracts__CouponRedeemer=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
+      - Admin__Emails=${ADMIN_EMAILS:-}  # Policy "Admin" (claim email); vazio = nega tudo
       - Ollama__Endpoint=http://ollama:11434
       - Bundler__Rpc=http://bundler:4337
       - Paymaster__Rpc=http://paymaster:3000
@@ -160,6 +174,29 @@ services:
   # CHAIN STACK (Fase 1, profile:chain) — TODOS só na rede interna
   # ═══════════════════════════════════════════════════════════
 
+  # ANVIL — nó dev local (fork do padrão Foundry; mesmos endereços do CI).
+  # Estado persistente em volume (--state): contratos e saldos sobrevivem a
+  # restarts. Endereços determinísticos do Deploy.s.sol são fixados no env do
+  # app (Chain__Contracts__*). É o RPC default do app (CHAIN_RPC_URL).
+  anvil:
+    profiles: ["chain"]
+    image: ghcr.io/foundry-rs/foundry:latest
+    container_name: revoa-anvil
+    # ENTRYPOINT da imagem é ["bash","-l","-c"] — engole args avulsos; o comando
+    # inteiro precisa vir como UMA string.
+    entrypoint: ["bash", "-l", "-c",
+                 "anvil --host 0.0.0.0 --port 8545 --chain-id 31337 --state /data/anvil-state.json --state-interval 10"]
+    volumes:
+      - revoa-anvil-data:/data
+    networks: [internal]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://localhost:8545 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   # Nó Avalanche Subnet-EVM própria (privada agora → pública depois)
   avalanche:
     profiles: ["chain"]
@@ -238,6 +275,7 @@ volumes:
   revoa-app-data:
   revoa-mongo-data:
   revoa-minio-data:
+  revoa-anvil-data:
   revoa-chain-data:
   revoa-ollama-data:
   revoa-mail-dkim:
