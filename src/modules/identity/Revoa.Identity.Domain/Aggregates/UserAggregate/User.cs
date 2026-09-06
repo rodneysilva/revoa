@@ -35,16 +35,16 @@ public class User : AggregateRoot
     public bool EmailVerified { get; private set; }
     public bool PhoneVerified { get; private set; }
 
-    // VerificaÃ§Ã£o de e-mail (token de uso Ãºnico)
+    // Verificação de e-mail (token de uso único)
     public string? EmailToken { get; private set; }
     public DateTime? EmailTokenExpiry { get; private set; }
 
-    // VerificaÃ§Ã£o de telefone (OTP hasheado)
+    // Verificação de telefone (OTP hasheado)
     public string? PhoneOtpHash { get; private set; }
     public DateTime? PhoneOtpExpiry { get; private set; }
     public int PhoneOtpAttempts { get; private set; }
 
-    // Login passwordless por cÃ³digo de e-mail (magic OTP). Prova posse do e-mail no login.
+    // Login passwordless por código de e-mail (magic OTP). Prova posse do e-mail no login.
     public string? LoginCodeHash { get; private set; }
     public DateTime? LoginCodeExpiry { get; private set; }
     public int LoginCodeAttempts { get; private set; }
@@ -57,7 +57,7 @@ public class User : AggregateRoot
     {
         if (!idadeOk)
         {
-            throw new DomainException("Idade mÃ­nima de 18 anos nÃ£o atendida.");
+            throw new DomainException("Idade mínima de 18 anos não atendida.");
         }
 
         return new User
@@ -160,7 +160,7 @@ public class User : AggregateRoot
     // Role atribuída apenas por admin (PUT /api/admin/users/{id}/role). Não muda Status.
     public void SetRole(UserRole role) => Role = role;
 
-    // --- Login passwordless por cÃ³digo de e-mail ---
+    // --- Login passwordless por código de e-mail ---
     public void SetLoginCode(string code, DateTime expiry)
     {
         LoginCodeHash = HashOtp(code);
@@ -195,9 +195,9 @@ public class User : AggregateRoot
         return true;
     }
 
-    // DEV-ONLY: ativa o usuÃ¡rio sem token/OTP (bypass da verificaÃ§Ã£o dupla). Usado apenas pelo
-    // endpoint /api/auth/dev-verify (gated IsDevelopment). NUNCA em produÃ§Ã£o. Marca verificado,
-    // limpa tokens e ativa â€” equivalente a ter confirmado e-mail + telefone.
+    // DEV-ONLY: ativa o usuário sem token/OTP (bypass da verificação dupla). Usado apenas pelo
+    // endpoint /api/auth/dev-verify (gated IsDevelopment). NUNCA em produção. Marca verificado,
+    // limpa tokens e ativa — equivalente a ter confirmado e-mail + telefone.
     public void DevActivate()
     {
         EmailVerified = true;

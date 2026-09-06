@@ -18,7 +18,7 @@ public enum TradeMode
     Volunteer
 }
 
-// Espelha EscrowVault.State (OOUX 11 = Troca, 12 = DoaÃ§Ã£o = trade total 0).
+// Espelha EscrowVault.State (OOUX 11 = Troca, 12 = Doação = trade total 0).
 public enum TradeState
 {
     Offered,
@@ -29,7 +29,7 @@ public enum TradeState
     Cancelled
 }
 
-// Aggregate "Troca" (OOUX 11) â€” tambÃ©m cobre doaÃ§Ã£o (OOUX 12) quando Modo âˆˆ {Doar, Voluntariar}
+// Aggregate "Troca" (OOUX 11) — também cobre doação (OOUX 12) quando Modo ∈ {Doar, Voluntariar}
 // (total 0). Estados espelham o EscrowVault on-chain. Seller/Buyer embed (Nome/Avatar) anti-N+1.
 public class Trade : AggregateRoot
 {
@@ -49,10 +49,10 @@ public class Trade : AggregateRoot
 
     public long TotalRvm { get; private set; }
     public string AssetContract { get; private set; } = string.Empty;
-    // NFT id (produto) | voucher id (serviÃ§o).
+    // NFT id (produto) | voucher id (serviço).
     public long TokenId { get; private set; }
 
-    // Preenchido apÃ³s createTrade on-chain.
+    // Preenchido após createTrade on-chain.
     public long? OnChainTradeId { get; private set; }
 
     public TradeState State { get; private set; }
@@ -64,7 +64,7 @@ public class Trade : AggregateRoot
     // Auditoria: quem resolveu a disputa (e-mail do árbitro). Espelha DisputeOpenedBy.
     public string? ResolvedBy { get; private set; }
 
-    // ServiÃ§o: voucher foi redeemado (confirmaÃ§Ã£o de prestaÃ§Ã£o).
+    // Serviço: voucher foi redeemado (confirmação de prestação).
     public bool VoucherRedeemed { get; private set; }
 
     public string? LastTxHash { get; private set; }
@@ -73,7 +73,7 @@ public class Trade : AggregateRoot
 
     public bool IsDonation => Mode is TradeMode.Donate or TradeMode.Volunteer;
 
-    // O trade nasce financiado (compra/doaÃ§Ã£o jÃ¡ funded on-chain no command handler).
+    // O trade nasce financiado (compra/doação já funded on-chain no command handler).
     public static Trade Create(
         Guid listingId,
         TradeMode modo,
@@ -103,11 +103,11 @@ public class Trade : AggregateRoot
             Kind = kind,
             SellerId = sellerId,
             SellerWallet = sellerWallet,
-            SellerName = string.IsNullOrWhiteSpace(sellerNome) ? "UsuÃ¡rio" : sellerNome,
+            SellerName = string.IsNullOrWhiteSpace(sellerNome) ? "Usuário" : sellerNome,
             SellerAvatarUrl = sellerAvatarUrl,
             BuyerId = buyerId,
             BuyerWallet = buyerWallet,
-            BuyerName = string.IsNullOrWhiteSpace(buyerNome) ? "UsuÃ¡rio" : buyerNome,
+            BuyerName = string.IsNullOrWhiteSpace(buyerNome) ? "Usuário" : buyerNome,
             BuyerAvatarUrl = buyerAvatarUrl,
             TotalRvm = totalRvm,
             AssetContract = assetContract,
@@ -120,7 +120,7 @@ public class Trade : AggregateRoot
         };
     }
 
-    // TransiÃ§Ã£o reservada p/ fluxo assÃ­ncrono futuro (criar â†’ financiar em passos separados).
+    // Transição reservada p/ fluxo assíncrono futuro (criar → financiar em passos separados).
     public void MarkFunded(long onChainTradeId, DateTime fundedAt, string? tx)
     {
         if (State != TradeState.Offered)
@@ -134,12 +134,12 @@ public class Trade : AggregateRoot
         LastTxHash = tx ?? LastTxHash;
     }
 
-    // ServiÃ§o: comprador confirma prestaÃ§Ã£o (redeem do voucher). Estado permanece Financiada.
+    // Serviço: comprador confirma prestação (redeem do voucher). Estado permanece Financiada.
     public void MarkRedeemed(string? tx)
     {
         if (Kind != TradeKind.Service)
         {
-            throw new DomainException("Redeem aplica apenas a serviÃ§os.");
+            throw new DomainException("Redeem aplica apenas a serviços.");
         }
 
         if (State != TradeState.Funded)
@@ -149,19 +149,19 @@ public class Trade : AggregateRoot
 
         if (VoucherRedeemed)
         {
-            throw new DomainException("Voucher jÃ¡ foi redeemado.");
+            throw new DomainException("Voucher já foi redeemado.");
         }
 
         VoucherRedeemed = true;
         LastTxHash = tx ?? LastTxHash;
     }
 
-    // LiberaÃ§Ã£o cooperativa (seller OU buyer) ou por Ã¡rbitro (resolve dispute).
+    // Liberação cooperativa (seller OU buyer) ou por árbitro (resolve dispute).
     public void MarkLiberada(string? tx, string? resolvedBy = null)
     {
         if (State is not (TradeState.Funded or TradeState.Disputed))
         {
-            throw new DomainException("LiberaÃ§Ã£o exige trade financiada ou disputada.");
+            throw new DomainException("Liberação exige trade financiada ou disputada.");
         }
 
         State = TradeState.Released;
@@ -184,7 +184,7 @@ public class Trade : AggregateRoot
         DisputeOpenedBy = string.IsNullOrWhiteSpace(openedBy) ? null : openedBy;
     }
 
-    // Reembolso (cancelamento cooperativo ou Ã¡rbitro decide a favor do comprador).
+    // Reembolso (cancelamento cooperativo ou árbitro decide a favor do comprador).
     public void MarkReembolsada(string? tx, string? resolvedBy = null)
     {
         if (State is not (TradeState.Funded or TradeState.Disputed))
@@ -224,13 +224,13 @@ public class Trade : AggregateRoot
     {
         if (totalRvm < 0)
         {
-            throw new DomainException("Total RVM nÃ£o pode ser negativo.");
+            throw new DomainException("Total RVM não pode ser negativo.");
         }
 
-        // Doar/Voluntariar â‡’ total 0.
+        // Doar/Voluntariar ⇒ total 0.
         if ((modo == TradeMode.Donate || modo == TradeMode.Volunteer) && totalRvm != 0)
         {
-            throw new DomainException("DoaÃ§Ã£o/voluntariado deve ter total 0 RVM.");
+            throw new DomainException("Doação/voluntariado deve ter total 0 RVM.");
         }
 
         // Produto exige NFT (tokenId) em escrow.
@@ -241,17 +241,17 @@ public class Trade : AggregateRoot
 
         if (sellerId == buyerId)
         {
-            throw new DomainException("Vendedor e comprador devem ser usuÃ¡rios diferentes.");
+            throw new DomainException("Vendedor e comprador devem ser usuários diferentes.");
         }
 
         if (string.IsNullOrWhiteSpace(assetContract))
         {
-            throw new DomainException("AssetContract Ã© obrigatÃ³rio.");
+            throw new DomainException("AssetContract é obrigatório.");
         }
 
         if (string.IsNullOrWhiteSpace(sellerWallet) || string.IsNullOrWhiteSpace(buyerWallet))
         {
-            throw new DomainException("Carteiras do vendedor e comprador sÃ£o obrigatÃ³rias.");
+            throw new DomainException("Carteiras do vendedor e comprador são obrigatórias.");
         }
     }
 }

@@ -27,11 +27,11 @@ public enum CommunityStatus
     Archived
 }
 
-// Comunidade (OOUX objeto 17). Default = uma por cidade (sempre Open, auto-vÃ­nculo no onboarding);
-// User = criada por usuÃ¡rio (Open ou Private com senha). Criador Ã© embed (Nome/AvatarUrl) anti-N+1.
+// Comunidade (OOUX objeto 17). Default = uma por cidade (sempre Open, auto-vínculo no onboarding);
+// User = criada por usuário (Open ou Private com senha). Criador é embed (Nome/AvatarUrl) anti-N+1.
 //
-// Tipo nomeado "CommunityGroup" (e nÃ£o "Community") para evitar colisÃ£o com o namespace Revoa.Community
-// (mesma convenÃ§Ã£o do mÃ³dulo Account, que nomeia o aggregate "UserAccount" em vez de "Account").
+// Tipo nomeado "CommunityGroup" (e não "Community") para evitar colisão com o namespace Revoa.Community
+// (mesma convenção do módulo Account, que nomeia o aggregate "UserAccount" em vez de "Account").
 public class CommunityGroup : AggregateRoot
 {
     public string Name { get; private set; } = string.Empty;
@@ -40,7 +40,7 @@ public class CommunityGroup : AggregateRoot
     public CommunityAxis Axis { get; private set; }
     public CommunityVisibility Visibility { get; private set; }
 
-    // SÃ³ para Private.
+    // Só para Private.
     public string? PasswordHash { get; private set; }
 
     public double? Lat { get; private set; }
@@ -90,14 +90,14 @@ public class CommunityGroup : AggregateRoot
             City = cidade,
             State = estado,
             CreatorId = criadorId,
-            CreatorName = string.IsNullOrWhiteSpace(criadorNome) ? "UsuÃ¡rio" : criadorNome,
+            CreatorName = string.IsNullOrWhiteSpace(criadorNome) ? "Usuário" : criadorNome,
             CreatorAvatarUrl = criadorAvatarUrl,
             Status = CommunityStatus.Active,
             Version = 1
         };
     }
 
-    // Seta o hash da senha (apenas Private). Usado na criaÃ§Ã£o (handler) e na rotaÃ§Ã£o de senha.
+    // Seta o hash da senha (apenas Private). Usado na criação (handler) e na rotação de senha.
     public void SetPasswordHash(string hash)
     {
         if (Visibility != CommunityVisibility.Private)
@@ -112,7 +112,7 @@ public class CommunityGroup : AggregateRoot
     {
         if (Status == CommunityStatus.Archived)
         {
-            throw new DomainException("Comunidade jÃ¡ estÃ¡ arquivada.");
+            throw new DomainException("Comunidade já está arquivada.");
         }
 
         Status = CommunityStatus.Archived;
@@ -127,13 +127,13 @@ public class CommunityGroup : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
-            throw new DomainException("Nome da comunidade Ã© obrigatÃ³rio.");
+            throw new DomainException("Nome da comunidade é obrigatório.");
         }
 
-        // Default (uma por cidade) Ã© sempre Open.
+        // Default (uma por cidade) é sempre Open.
         if (tipo == CommunityType.Default && visibilidade != CommunityVisibility.Open)
         {
-            throw new DomainException("Comunidades Default sÃ£o sempre Open.");
+            throw new DomainException("Comunidades Default são sempre Open.");
         }
 
         if (visibilidade == CommunityVisibility.Private && string.IsNullOrWhiteSpace(password))
@@ -143,7 +143,7 @@ public class CommunityGroup : AggregateRoot
 
         if (criadorId == Guid.Empty)
         {
-            throw new DomainException("Criador Ã© obrigatÃ³rio.");
+            throw new DomainException("Criador é obrigatório.");
         }
     }
 }

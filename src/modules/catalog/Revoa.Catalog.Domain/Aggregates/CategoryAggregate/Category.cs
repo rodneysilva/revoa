@@ -22,12 +22,12 @@ public class Category : AggregateRoot
     {
         if (string.IsNullOrWhiteSpace(nome))
         {
-            throw new DomainException("Nome da categoria Ã© obrigatÃ³rio.");
+            throw new DomainException("Nome da categoria é obrigatório.");
         }
 
         if (string.IsNullOrWhiteSpace(slug))
         {
-            throw new DomainException("Slug da categoria Ã© obrigatÃ³rio.");
+            throw new DomainException("Slug da categoria é obrigatório.");
         }
 
         return new Category

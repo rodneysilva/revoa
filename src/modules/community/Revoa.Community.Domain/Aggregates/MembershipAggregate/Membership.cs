@@ -15,8 +15,8 @@ public enum MembershipStatus
     Bloqueada
 }
 
-// VÃ­nculo usuÃ¡rioâ†”comunidade (OOUX objeto 18). UserName/AvatarUrl embed anti-N+1.
-// Papel Criador Ã© imutÃ¡vel (nÃ£o pode ser rebaixado/bloqueado). Ãndice Ãºnico (UsuarioId, CommunityId).
+// Vínculo usuário↔comunidade (OOUX objeto 18). UserName/AvatarUrl embed anti-N+1.
+// Papel Criador é imutável (não pode ser rebaixado/bloqueado). Índice único (UsuarioId, CommunityId).
 public class Membership : AggregateRoot
 {
     public Guid UsuarioId { get; private set; }
@@ -39,19 +39,19 @@ public class Membership : AggregateRoot
     {
         if (usuarioId == Guid.Empty)
         {
-            throw new DomainException("UsuÃ¡rio Ã© obrigatÃ³rio.");
+            throw new DomainException("Usuário é obrigatório.");
         }
 
         if (comunidadeId == Guid.Empty)
         {
-            throw new DomainException("Comunidade Ã© obrigatÃ³ria.");
+            throw new DomainException("Comunidade é obrigatória.");
         }
 
         return new Membership
         {
             Id = Guid.NewGuid(),
             UsuarioId = usuarioId,
-            UserName = string.IsNullOrWhiteSpace(usuarioNome) ? "UsuÃ¡rio" : usuarioNome,
+            UserName = string.IsNullOrWhiteSpace(usuarioNome) ? "Usuário" : usuarioNome,
             UsuarioAvatarUrl = usuarioAvatarUrl,
             CommunityId = comunidadeId,
             Role = papel,
@@ -65,18 +65,18 @@ public class Membership : AggregateRoot
     {
         if (Status != MembershipStatus.Ativa)
         {
-            throw new DomainException("Membro bloqueado nÃ£o pode ser promovido.");
+            throw new DomainException("Membro bloqueado não pode ser promovido.");
         }
 
         if (Role == MembershipRole.Creator)
         {
-            throw new DomainException("Criador jÃ¡ Ã© o papel mÃ¡ximo.");
+            throw new DomainException("Criador já é o papel máximo.");
         }
 
         Role = MembershipRole.Moderator;
     }
 
-    // Apenas Moderador â†’ Membro.
+    // Apenas Moderador → Membro.
     public void RebaixarMembro()
     {
         if (Role != MembershipRole.Moderator)
@@ -91,12 +91,12 @@ public class Membership : AggregateRoot
     {
         if (Role == MembershipRole.Creator)
         {
-            throw new DomainException("Criador nÃ£o pode ser bloqueado.");
+            throw new DomainException("Criador não pode ser bloqueado.");
         }
 
         if (Status == MembershipStatus.Bloqueada)
         {
-            throw new DomainException("Membro jÃ¡ estÃ¡ bloqueado.");
+            throw new DomainException("Membro já está bloqueado.");
         }
 
         Status = MembershipStatus.Bloqueada;
@@ -106,7 +106,7 @@ public class Membership : AggregateRoot
     {
         if (Status != MembershipStatus.Bloqueada)
         {
-            throw new DomainException("Membro nÃ£o estÃ¡ bloqueado.");
+            throw new DomainException("Membro não está bloqueado.");
         }
 
         Status = MembershipStatus.Ativa;

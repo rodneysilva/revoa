@@ -2,7 +2,7 @@
 
 namespace Revoa.Notifications.Domain.Aggregates.NotificationAggregate;
 
-// Tipo de notificaÃ§Ã£o (OOUX 21). Mapeia triggers: escrow/oferta/transfer/post/chat/doaÃ§Ã£o/preÃ§o/ajuda.
+// Tipo de notificação (OOUX 21). Mapeia triggers: escrow/oferta/transfer/post/chat/doação/preço/ajuda.
 public enum NotificationType
 {
     EscrowUpdate,
@@ -16,7 +16,7 @@ public enum NotificationType
     System
 }
 
-// NotificaÃ§Ã£o pessoal de um usuÃ¡rio (OOUX objeto 21). Payload = JSON p/ deep link (ex.: tradeId).
+// Notificação pessoal de um usuário (OOUX objeto 21). Payload = JSON p/ deep link (ex.: tradeId).
 // Leitura/marcar-leitura exige ownership (claim sub). Lida=false ao criar.
 public class Notification : AggregateRoot
 {
@@ -58,7 +58,7 @@ public class Notification : AggregateRoot
     {
         if (Lida)
         {
-            throw new DomainException("NotificaÃ§Ã£o jÃ¡ foi marcada como lida.");
+            throw new DomainException("Notificação já foi marcada como lida.");
         }
 
         Lida = true;
@@ -69,12 +69,12 @@ public class Notification : AggregateRoot
     {
         if (userId == Guid.Empty)
         {
-            throw new DomainException("UsuÃ¡rio Ã© obrigatÃ³rio.");
+            throw new DomainException("Usuário é obrigatório.");
         }
 
         if (string.IsNullOrWhiteSpace(titulo))
         {
-            throw new DomainException("TÃ­tulo da notificaÃ§Ã£o Ã© obrigatÃ³rio.");
+            throw new DomainException("Título da notificação é obrigatório.");
         }
     }
 }
