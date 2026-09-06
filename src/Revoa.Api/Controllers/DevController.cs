@@ -68,11 +68,11 @@ public class DevController : ControllerBase
 
         // 1) Garante categorias (produto + serviço) — lista canônica do módulo Catalog. Idempotente.
         var categoriasCriadas = 0;
-        foreach (var (nome, slug, descricao) in CategorySeed.All)
+        foreach (var (name, slug, description) in CategorySeed.All)
         {
             if (await _categories.GetBySlugAsync(slug, ct) is null)
             {
-                await _categories.AddAsync(Category.Create(nome, slug, descricao), ct);
+                await _categories.AddAsync(Category.Create(name, slug, description), ct);
                 categoriasCriadas++;
             }
         }
@@ -231,18 +231,18 @@ public class DevController : ControllerBase
 
                 var listing = Listing.Create(
                     kind: seed.Kind,
-                    modo: seed.Mode,
-                    titulo: seed.Title,
-                    descricao: DemoPrefix + " " + seed.Description,
-                    imagens: new List<string> { $"https://picsum.photos/seed/revoa-{i}/600/400" },
-                    precoRvm: seed.PriceRvm,
-                    vendedorId: seller.Id,
-                    vendedorNome: seller.Name,
-                    vendedorAvatarUrl: seller.AvatarUrl,
-                    localizacao: local,
-                    categoriaId: catId,
+                    mode: seed.Mode,
+                    title: seed.Title,
+                    description: DemoPrefix + " " + seed.Description,
+                    images: new List<string> { $"https://picsum.photos/seed/revoa-{i}/600/400" },
+                    priceRvm: seed.PriceRvm,
+                    sellerId: seller.Id,
+                    sellerName: seller.Name,
+                    sellerAvatarUrl: seller.AvatarUrl,
+                    location: local,
+                    categoryId: catId,
                     communityId: null,
-                    visibilidade: ListingVisibility.Global,
+                    visibility: ListingVisibility.Global,
                     productDetails: pd,
                     serviceDetails: sd);
 
@@ -292,20 +292,20 @@ public class DevController : ControllerBase
             var creator = mocks[sp.CriadorIndex];
 
             var comm = CommunityGroup.Create(
-                nome: sp.Name,
-                descricao: sp.Description,
-                tipo: CommunityType.User,
-                eixo: sp.Axis,
-                visibilidade: CommunityVisibility.Open,
+                name: sp.Name,
+                description: sp.Description,
+                type: CommunityType.User,
+                axis: sp.Axis,
+                visibility: CommunityVisibility.Open,
                 password: null,
                 lat: sp.Lat,
                 lng: sp.Lng,
-                bairro: sp.Neighborhood,
-                cidade: sp.City,
-                estado: sp.State,
-                criadorId: creator.Id,
-                criadorNome: creator.Name,
-                criadorAvatarUrl: creator.AvatarUrl);
+                neighborhood: sp.Neighborhood,
+                city: sp.City,
+                state: sp.State,
+                creatorId: creator.Id,
+                creatorName: creator.Name,
+                creatorAvatarUrl: creator.AvatarUrl);
 
             var commDoc = comm.ToBsonDocument();
             commDoc["_id"] = new BsonBinaryData(commId, GuidRepresentation.Standard);
@@ -507,8 +507,8 @@ public class DevController : ControllerBase
         new("aabbccdd-1005-4000-8000-000000000005")
     };
 
-    private static string AvatarFor(string nome) =>
-        $"https://api.dicebear.com/7.x/initials/svg?seed={Uri.EscapeDataString(nome)}";
+    private static string AvatarFor(string name) =>
+        $"https://api.dicebear.com/7.x/initials/svg?seed={Uri.EscapeDataString(name)}";
 
     private static IReadOnlyList<SeedListing> BuildProducts()
     {
@@ -519,13 +519,13 @@ public class DevController : ControllerBase
 
         return new List<SeedListing>
         {
-            new(p, T, "Notebook Dell usado — 8GB SSD240", "Notebook funcional, bateria com boa autonomia. Retirada no bairro.", "eletronicos", 35, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Notebook Dell usado — 8GB SSD240", "Notebook funcional, bateria com boa autonomia. Retirada no neighborhood.", "eletronicos", 35, ProductCondition.Seminovo, null, 0),
             new(p, T, "Celular Moto G usado 64GB", "Funcionando, leves marcas de uso. Tela sem trincos.", "eletronicos", 28, ProductCondition.Usado, null, 0),
-            new(p, T, "Smart TV LED 32 polegadas", "TV em ótimo estado, controle incluso. Retirada a combinar.", "eletronicos", 40, ProductCondition.Usado, null, 0),
+            new(p, T, "Smart TV LED 32 polegadas", "TV em ótimo state, controle incluso. Retirada a combinar.", "eletronicos", 40, ProductCondition.Usado, null, 0),
             new(p, R, "Carregador portátil 10000mAh", "Power bank seminovo, carrega dois aparelhos.", "eletronicos", 4, ProductCondition.Seminovo, null, 0),
             new(p, D, "Fone bluetooth (doação)", "Funciona bem, na caixa. Levo para quem precisar.", "eletronicos", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Cadeira de escritório ergonômica", "Cadeira confortável, rodízios ok. Ótima para home office.", "moveis-decoracao", 22, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Sofá de 3 lugares (doação)", "Sofá usado em bom estado, só retirar. Combinamos horário.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Sofá de 3 lugares (doação)", "Sofá usado em bom state, só retirar. Combinamos horário.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Mesa de jantar de madeira maciça", "Mesa espaçosa para 6 pessoas. Retirada no local.", "moveis-decoracao", 30, ProductCondition.Usado, null, 0),
             new(p, R, "Rack de TV pequeno", "Rack em MDF, comporta até 42 polegadas.", "moveis-decoracao", 6, ProductCondition.Usado, null, 0),
             new(p, D, "Abajur decorativo (doação)", "Abajur funcional, perfeito para o canto da sala.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
@@ -533,25 +533,25 @@ public class DevController : ControllerBase
             new(p, D, "Vestido floral tam G (doação)", "Vestido bonito, usado poucas vezes. Para quem servir.", "roupas-acessorios", 0, ProductCondition.Seminovo, null, 0),
             new(p, R, "Tênis esportivo nº 39", "Tênis usado, mas com solado íntegro.", "roupas-acessorios", 5, ProductCondition.Usado, null, 0),
             new(p, T, "Mochila universitária reforçada", "Mochila espaçosa, com compartimento para notebook.", "roupas-acessorios", 10, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Roupas infantis 2-3 anos (doação)", "Várias peças em bom estado. Para famílias que precisam.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Roupas infantis 2-3 anos (doação)", "Várias peças em bom state. Para famílias que precisam.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Liquidificador 3 velocidades", "Funciona perfeitamente, copo sem trincos.", "casa-cozinha", 9, ProductCondition.Usado, null, 0),
-            new(p, R, "Jogo de panelas antiaderente (4 peças)", "Panelas em estado razoável, ótimas para começar.", "casa-cozinha", 7, ProductCondition.Usado, null, 0),
+            new(p, R, "Jogo de panelas antiaderente (4 peças)", "Panelas em state razoável, ótimas para começar.", "casa-cozinha", 7, ProductCondition.Usado, null, 0),
             new(p, D, "Liquidificador manual (doação)", "Minipimer funcionando, para quem está montando casa.", "casa-cozinha", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Cafeteira elétrica", "Cafeteira seminova, faz café rápido.", "casa-cozinha", 6, ProductCondition.Seminovo, null, 0),
             new(p, T, "Air Fryer 3,2 litros", "Fritadeira sem óleo, super conservada.", "casa-cozinha", 18, ProductCondition.Seminovo, null, 0),
             new(p, D, "Livros de literatura (lote, doação)", "6 livros clássicos para circular o conhecimento.", "livros-midia", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Apostilas de ENEM usadas (doação)", "Material para quem está se preparando.", "livros-midia", 0, ProductCondition.Usado, null, 0),
-            new(p, R, "HQ Turma da Mônica (coleção)", "Várias edições em bom estado, nostalgia garantida.", "livros-midia", 3, ProductCondition.Usado, null, 0),
-            new(p, T, "Livro A Arte da Guerra", "Edição de bolso, capa em ótimo estado.", "livros-midia", 4, ProductCondition.Seminovo, null, 0),
+            new(p, R, "HQ Turma da Mônica (coleção)", "Várias edições em bom state, nostalgia garantida.", "livros-midia", 3, ProductCondition.Usado, null, 0),
+            new(p, T, "Livro A Arte da Guerra", "Edição de bolso, capa em ótimo state.", "livros-midia", 4, ProductCondition.Seminovo, null, 0),
             new(p, T, "Bicicleta aro 26 revisada", "Bike calibrada e com freios ajustados. Pronta pra rodar.", "esporte-lazer", 32, ProductCondition.Usado, null, 0),
             new(p, T, "Par de halteres 10kg", "Halteres de ferro, ótimos para treino em casa.", "esporte-lazer", 14, ProductCondition.Usado, null, 0),
-            new(p, R, "Prancha de surfe usada", "Prancha em estado razoável, ótima para iniciantes.", "esporte-lazer", 8, ProductCondition.Usado, null, 0),
-            new(p, D, "Bola de futebol society (doação)", "Bola em condição de uso, para a pelada do bairro.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
+            new(p, R, "Prancha de surfe usada", "Prancha em state razoável, ótima para iniciantes.", "esporte-lazer", 8, ProductCondition.Usado, null, 0),
+            new(p, D, "Bola de futebol society (doação)", "Bola em condição de uso, para a pelada do neighborhood.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Jogo de damas de madeira (doação)", "Tabuleiro completo para o lazer em família.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Carrinho de controle remoto (doação)", "Funciona, vai alegrar uma criança.", "brinquedos-infantil", 0, ProductCondition.Usado, null, 0),
             new(p, R, "Blocos de montar (lote grande)", "Várias peças de encaixar, criatividade sem limite.", "brinquedos-infantil", 5, ProductCondition.Usado, null, 0),
             new(p, D, "Boneca de pano artesanal (doação)", "Feita à mão, novinha. Linda para presentear.", "brinquedos-infantil", 0, ProductCondition.Seminovo, null, 0),
-            new(p, T, "Triciclo infantil", "Triciclo em bom estado, ideal de 2 a 5 anos.", "brinquedos-infantil", 12, ProductCondition.Usado, null, 0),
+            new(p, T, "Triciclo infantil", "Triciclo em bom state, ideal de 2 a 5 anos.", "brinquedos-infantil", 12, ProductCondition.Usado, null, 0),
             new(p, T, "Furadeira de impacto 13mm", "Furadeira potente com brocas, super conservada.", "ferramentas", 20, ProductCondition.Seminovo, null, 0),
             new(p, R, "Caixa de ferramentas com kit", "Kit completo para pequenos reparos domésticos.", "ferramentas", 6, ProductCondition.Usado, null, 0),
             new(p, D, "Martelo e alicate (doação)", "Ferramentas básicas para quem está começando.", "ferramentas", 0, ProductCondition.Usado, null, 0),
@@ -559,7 +559,7 @@ public class DevController : ControllerBase
             new(p, D, "Muda de costela-de-adão (doação)", "Planta saudável para deixar a casa verde.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
             new(p, T, "Vaso de cerâmica grande", "Vaso decorativo, combina com qualquer ambiente.", "jardim-plantas", 11, ProductCondition.Usado, null, 0),
             new(p, D, "Mudas de manjericão e salsa (doação)", "Hortaliças para começar sua horta em casa.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
-            new(p, R, "Mangueira de jardim 15m", "Mangueira em bom estado, sem vazamentos.", "jardim-plantas", 3, ProductCondition.Usado, null, 0),
+            new(p, R, "Mangueira de jardim 15m", "Mangueira em bom state, sem vazamentos.", "jardim-plantas", 3, ProductCondition.Usado, null, 0),
             new(p, T, "Ração para cães 3kg (fechada)", "Saco lacrado, marca de qualidade. Para o seu pet.", "pet", 16, ProductCondition.Novo, null, 0),
             new(p, D, "Caminha pet tam M (doação)", "Caminha limpa e confortável para o bichinho.", "pet", 0, ProductCondition.Usado, null, 0),
             new(p, R, "Arranhador de gato", "Arranhador seminovo, salva seu sofá.", "pet", 4, ProductCondition.Seminovo, null, 0),
@@ -570,7 +570,7 @@ public class DevController : ControllerBase
             new(p, R, "Estojo de maquiagem (usado 1x)", "Maquiagem seminova, várias tonalidades.", "beleza-cuidados", 4, ProductCondition.Seminovo, null, 0),
             new(p, T, "Violão popular acústico", "Violão com som macio, cordas novas.", "instrumentos-musicais", 25, ProductCondition.Usado, null, 0),
             new(p, T, "Teclado musical 61 teclas", "Teclado com fonte, ótimo para estudar.", "instrumentos-musicais", 26, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Flauta doce Yamaha (doação)", "Flauta em ótimo estado, perfeita para escola.", "instrumentos-musicais", 0, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Flauta doce Yamaha (doação)", "Flauta em ótimo state, perfeita para escola.", "instrumentos-musicais", 0, ProductCondition.Seminovo, null, 0),
             new(p, R, "Kit palhetas de saxofone", "Palhetas novas na embalagem.", "instrumentos-musicais", 2, ProductCondition.Novo, null, 0),
             new(p, R, "Webcam HD 720p", "Webcam seminova, ótima para reuniões online.", "eletronicos", 3, ProductCondition.Seminovo, null, 0),
             new(p, D, "Sanduicheira (doação)", "Funciona bem, para quem está montando a cozinha.", "casa-cozinha", 0, ProductCondition.Usado, null, 0),
@@ -607,7 +607,7 @@ public class DevController : ControllerBase
             new(s, V, "Backup de fotos do celular (voluntariado)", "Salvo suas fotos na nuvem para não perder memórias.", "tecnologia-suporte", 0, null, ServiceUnitType.PerService, 0),
             new(s, T, "Manutenção de roteador Wi-Fi", "Configuração e otimização da sua rede.", "tecnologia-suporte", 8, null, ServiceUnitType.PerService, 0),
             new(s, V, "Configuração de celular para idosos (voluntariado)", "Deixo o celular fácil de usar para os mais velhos.", "tecnologia-suporte", 0, null, ServiceUnitType.Hours, 60),
-            new(s, T, "Frete de móvel dentro da cidade", "Transporto seu móvel com cuidado, na mesma cidade.", "transporte-fretes", 25, null, ServiceUnitType.PerService, 0),
+            new(s, T, "Frete de móvel dentro da city", "Transporto seu móvel com cuidado, na mesma city.", "transporte-fretes", 25, null, ServiceUnitType.PerService, 0),
             new(s, V, "Carona para o aeroporto (voluntariado)", "Levo na hora do voo, sem custo, ajuda mútua.", "transporte-fretes", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Transporte de compras para idoso (voluntariado)", "Levo as compras até em casa para quem precisa.", "transporte-fretes", 0, null, ServiceUnitType.PerService, 0),
             new(s, T, "Mudança pequena (carro + ajuda)", "Mudança de poucos móveis, com meu apoio.", "transporte-fretes", 30, null, ServiceUnitType.PerService, 0),
@@ -618,7 +618,7 @@ public class DevController : ControllerBase
             new(s, V, "Acompanhante em consulta (apoio, voluntariado)", "Acompanho você numa consulta, apoio emocional.", "saude-bem-estar", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Caminhada guiada em grupo (voluntariado)", "Caminhada saudável e conversa boa.", "saude-bem-estar", 0, null, ServiceUnitType.Hours, 60),
             new(s, T, "Decoração de festa infantil", "Decoro festas com balões e temas.", "eventos-festas", 28, null, ServiceUnitType.PerService, 0),
-            new(s, V, "DJ para festa comunitária (voluntariado)", "Coloco música numa festa do bairro.", "eventos-festas", 0, null, ServiceUnitType.Hours, 240),
+            new(s, V, "DJ para festa comunitária (voluntariado)", "Coloco música numa festa do neighborhood.", "eventos-festas", 0, null, ServiceUnitType.Hours, 240),
             new(s, T, "Garçom e bartender para evento", "Atendo seu evento com drinks e serviço.", "eventos-festas", 20, null, ServiceUnitType.Hours, 240),
             new(s, V, "Fotografia de aniversário (voluntariado)", "Registro seu aniversário com boas fotos.", "eventos-festas", 0, null, ServiceUnitType.Hours, 180),
             new(s, V, "Animação infantil — palhaço (voluntariado)", "Animo a festinha das crianças, de coração.", "eventos-festas", 0, null, ServiceUnitType.Hours, 120),
@@ -637,8 +637,8 @@ public class DevController : ControllerBase
             new(s, V, "Auxílio em currículo e LinkedIn (voluntariado)", "Ajudando você a se posicionar bem.", "administracao-contabilidade", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Acompanhamento de idoso (compras, voluntariado)", "Acompanho e ajudo idosos nas tarefas do dia.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 120),
             new(s, V, "Visita e conversa a pessoa acamada (voluntariado)", "Visito e faço companhia a quem está de cama.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
-            new(s, V, "Passeio com cachorro no bairro (voluntariado)", "Passeio com seu pet quando você não puder.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
-            new(s, V, "Mutirão de limpeza de praça (voluntariado)", "Junta gente pra limpar a praça do bairro.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 180),
+            new(s, V, "Passeio com cachorro no neighborhood (voluntariado)", "Passeio com seu pet quando você não puder.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
+            new(s, V, "Mutirão de limpeza de praça (voluntariado)", "Junta gente pra limpar a praça do neighborhood.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 180),
             new(s, V, "Distribuição de cestas básicas (voluntariado)", "Ajudo a levar cestas para famílias.", "ajuda-voluntariado", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Tradução solidária de documentos (voluntariado)", "Traduzo documentos curtos para quem precisa.", "ajuda-voluntariado", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Alongamento guiado para grupo de idosos (voluntariado)", "Alongamento leve para manter a mobilidade.", "saude-bem-estar", 0, null, ServiceUnitType.Hours, 60),
@@ -667,16 +667,16 @@ public class DevController : ControllerBase
         var list = new List<MockUser>(nomes.Length);
         for (var i = 0; i < nomes.Length; i++)
         {
-            var (nome, ddd, cidade, bairro) = nomes[i];
+            var (name, ddd, city, neighborhood) = nomes[i];
             var n = i + 1;
             list.Add(new MockUser(
                 Id: DemoUserIds[i],
-                Name: nome,
+                Name: name,
                 Email: $"mock{n:00}@revoa.dev",
                 Phone: $"+55{ddd}9{10000000 + n}",
-                AvatarUrl: AvatarFor(nome),
-                City: cidade,
-                Neighborhood: bairro));
+                AvatarUrl: AvatarFor(name),
+                City: city,
+                Neighborhood: neighborhood));
         }
 
         return list;
@@ -686,7 +686,7 @@ public class DevController : ControllerBase
     {
         return new List<CommunitySpec>
         {
-            new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da cidade.",
+            new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da city.",
                 CommunityAxis.Geo, "São Paulo", "SP", "Pinheiros", -23.5641, -46.6361, 0),
             new("Doações Vila Mariana", "Solidariedade de quem mora na Vila Mariana e arredores.",
                 CommunityAxis.Geo, "São Paulo", "SP", "Vila Mariana", -23.5868, -46.6353, 4),
@@ -703,7 +703,7 @@ public class DevController : ControllerBase
     {
         return new List<string>
         {
-            "Alguém sabe onde descarto eletrônicos velhos aqui no bairro?",
+            "Alguém sabe onde descarto eletrônicos velhos aqui no neighborhood?",
             "Tenho roupas infantis G3-G4 para doar, alguém indica quem precisa?",
             "Ofereço aula de Excel aos sábados de manhã, é só chamar!",
             "Achei um gatinho na rua, alguém pode abrigar? Não dá pra ficar com ele.",
@@ -725,7 +725,7 @@ public class DevController : ControllerBase
             "Pessoa muito atenciosa, troca super tranquila.",
             "Combinamos tudo certinho, recomendo demais.",
             "Demorou um pouquinho pra responder, mas fechou tudo ok.",
-            "Produto em estado melhor do que eu esperava!",
+            "Produto em state melhor do que eu esperava!",
             "Super prestativo, ajudou com a entrega.",
             "Ótima experiência, voltarei a negociar."
         };

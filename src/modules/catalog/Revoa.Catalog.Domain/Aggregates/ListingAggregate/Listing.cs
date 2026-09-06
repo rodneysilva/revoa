@@ -32,7 +32,7 @@ public enum ListingStatus
     Cancelled
 }
 
-// Aggregate "Anúncio" (OOUX objeto 7). kind (product|service) + modo + visibilidade.
+// Aggregate "Anúncio" (OOUX objeto 7). kind (product|service) + mode + visibility.
 // Vendedor é embed (Nome/AvatarUrl) para evitar N+1 no feed. NftTokenId é preenchido ao mintar
 // produto (mint-to-escrow, UF-07..09). Serviço NÃO tem NFT até a compra (UF-13 mint-on-purchase).
 public class Listing : AggregateRoot
@@ -76,39 +76,39 @@ public class Listing : AggregateRoot
 
     public static Listing Create(
         ListingKind kind,
-        ListingMode modo,
-        string titulo,
-        string descricao,
-        List<string> imagens,
-        long precoRvm,
-        Guid vendedorId,
-        string vendedorNome,
-        string? vendedorAvatarUrl,
-        Location localizacao,
-        Guid categoriaId,
-        Guid? comunidadeId,
-        ListingVisibility visibilidade,
+        ListingMode mode,
+        string title,
+        string description,
+        List<string> images,
+        long priceRvm,
+        Guid sellerId,
+        string sellerName,
+        string? sellerAvatarUrl,
+        Location location,
+        Guid categoryId,
+        Guid? communityId,
+        ListingVisibility visibility,
         ProductDetails? productDetails = null,
         ServiceDetails? serviceDetails = null)
     {
-        ValidateInvariants(kind, modo, precoRvm, visibilidade, comunidadeId, productDetails, serviceDetails);
+        ValidateInvariants(kind, mode, priceRvm, visibility, communityId, productDetails, serviceDetails);
 
         return new Listing
         {
             Id = Guid.NewGuid(),
             Kind = kind,
-            Mode = modo,
-            Title = titulo,
-            Description = descricao,
-            Imagens = imagens ?? new List<string>(),
-            PriceRvm = precoRvm,
-            SellerId = vendedorId,
-            SellerName = string.IsNullOrWhiteSpace(vendedorNome) ? "Usuário" : vendedorNome,
-            SellerAvatarUrl = vendedorAvatarUrl,
-            Localizacao = localizacao ?? Location.Create(null, null, null, null, null),
-            CategoryId = categoriaId,
-            CommunityId = comunidadeId,
-            Visibility = visibilidade,
+            Mode = mode,
+            Title = title,
+            Description = description,
+            Imagens = images ?? new List<string>(),
+            PriceRvm = priceRvm,
+            SellerId = sellerId,
+            SellerName = string.IsNullOrWhiteSpace(sellerName) ? "Usuário" : sellerName,
+            SellerAvatarUrl = sellerAvatarUrl,
+            Localizacao = location ?? Location.Create(null, null, null, null, null),
+            CategoryId = categoryId,
+            CommunityId = communityId,
+            Visibility = visibility,
             Status = ListingStatus.Active,
             CreatedAt = DateTime.UtcNow,
             Version = 1
@@ -148,10 +148,10 @@ public class Listing : AggregateRoot
 
     private static void ValidateInvariants(
         ListingKind kind,
-        ListingMode modo,
-        long precoRvm,
-        ListingVisibility visibilidade,
-        Guid? comunidadeId,
+        ListingMode mode,
+        long priceRvm,
+        ListingVisibility visibility,
+        Guid? communityId,
         ProductDetails? productDetails,
         ServiceDetails? serviceDetails)
     {
@@ -160,28 +160,28 @@ public class Listing : AggregateRoot
         //   Repassar   → product
         //   Doar       → product
         //   Voluntariar→ service
-        if (modo == ListingMode.Resell && kind != ListingKind.Product)
+        if (mode == ListingMode.Resell && kind != ListingKind.Product)
         {
             throw new DomainException("Repassar é exclusivo de produtos.");
         }
 
-        if (modo == ListingMode.Donate && kind != ListingKind.Product)
+        if (mode == ListingMode.Donate && kind != ListingKind.Product)
         {
             throw new DomainException("Doar é exclusivo de produtos.");
         }
 
-        if (modo == ListingMode.Volunteer && kind != ListingKind.Service)
+        if (mode == ListingMode.Volunteer && kind != ListingKind.Service)
         {
             throw new DomainException("Voluntariar é exclusivo de serviços.");
         }
 
         // Preço: doar/voluntariar = 0 RVM; demais ≥ 0.
-        if (precoRvm < 0)
+        if (priceRvm < 0)
         {
             throw new DomainException("Preço RVM não pode ser negativo.");
         }
 
-        if ((modo == ListingMode.Donate || modo == ListingMode.Volunteer) && precoRvm != 0)
+        if ((mode == ListingMode.Donate || mode == ListingMode.Volunteer) && priceRvm != 0)
         {
             throw new DomainException("Doar/voluntariar deve ter preço 0 RVM.");
         }
@@ -208,7 +208,7 @@ public class Listing : AggregateRoot
         }
 
         // Visibilidade Comunidade exige CommunityId.
-        if (visibilidade == ListingVisibility.Community && comunidadeId is null)
+        if (visibility == ListingVisibility.Community && communityId is null)
         {
             throw new DomainException("Visibilidade Comunidade exige CommunityId.");
         }

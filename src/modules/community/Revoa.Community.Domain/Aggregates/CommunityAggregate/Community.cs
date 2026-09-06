@@ -27,7 +27,7 @@ public enum CommunityStatus
     Archived
 }
 
-// Comunidade (OOUX objeto 17). Default = uma por cidade (sempre Open, auto-vínculo no onboarding);
+// Comunidade (OOUX objeto 17). Default = uma por city (sempre Open, auto-vínculo no onboarding);
 // User = criada por usuário (Open ou Private com senha). Criador é embed (Nome/AvatarUrl) anti-N+1.
 //
 // Tipo nomeado "CommunityGroup" (e não "Community") para evitar colisão com o namespace Revoa.Community
@@ -58,40 +58,40 @@ public class CommunityGroup : AggregateRoot
     private CommunityGroup() { }
 
     public static CommunityGroup Create(
-        string nome,
-        string descricao,
-        CommunityType tipo,
-        CommunityAxis eixo,
-        CommunityVisibility visibilidade,
+        string name,
+        string description,
+        CommunityType type,
+        CommunityAxis axis,
+        CommunityVisibility visibility,
         string? password,
         double? lat,
         double? lng,
-        string? bairro,
-        string? cidade,
-        string? estado,
-        Guid criadorId,
-        string criadorNome,
-        string? criadorAvatarUrl)
+        string? neighborhood,
+        string? city,
+        string? state,
+        Guid creatorId,
+        string creatorName,
+        string? creatorAvatarUrl)
     {
-        ValidateInvariants(nome, tipo, visibilidade, password, criadorId);
+        ValidateInvariants(name, type, visibility, password, creatorId);
 
         return new CommunityGroup
         {
             Id = Guid.NewGuid(),
-            Name = nome.Trim(),
-            Description = descricao?.Trim() ?? string.Empty,
-            Type = tipo,
-            Axis = eixo,
-            Visibility = visibilidade,
+            Name = name.Trim(),
+            Description = description?.Trim() ?? string.Empty,
+            Type = type,
+            Axis = axis,
+            Visibility = visibility,
             PasswordHash = null,
             Lat = lat,
             Lng = lng,
-            Neighborhood = bairro,
-            City = cidade,
-            State = estado,
-            CreatorId = criadorId,
-            CreatorName = string.IsNullOrWhiteSpace(criadorNome) ? "Usuário" : criadorNome,
-            CreatorAvatarUrl = criadorAvatarUrl,
+            Neighborhood = neighborhood,
+            City = city,
+            State = state,
+            CreatorId = creatorId,
+            CreatorName = string.IsNullOrWhiteSpace(creatorName) ? "Usuário" : creatorName,
+            CreatorAvatarUrl = creatorAvatarUrl,
             Status = CommunityStatus.Active,
             Version = 1
         };
@@ -119,29 +119,29 @@ public class CommunityGroup : AggregateRoot
     }
 
     private static void ValidateInvariants(
-        string nome,
-        CommunityType tipo,
-        CommunityVisibility visibilidade,
+        string name,
+        CommunityType type,
+        CommunityVisibility visibility,
         string? password,
-        Guid criadorId)
+        Guid creatorId)
     {
-        if (string.IsNullOrWhiteSpace(nome))
+        if (string.IsNullOrWhiteSpace(name))
         {
             throw new DomainException("Nome da comunidade é obrigatório.");
         }
 
-        // Default (uma por cidade) é sempre Open.
-        if (tipo == CommunityType.Default && visibilidade != CommunityVisibility.Open)
+        // Default (uma por city) é sempre Open.
+        if (type == CommunityType.Default && visibility != CommunityVisibility.Open)
         {
             throw new DomainException("Comunidades Default são sempre Open.");
         }
 
-        if (visibilidade == CommunityVisibility.Private && string.IsNullOrWhiteSpace(password))
+        if (visibility == CommunityVisibility.Private && string.IsNullOrWhiteSpace(password))
         {
             throw new DomainException("Comunidades privadas exigem senha.");
         }
 
-        if (criadorId == Guid.Empty)
+        if (creatorId == Guid.Empty)
         {
             throw new DomainException("Criador é obrigatório.");
         }
