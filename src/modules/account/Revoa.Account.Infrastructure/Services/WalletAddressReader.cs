@@ -22,4 +22,10 @@ public class WalletAddressReader : IWalletAddressReader
             .Select(a => new WalletAddressEntry(a.UserId, a.WalletAddress))
             .ToList();
     }
+
+    public async Task<WalletAddressEntry?> GetByUserIdAsync(Guid userId, CancellationToken ct = default)
+    {
+        var account = await _accounts.GetByUserIdAsync(userId, ct);
+        return account is null ? null : new WalletAddressEntry(account.UserId, account.WalletAddress);
+    }
 }

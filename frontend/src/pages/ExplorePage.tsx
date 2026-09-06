@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
 import type { Category, FeedItem, FeedParams, Kind, Mode } from "../api/types";
@@ -470,28 +471,28 @@ export function ExplorePage() {
               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
-              <p className="text-silver mb-1">Nenhum anúncio com esses filtros.</p>
-              <p className="text-sm text-silver/70 mb-4">
-                Tente ajustar a busca ou limpar os filtros.
-              </p>
-              {activeCount > 0 && (
-                <button
-                  onClick={clearFilters}
-                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-                >
-                  Limpar filtros
-                </button>
-              )}
-              {!activeCount && user?.verified && (
-                <Link
-                  to="/listings/new"
-                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-                >
-                  Criar o primeiro anúncio
-                </Link>
-              )}
-            </div>
+            <EmptyState
+              icon="♻️"
+              title="Nenhum anúncio com esses filtros."
+              hint="Tente ajustar a busca ou limpar os filtros."
+              action={
+                activeCount > 0 ? (
+                  <button
+                    onClick={clearFilters}
+                    className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                  >
+                    Limpar filtros
+                  </button>
+                ) : user?.verified ? (
+                  <Link
+                    to="/listings/new"
+                    className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                  >
+                    Criar o primeiro anúncio
+                  </Link>
+                ) : undefined
+              }
+            />
           ) : (
             <>
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6">

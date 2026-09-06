@@ -36,6 +36,7 @@ import type {
   SeedCatalogResult,
   Trade,
   TradesParams,
+  WalletBalance,
 } from "./types";
 
 const TOKEN_KEY = "revoa.token";
@@ -280,6 +281,10 @@ export const api = {
     ).then((r) => r.Id),
   communityMembers: (id: string): Promise<Membership[]> =>
     apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
+
+  // Carteira do usuário logado (VISUAL_IDENTITY §8 — chip RM$ no header).
+  walletBalance: (): Promise<WalletBalance> =>
+    apiGet<WalletBalance>("/api/wallet/balance"),
 
   // Moderação (UF-24/25)
   createReport: (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Avatar } from "../components/Avatar";
+import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
 import type { Category, Community, FeedItem, Kind, Mode, Post } from "../api/types";
@@ -290,17 +291,20 @@ export function FeedPage() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
-          <p className="text-silver">Nenhum anúncio por aqui ainda.</p>
-          {user?.verified && (
-            <Link
-              to="/listings/new"
-              className="mt-4 inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-            >
-              Criar o primeiro anúncio
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          icon="♻️"
+          title="Nenhum anúncio por aqui ainda."
+          action={
+            user?.verified ? (
+              <Link
+                to="/listings/new"
+                className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+              >
+                Criar o primeiro anúncio
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <>
           {/* Rails só sem filtro ativo — com filtro eles duplicariam o resultado */}

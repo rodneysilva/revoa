@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { isAdminUser } from "../lib/admin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -23,9 +24,28 @@ export function Layout() {
   const location = useLocation();
   const admin = isAdminUser(user);
 
+  // Saldo RM$ no header (VISUAL_IDENTITY §8). Degrada em silêncio: sem carteira
+  // ou chain offline → "—" (nunca bloqueia a barra). Re-busca a cada rota (o saldo
+  // muda após trocas).
+  const [saldo, setSaldo] = useState<number | null>(null);
   useEffect(() => {
-    setOpen(false);
-  }, [location.pathname]);
+    if (!user) {
+      setSaldo(null);
+      return;
+    }
+    let active = true;
+    api
+      .walletBalance()
+      .then((b) => {
+        if (active) setSaldo(typeof b.Rvm === "number" ? b.Rvm : null);
+      })
+      .catch(() => {
+        /* saldo é decorativo — falha escondida */
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, location.pathname]);
 
   return (
     <div className="app-shell">
@@ -71,10 +91,13 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/wallet"
-                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
-                  title="Carteira"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-sm text-lima hover:text-cream"
+                  title="Carteira — créditos de troca (RM$)"
                 >
-                  💰 Carteira
+                  <span className="rms">RM$</span>
+                  {saldo !== null
+                    ? saldo.toLocaleString("pt-BR", { maximumFractionDigits: 2 })
+                    : "—"}
                 </Link>
                 <Link
                   to="/notifications"

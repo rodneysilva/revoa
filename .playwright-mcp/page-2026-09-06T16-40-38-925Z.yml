@@ -1,0 +1,277 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "revoa.me início" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - text: revoa.me
+      - navigation [ref=e7]:
+        - link "Feed" [ref=e8] [cursor=pointer]:
+          - /url: /feed
+        - link "Explorar" [ref=e9] [cursor=pointer]:
+          - /url: /explore
+        - link "Comunidade" [ref=e10] [cursor=pointer]:
+          - /url: /community
+        - link "Anunciar" [ref=e11] [cursor=pointer]:
+          - /url: /listings/new
+      - generic [ref=e12]:
+        - link "Entrar" [ref=e13] [cursor=pointer]:
+          - /url: /login
+        - link "Cadastrar" [ref=e14] [cursor=pointer]:
+          - /url: /register
+        - button "Mudar para tema escuro" [ref=e15]: 🌙
+  - main [ref=e16]:
+    - generic [ref=e23]:
+      - heading "revoa.me" [level=1] [ref=e24]
+      - paragraph [ref=e25]: Tudo encontra um novo lar.
+      - paragraph [ref=e26]: Economia circular e ajuda mútua, sem fins lucrativos, com a moeda social RVM. Você oferece o que sabe fazer ou o que não usa mais — troca, doa e cuida, de vizinho para vizinho.
+      - generic [ref=e27]:
+        - link "Ofereça o que você tem" [ref=e28] [cursor=pointer]:
+          - /url: /register
+        - link "Explorar o feed" [ref=e29] [cursor=pointer]:
+          - /url: /feed
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - heading "O que a comunidade está oferecendo" [level=2] [ref=e34]
+          - paragraph [ref=e35]: Anúncios reais de quem já faz parte do revoa.me — troque, doe e cuide com seus vizinhos.
+        - link "Ver tudo →" [ref=e36] [cursor=pointer]:
+          - /url: /explore
+      - generic [ref=e37]:
+        - paragraph [ref=e38]: Ainda não há anúncios por aqui.
+        - paragraph [ref=e39]: Seja o primeiro a oferecer algo!
+        - link "Ofereça o que você tem" [ref=e40] [cursor=pointer]:
+          - /url: /register
+    - generic [ref=e42]:
+      - generic [ref=e43]:
+        - heading "Como você quer participar?" [level=2] [ref=e44]
+        - paragraph [ref=e45]: Escolha um modo e veja o passo a passo — simples, para todas as idades.
+      - generic [ref=e46]:
+        - 'button "Ver como funciona: Trocar" [ref=e47]':
+          - generic [aria-hidden] [ref=e49]: 🔄
+          - heading "Trocar" [level=3] [ref=e50]
+          - paragraph [ref=e51]: Troque produtos e serviços com o RVM, a moeda da comunidade.
+          - generic [ref=e52]: Ver como funciona →
+        - 'button "Ver como funciona: Repassar" [ref=e53]':
+          - generic [aria-hidden] [ref=e55]: 💜
+          - heading "Repassar" [level=3] [ref=e56]
+          - paragraph [ref=e57]: Repassa por um valor baixo em RVM, acessível para mais gente.
+          - generic [ref=e58]: Ver como funciona →
+        - 'button "Ver como funciona: Doar" [ref=e59]':
+          - generic [aria-hidden] [ref=e61]: 🎁
+          - heading "Doar" [level=3] [ref=e62]
+          - paragraph [ref=e63]: Dê nova vida ao que não usa — de graça, a quem precisa.
+          - generic [ref=e64]: Ver como funciona →
+        - 'button "Ver como funciona: Voluntariar" [ref=e65]':
+          - generic [aria-hidden] [ref=e67]: 🤝
+          - heading "Voluntariar" [level=3] [ref=e68]
+          - paragraph [ref=e69]: Ofereça seu tempo e habilidades. A comunidade agradece.
+          - generic [ref=e70]: Ver como funciona →
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Como funciona" [level=2] [ref=e74]
+        - paragraph [ref=e75]: O passo a passo de cada modo, do anúncio até o novo lar. Sem complicação.
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [aria-hidden] [ref=e79]: 🔄
+            - generic [ref=e80]: Trocar
+          - paragraph [ref=e81]: Troque produtos e serviços com o RVM, a moeda da comunidade. Você oferece, recebe RVM e usa quando precisa.
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - generic [aria-hidden] [ref=e84]: "1"
+              - generic [ref=e85]:
+                - generic [aria-hidden] [ref=e86]: 📝
+                - generic [ref=e87]: Você anuncia o que oferece (produto ou serviço) com um preço justo em RVM.
+            - listitem [ref=e88]:
+              - generic [aria-hidden] [ref=e89]: "2"
+              - generic [ref=e90]:
+                - generic [aria-hidden] [ref=e91]: 👀
+                - generic [ref=e92]: Quem precisa encontra seu anúncio no feed e oferece os RVM.
+            - listitem [ref=e93]:
+              - generic [aria-hidden] [ref=e94]: "3"
+              - generic [ref=e95]:
+                - generic [aria-hidden] [ref=e96]: 🤝
+                - generic [ref=e97]: Vocês combinam a entrega do produto ou a prestação do serviço.
+            - listitem [ref=e98]:
+              - generic [aria-hidden] [ref=e99]: "4"
+              - generic [ref=e100]:
+                - generic [aria-hidden] [ref=e101]: ✅
+                - generic [ref=e102]: Na confirmação, você recebe seus RVM (menos uma pequena taxa que sustenta a plataforma — sem lucro).
+            - listitem [ref=e103]:
+              - generic [aria-hidden] [ref=e104]: "5"
+              - generic [ref=e105]:
+                - generic [aria-hidden] [ref=e106]: ⭐
+                - generic [ref=e107]: Vocês se avaliam e a confiança da comunidade cresce.
+          - generic [ref=e108]:
+            - group [ref=e109]:
+              - generic "O que é RVM?" [ref=e110] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e112]: +
+            - group [ref=e113]:
+              - generic "Preciso pagar em dinheiro?" [ref=e114] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e116]: +
+            - group [ref=e117]:
+              - generic "E se algo der errado?" [ref=e118] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e120]: +
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - generic [aria-hidden] [ref=e123]: 💜
+            - generic [ref=e124]: Repassar
+          - paragraph [ref=e125]: Repassa algo por um valor baixo em RVM, para que mais gente possa acessar. Acessibilidade no centro.
+          - list [ref=e126]:
+            - listitem [ref=e127]:
+              - generic [aria-hidden] [ref=e128]: "1"
+              - generic [ref=e129]:
+                - generic [aria-hidden] [ref=e130]: 📝
+                - generic [ref=e131]: Você anuncia um produto por um preço baixo em RVM — acessível para mais gente.
+            - listitem [ref=e132]:
+              - generic [aria-hidden] [ref=e133]: "2"
+              - generic [ref=e134]:
+                - generic [aria-hidden] [ref=e135]: 👀
+                - generic [ref=e136]: Quem precisa encontra e oferece os RVM.
+            - listitem [ref=e137]:
+              - generic [aria-hidden] [ref=e138]: "3"
+              - generic [ref=e139]:
+                - generic [aria-hidden] [ref=e140]: 🤝
+                - generic [ref=e141]: Vocês combinam a entrega no bairro.
+            - listitem [ref=e142]:
+              - generic [aria-hidden] [ref=e143]: "4"
+              - generic [ref=e144]:
+                - generic [aria-hidden] [ref=e145]: ✅
+                - generic [ref=e146]: Na confirmação, você recebe — e o item segue circulando.
+            - listitem [ref=e147]:
+              - generic [aria-hidden] [ref=e148]: "5"
+              - generic [ref=e149]:
+                - generic [aria-hidden] [ref=e150]: ⭐
+                - generic [ref=e151]: Vocês se avaliam.
+          - generic [ref=e152]:
+            - group [ref=e153]:
+              - generic "O que é repassar?" [ref=e154] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e156]: +
+            - group [ref=e157]:
+              - generic "É diferente de doar?" [ref=e158] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e160]: +
+        - generic [ref=e161]:
+          - generic [ref=e162]:
+            - generic [aria-hidden] [ref=e163]: 🎁
+            - generic [ref=e164]: Doar
+          - paragraph [ref=e165]: Dê nova vida ao que não usa mais — de graça. Você escolhe quem recebe e ganha o reconhecimento da comunidade.
+          - list [ref=e166]:
+            - listitem [ref=e167]:
+              - generic [aria-hidden] [ref=e168]: "1"
+              - generic [ref=e169]:
+                - generic [aria-hidden] [ref=e170]: 📝
+                - generic [ref=e171]: Você anuncia o que não usa mais, de graça (RM$ 0).
+            - listitem [ref=e172]:
+              - generic [aria-hidden] [ref=e173]: "2"
+              - generic [ref=e174]:
+                - generic [aria-hidden] [ref=e175]: 🙋
+                - generic [ref=e176]: Quem precisa pede na fila de interesse.
+            - listitem [ref=e177]:
+              - generic [aria-hidden] [ref=e178]: "3"
+              - generic [ref=e179]:
+                - generic [aria-hidden] [ref=e180]: ❤️
+                - generic [ref=e181]: Você escolhe quem vai receber (por proximidade, mensagem e reputação).
+            - listitem [ref=e182]:
+              - generic [aria-hidden] [ref=e183]: "4"
+              - generic [ref=e184]:
+                - generic [aria-hidden] [ref=e185]: 🤝
+                - generic [ref=e186]: Vocês combinam a entrega.
+            - listitem [ref=e187]:
+              - generic [aria-hidden] [ref=e188]: "5"
+              - generic [ref=e189]:
+                - generic [aria-hidden] [ref=e190]: 🎉
+                - generic [ref=e191]: "Pronto: encontrou um novo lar — e você ganha reconhecimento (selo de doador + pontos de ajuda)."
+          - generic [ref=e192]:
+            - group [ref=e193]:
+              - generic "Preciso pagar algo?" [ref=e194] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e196]: +
+            - group [ref=e197]:
+              - generic "É seguro?" [ref=e198] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e200]: +
+            - group [ref=e201]:
+              - generic "Ganho algo doando?" [ref=e202] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e204]: +
+        - generic [ref=e205]:
+          - generic [ref=e206]:
+            - generic [aria-hidden] [ref=e207]: 🤝
+            - generic [ref=e208]: Voluntariar
+          - paragraph [ref=e209]: Ofereça uma ajuda que você sabe prestar — de graça. A comunidade agradece e você ganha reconhecimento.
+          - list [ref=e210]:
+            - listitem [ref=e211]:
+              - generic [aria-hidden] [ref=e212]: "1"
+              - generic [ref=e213]:
+                - generic [aria-hidden] [ref=e214]: 📝
+                - generic [ref=e215]: Você anuncia uma ajuda que sabe prestar, de graça (RM$ 0).
+            - listitem [ref=e216]:
+              - generic [aria-hidden] [ref=e217]: "2"
+              - generic [ref=e218]:
+                - generic [aria-hidden] [ref=e219]: 🙋
+                - generic [ref=e220]: Quem precisa pede.
+            - listitem [ref=e221]:
+              - generic [aria-hidden] [ref=e222]: "3"
+              - generic [ref=e223]:
+                - generic [aria-hidden] [ref=e224]: ❤️
+                - generic [ref=e225]: Você escolhe quem ajudar.
+            - listitem [ref=e226]:
+              - generic [aria-hidden] [ref=e227]: "4"
+              - generic [ref=e228]:
+                - generic [aria-hidden] [ref=e229]: 🤝
+                - generic [ref=e230]: Vocês combinam e você presta a ajuda.
+            - listitem [ref=e231]:
+              - generic [aria-hidden] [ref=e232]: "5"
+              - generic [ref=e233]:
+                - generic [aria-hidden] [ref=e234]: 🎉
+                - generic [ref=e235]: A comunidade agradece — você ganha selo de voluntário + pontos de ajuda.
+          - generic [ref=e236]:
+            - group [ref=e237]:
+              - generic "Preciso pagar algo?" [ref=e238] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e240]: +
+            - group [ref=e241]:
+              - generic "Que tipo de ajuda posso oferecer?" [ref=e242] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e244]: +
+            - group [ref=e245]:
+              - generic "Ganho algo?" [ref=e246] [cursor=pointer]:
+                - generic [aria-hidden] [ref=e248]: +
+    - generic [ref=e250]:
+      - generic [ref=e251]:
+        - heading "Por que o revoa.me" [level=2] [ref=e252]
+        - paragraph [ref=e253]: Uma comunidade que se ajuda, sem fins lucrativos.
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - generic [aria-hidden] [ref=e256]: ♻️
+          - heading "Tudo é compartilhado e transformável" [level=3] [ref=e257]
+          - paragraph [ref=e258]: Serviço, produto e RVM se convertem. Nada fica parado — tudo circula e muda de forma.
+        - generic [ref=e259]:
+          - generic [aria-hidden] [ref=e260]: 🌱
+          - heading "Reuso com propósito" [level=3] [ref=e261]
+          - paragraph [ref=e262]: O que você não usa mais encontra um novo lar onde é útil, em vez de ir para o lixo.
+        - generic [ref=e263]:
+          - generic [aria-hidden] [ref=e264]: 🛠️
+          - heading "Habilidade = poder de troca" [level=3] [ref=e265]
+          - paragraph [ref=e266]: Seu serviço gera RVM, que vira outros produtos ou serviços quando você precisa.
+        - generic [ref=e267]:
+          - generic [aria-hidden] [ref=e268]: ❤️
+          - heading "Ajuda mútua em primeiro lugar" [level=3] [ref=e269]
+          - paragraph [ref=e270]: Doar e voluntariar valem tanto quanto trocar. A economia é o meio — cuidar é o fim.
+    - generic [ref=e275]:
+      - heading "Comunidade que troca, doa e cuida." [level=2] [ref=e276]
+      - paragraph [ref=e277]: Junte-se a quem acredita que o que não usa merece um novo lar.
+      - link "Participe da comunidade" [ref=e278] [cursor=pointer]:
+        - /url: /register
+  - contentinfo [ref=e279]:
+    - generic [ref=e280]:
+      - generic [ref=e281]: revoa.me · Economia circular · sem fins lucrativos
+      - generic [ref=e282]:
+        - link "Feed" [ref=e283] [cursor=pointer]:
+          - /url: /feed
+        - link "Explorar" [ref=e284] [cursor=pointer]:
+          - /url: /explore
+        - link "Comunidade" [ref=e285] [cursor=pointer]:
+          - /url: /community
+        - link "Transparência" [ref=e286] [cursor=pointer]:
+          - /url: /transparency
+        - link "Termos de Uso" [ref=e287] [cursor=pointer]:
+          - /url: /terms
+        - link "Entrar" [ref=e288] [cursor=pointer]:
+          - /url: /login
+        - generic [ref=e289]: RM$ = crédito de troca, não cripto

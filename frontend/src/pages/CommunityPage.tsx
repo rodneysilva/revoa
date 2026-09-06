@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { CommunityCard } from "../components/CommunityCard";
+import { EmptyState } from "../components/EmptyState";
 import { useAuth } from "../auth/AuthContext";
 import {
   EIXO_EMOJI,
@@ -168,30 +169,31 @@ export function CommunityPage() {
             ))}
           </div>
         ) : visiveis.length === 0 ? (
-          <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
-            <div className="text-4xl mb-2" aria-hidden>
-              🫂
-            </div>
-            <p className="text-silver">
-              {busca
+          <EmptyState
+            icon="🫂"
+            title={
+              busca
                 ? "Nenhuma comunidade encontrada com essa busca."
                 : items.length === 0
-                  ? `Ainda não há comunidades por aqui — ${
-                      user?.verified
-                        ? "crie a primeira!"
-                        : "seja a primeira pessoa a criar uma."
-                    }`
-                  : "Nenhuma comunidade neste eixo."}
-            </p>
-            {!busca && items.length === 0 && user?.verified && (
-              <button
-                onClick={() => setShowCreate(true)}
-                className="mt-4 inline-block bg-community text-ink font-semibold px-5 py-2.5 rounded-xl"
-              >
-                Criar comunidade
-              </button>
-            )}
-          </div>
+                  ? "Ainda não há comunidades por aqui."
+                  : "Nenhuma comunidade neste eixo."
+            }
+            hint={
+              !busca && items.length === 0 && !user?.verified
+                ? "Seja a primeira pessoa a criar uma."
+                : undefined
+            }
+            action={
+              !busca && items.length === 0 && user?.verified ? (
+                <button
+                  onClick={() => setShowCreate(true)}
+                  className="inline-block bg-community text-ink font-semibold px-5 py-2.5 rounded-xl"
+                >
+                  Criar comunidade
+                </button>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {visiveis.map((c) => (

@@ -13,4 +13,8 @@ public interface IWalletAddressReader
     // Todas as carteiras conhecidas (MVP dev: EOAs em UserAccount). Demurrage itera para ler
     // saldos e queimar acima do piso.
     Task<IReadOnlyList<WalletAddressEntry>> GetAllAsync(CancellationToken ct = default);
+
+    // Carteira de UM usuário (null se ainda não tem conta). Consumido pelo Token para expor
+    // o saldo do usuário logado (GET /api/wallet/balance).
+    Task<WalletAddressEntry?> GetByUserIdAsync(Guid userId, CancellationToken ct = default);
 }

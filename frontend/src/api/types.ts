@@ -262,6 +262,13 @@ export interface MyCommunity {
   JoinedAt: string;
 }
 
+// GET /api/wallet/balance — saldo RVM do usuário logado. Rvm null = saldo
+// indisponível (chain offline ou carteira ainda não criada); a UI degrada em silêncio.
+export interface WalletBalance {
+  WalletAddress: string | null;
+  Rvm: number | null;
+}
+
 export interface ChatMessage {
   Id: string;
   CommunityId: string;

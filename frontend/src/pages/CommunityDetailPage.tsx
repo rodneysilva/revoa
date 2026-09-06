@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
+import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { LiveChat } from "../components/LiveChat";
 import { PostThread } from "../components/PostThread";
@@ -495,14 +496,14 @@ function ConversasPanel({
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-charcoal border border-smoke rounded-xl p-8 text-center">
-          <div className="text-3xl mb-2" aria-hidden>
-            💬
-          </div>
-          <p className="text-silver">
-            {canPost ? "Ainda não há conversas. Que tal começar a falar com a comunidade?" : "Ainda não há conversas por aqui."}
-          </p>
-        </div>
+        <EmptyState
+          icon="💬"
+          title={
+            canPost
+              ? "Ainda não há conversas. Que tal começar a falar com a comunidade?"
+              : "Ainda não há conversas por aqui."
+          }
+        />
       ) : (
         <PostThread
           posts={posts}
@@ -582,22 +583,20 @@ function OfertasPanel({
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-charcoal border border-smoke rounded-2xl p-8 text-center">
-          <div className="text-3xl mb-2" aria-hidden>
-            🛍️
-          </div>
-          <p className="text-silver">
-            Nenhum anúncio dos membros por aqui ainda.
-          </p>
-          {canPost && (
-            <Link
-              to="/listings/new"
-              className="mt-4 inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-            >
-              + Anunciar algo
-            </Link>
-          )}
-        </div>
+        <EmptyState
+          icon="🛍️"
+          title="Nenhum anúncio dos membros por aqui ainda."
+          action={
+            canPost ? (
+              <Link
+                to="/listings/new"
+                className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+              >
+                + Anunciar algo
+              </Link>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {items.map((item) => (
@@ -666,16 +665,14 @@ function MembrosPanel({
       </div>
 
       {visiveis.length === 0 ? (
-        <div className="bg-charcoal border border-smoke rounded-xl p-8 text-center">
-          <div className="text-3xl mb-2" aria-hidden>
-            👥
-          </div>
-          <p className="text-silver">
-            {filtro === "Todos"
+        <EmptyState
+          icon="👥"
+          title={
+            filtro === "Todos"
               ? "Ninguém por aqui ainda."
-              : `Nenhum ${PAPEL_META[filtro as MembershipRole].label.toLowerCase()} ainda.`}
-          </p>
-        </div>
+              : `Nenhum ${PAPEL_META[filtro as MembershipRole].label.toLowerCase()} ainda.`
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {visiveis.map((m) => {
