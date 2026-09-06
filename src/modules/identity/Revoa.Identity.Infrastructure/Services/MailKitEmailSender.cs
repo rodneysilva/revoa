@@ -91,11 +91,12 @@ public class MailKitEmailSender : IEmailSender
         }
     }
 
-    // Relay autenticado (ex.: smtp.gmail.com:587). Sem usuário configurado = Postfix
-    // interno sem auth (rede interna do compose).
+    // Relay autenticado (ex.: smtp.gmail.com:587). Sem usuário E senha configurados =
+    // Postfix interno sem auth (rede interna do compose). Meio-configurado (só usuário)
+    // não autentica: falha no próprio SMTP com erro claro, não com senha vazia.
     private async Task AuthenticateAsync(SmtpClient client, CancellationToken ct)
     {
-        if (!string.IsNullOrEmpty(_options.Username))
+        if (!string.IsNullOrEmpty(_options.Username) && !string.IsNullOrEmpty(_options.Password))
         {
             await client.AuthenticateAsync(_options.Username, _options.Password, ct);
         }
