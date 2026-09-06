@@ -65,6 +65,17 @@ public class CommunityController : ControllerBase
         return Ok(result.Value);
     }
 
+    // Histórico do chat ao vivo (anônimo vê — leitura pública como posts).
+    // Mensagens em ordem cronológica (mais antigas primeiro).
+    [HttpGet("{id:guid}/chat")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<ChatMessageDto>>> Chat(
+        Guid id, [FromQuery] int limit = 50, CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new GetChatHistoryQuery(id, limit), ct);
+        return result.IsFailure ? NotFound(new ApiError(result.Error)) : Ok(result.Value);
+    }
+
     // Cria comunidade (gate Verified). Ownership (criador) do token, nunca do body.
     [HttpPost]
     [Authorize(Policy = "Verified")]

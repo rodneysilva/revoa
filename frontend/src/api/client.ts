@@ -6,6 +6,7 @@ import type {
   AppNotification,
   BrlRate,
   Category,
+  ChatMessage,
   Comment,
   Community,
   CommunityFeedParams,
@@ -281,6 +282,12 @@ export const api = {
     ).then((r) => r.Id),
   communityMembers: (id: string): Promise<Membership[]> =>
     apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
+  // Histórico do chat ao vivo (cronológico, mais antigas primeiro) — o hub
+  // persiste 90 dias; o LiveChat monta o histórico e o SignalR acrescenta ao vivo.
+  communityChat: (id: string, limit = 50): Promise<ChatMessage[]> =>
+    apiGet<ChatMessage[]>(
+      `/api/communities/${encodeURIComponent(id)}/chat${qs({ limit })}`
+    ),
 
   // Carteira do usuário logado (VISUAL_IDENTITY §8 — chip RM$ no header).
   walletBalance: (): Promise<WalletBalance> =>

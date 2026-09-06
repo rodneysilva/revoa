@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { HubConnection } from "@microsoft/signalr";
 import { buildCommunityHub } from "../api/signalr";
-import { getToken } from "../api/client";
+import { api, getToken } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "./Avatar";
 import { timeAgo } from "../lib/time";
@@ -27,6 +27,24 @@ export function LiveChat({
   const [error, setError] = useState<string | null>(null);
   const connRef = useRef<HubConnection | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Histórico (persistido 90 dias) carrega primeiro — para todos, inclusive
+  // não-membros (leitura pública, como os posts). Falha é best-effort: sem
+  // histórico o chat simplesmente começa vazio.
+  useEffect(() => {
+    let active = true;
+    api
+      .communityChat(communityId)
+      .then((h) => {
+        if (active) setMessages(h);
+      })
+      .catch(() => {
+        /* histórico é opcional */
+      });
+    return () => {
+      active = false;
+    };
+  }, [communityId]);
 
   useEffect(() => {
     if (!isMember) return;
@@ -111,14 +129,14 @@ export function LiveChat({
           </>
         )}
         <span className={`text-sm text-cream font-semibold ${isMember ? "ml-auto text-xs text-silver font-normal" : ""}`}>
-          {isMember ? `${messages.length} nesta sessão` : "Conversa da comunidade"}
+          {isMember ? `${messages.length} mensagens` : "Conversa da comunidade"}
         </span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
         {messages.length === 0 ? (
           <p className="text-sm text-silver text-center mt-8">
-            As mensagens enviadas agora aparecem aqui. Comece a conversa! 👋
+            Nenhuma mensagem ainda — as enviadas agora aparecem aqui. Comece a conversa! 👋
           </p>
         ) : (
           messages.map((m) => (
