@@ -1,8 +1,8 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Coupon.Application.Commands;
 using Revoa.Coupon.Application.Services;
 using Revoa.Coupon.Domain.Repositories;
@@ -32,7 +32,7 @@ public static class DependencyInjection
         services.AddScoped<ICouponChainService, NethereumCouponChainService>();
 
         // CQRS — MediatR (assembly da Application, onde vivem os handlers de command/query).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(CreateCouponCommandHandler).Assembly));
+        services.AddRevoaCQRS(typeof(CreateCouponCommandHandler).Assembly);
 
         return services;
     }

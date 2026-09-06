@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Revoa.Identity.Domain\Revoa.Identity.Domain.csproj" />
     <ProjectReference Include="..\Revoa.Identity.Application\Revoa.Identity.Application.csproj" />
+    <ProjectReference Include="..\..\..\shared\Revoa.Application\Revoa.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,8 +1,8 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Pricing.Application.Commands;
 using Revoa.Pricing.Application.Options;
 using Revoa.Pricing.Domain.Repositories;
@@ -30,7 +30,7 @@ public static class DependencyInjection
         services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
 
         // CQRS — MediatR (assembly da Application).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(RefreshPricingCommandHandler).Assembly));
+        services.AddRevoaCQRS(typeof(RefreshPricingCommandHandler).Assembly);
 
         // HttpClient tipado p/ o handler (IBGE + Ollama). Timeout 35s (Ollama qwen2.5:7b ~30s).
         // Registrado APÓS o MediatR para que a ativação via HttpClientFactory prevaleça na resolução

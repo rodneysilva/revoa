@@ -4,10 +4,10 @@
     <ProjectReference Include="..\Revoa.Catalog.Domain\Revoa.Catalog.Domain.csproj" />
     <ProjectReference Include="..\Revoa.Catalog.Application\Revoa.Catalog.Application.csproj" />
     <ProjectReference Include="..\..\..\shared\Revoa.IntegrationContracts\Revoa.IntegrationContracts.csproj" />
+    <ProjectReference Include="..\..\..\shared\Revoa.Application\Revoa.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />

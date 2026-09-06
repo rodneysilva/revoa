@@ -1,11 +1,9 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Community.Application.Commands;
-using Revoa.Community.Application.Validators;
 using Revoa.Community.Domain.Repositories;
 using Revoa.Community.Infrastructure.Persistence;
 
@@ -37,15 +35,8 @@ public static class DependencyInjection
         services.AddScoped<IPostRepository, PostsRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 
-        // CQRS — MediatR (assembly da Application) + pipeline de validação.
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(CreateCommunityCommandHandler).Assembly);
-            cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
-        });
-
-        // Validators (FluentValidation).
-        services.AddValidatorsFromAssembly(typeof(CreateCommunityCommandValidator).Assembly);
+        // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
+        services.AddRevoaCQRS(typeof(CreateCommunityCommandHandler).Assembly);
 
         return services;
     }

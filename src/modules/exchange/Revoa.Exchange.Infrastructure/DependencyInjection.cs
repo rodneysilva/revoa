@@ -1,12 +1,10 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Exchange.Application.Commands;
 using Revoa.Exchange.Application.Services;
-using Revoa.Exchange.Application.Validators;
 using Revoa.Exchange.Domain.Repositories;
 using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Exchange.Infrastructure.Services;
@@ -45,15 +43,8 @@ public static class DependencyInjection
         services.Configure<ExchangeChainOptions>(configuration.GetSection(ExchangeChainOptions.SectionName));
         services.AddScoped<IExchangeEscrowService, NethereumExchangeEscrowService>();
 
-        // CQRS — MediatR (assembly da Application) + pipeline de validação.
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(PurchaseCommandHandler).Assembly);
-            cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
-        });
-
-        // Validators (FluentValidation).
-        services.AddValidatorsFromAssembly(typeof(RequestHelpCommandValidator).Assembly);
+        // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
+        services.AddRevoaCQRS(typeof(PurchaseCommandHandler).Assembly);
 
         return services;
     }

@@ -1,13 +1,11 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.IntegrationContracts.Notifications;
 using Revoa.Notifications.Application.Commands;
 using Revoa.Notifications.Application.Services;
-using Revoa.Notifications.Application.Validators;
 using Revoa.Notifications.Domain.Repositories;
 using Revoa.Notifications.Infrastructure.Persistence;
 
@@ -46,14 +44,7 @@ public static class DependencyInjection
 
         // CQRS — MediatR (assembly da Application, onde vivem command/query handlers e event handlers)
         // + pipeline de validação. Isso registra DonationCompletedEventHandler (INotificationHandler<>).
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(SubscribePushCommandHandler).Assembly);
-            cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
-        });
-
-        // Validators (FluentValidation).
-        services.AddValidatorsFromAssembly(typeof(SubscribePushCommandValidator).Assembly);
+        services.AddRevoaCQRS(typeof(SubscribePushCommandHandler).Assembly);
 
         return services;
     }

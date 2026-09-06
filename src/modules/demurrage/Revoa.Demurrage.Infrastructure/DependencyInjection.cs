@@ -1,8 +1,8 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Demurrage.Application.Commands;
 using Revoa.Demurrage.Application.Options;
 using Revoa.Demurrage.Domain.Repositories;
@@ -31,7 +31,7 @@ public static class DependencyInjection
 
         // CQRS — MediatR (assembly da Application). IRvmService e IWalletAddressReader são
         // resolvidos dos módulos Token/Account (portas); não há registro duplicado aqui.
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(RunDemurrageCommandHandler).Assembly));
+        services.AddRevoaCQRS(typeof(RunDemurrageCommandHandler).Assembly);
 
         return services;
     }

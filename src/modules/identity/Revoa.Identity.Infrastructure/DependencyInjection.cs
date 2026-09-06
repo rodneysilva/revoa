@@ -1,12 +1,10 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Identity.Application.Commands;
 using Revoa.Identity.Application.Services;
-using Revoa.Identity.Application.Validators;
 using Revoa.Identity.Domain.Repositories;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure.Services;
@@ -48,14 +46,7 @@ public static class DependencyInjection
         services.AddScoped<ISmsSender>(sp => sp.GetRequiredService<ZenviaSmsSender>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação (roda os validators)
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(RegisterUserCommandHandler).Assembly);
-            cfg.AddOpenBehavior(typeof(Revoa.Identity.Application.Behaviors.ValidationBehavior<,>));
-        });
-
-        // Validators (FluentValidation)
-        services.AddValidatorsFromAssembly(typeof(RegisterUserCommandValidator).Assembly);
+        services.AddRevoaCQRS(typeof(RegisterUserCommandHandler).Assembly);
 
         return services;
     }

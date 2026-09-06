@@ -1,8 +1,8 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Reputation.Application.EventHandlers;
 using Revoa.Reputation.Application.Options;
 using Revoa.Reputation.Domain.Repositories;
@@ -31,7 +31,7 @@ public static class DependencyInjection
         services.Configure<DonationRewardOptions>(configuration.GetSection(DonationRewardOptions.SectionName));
 
         // CQRS — MediatR (assembly da Application, onde vive DonationCompletedEventHandler).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(DonationCompletedEventHandler).Assembly));
+        services.AddRevoaCQRS(typeof(DonationCompletedEventHandler).Assembly);
 
         return services;
     }

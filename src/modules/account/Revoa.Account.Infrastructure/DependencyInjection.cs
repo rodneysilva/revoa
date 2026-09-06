@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -7,6 +6,7 @@ using Revoa.Account.Application.EventHandlers;
 using Revoa.Account.Domain.Repositories;
 using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Account.Infrastructure.Services;
+using Revoa.Application;
 using Revoa.IntegrationContracts.Accounts;
 using Revoa.IntegrationContracts.UserWallets;
 
@@ -42,7 +42,7 @@ public static class DependencyInjection
         services.AddScoped<IWalletAddressReader, WalletAddressReader>();
 
         // CQRS — registra o handler de UserRegisteredEvent no MediatR (compartilha o barramento).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(UserRegisteredEventHandler).Assembly));
+        services.AddRevoaCQRS(typeof(UserRegisteredEventHandler).Assembly);
 
         return services;
     }

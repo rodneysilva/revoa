@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Revoa.Application;
 using Revoa.Token.Application.EventHandlers;
 using Revoa.Token.Application.Services;
 using Revoa.Token.Infrastructure.Services;
@@ -18,7 +19,7 @@ public static class DependencyInjection
         services.AddScoped<IRvmService, NethereumRvmService>();
 
         // CQRS — registra o handler de WalletCreatedEvent no MediatR (compartilha o barramento).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WalletCreatedEventHandler).Assembly));
+        services.AddRevoaCQRS(typeof(WalletCreatedEventHandler).Assembly);
 
         return services;
     }

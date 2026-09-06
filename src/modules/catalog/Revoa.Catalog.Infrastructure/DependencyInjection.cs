@@ -1,12 +1,10 @@
-using FluentValidation;
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
+using Revoa.Application;
 using Revoa.Catalog.Application.Commands;
 using Revoa.Catalog.Application.Services;
-using Revoa.Catalog.Application.Validators;
 using Revoa.Catalog.Domain.Repositories;
 using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Catalog.Infrastructure.Services;
@@ -52,15 +50,8 @@ public static class DependencyInjection
         services.Configure<CatalogChainOptions>(configuration.GetSection(CatalogChainOptions.SectionName));
         services.AddScoped<IProductNftService, NethereumProductNftService>();
 
-        // CQRS — MediatR (assembly da Application) + pipeline de validação.
-        services.AddMediatR(cfg =>
-        {
-            cfg.RegisterServicesFromAssembly(typeof(CreateListingCommandHandler).Assembly);
-            cfg.AddOpenBehavior(typeof(Application.Behaviors.ValidationBehavior<,>));
-        });
-
-        // Validators (FluentValidation).
-        services.AddValidatorsFromAssembly(typeof(CreateListingCommandValidator).Assembly);
+        // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
+        services.AddRevoaCQRS(typeof(CreateListingCommandHandler).Assembly);
 
         return services;
     }

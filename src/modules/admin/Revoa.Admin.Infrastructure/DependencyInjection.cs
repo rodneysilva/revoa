@@ -1,4 +1,3 @@
-using MediatR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -6,6 +5,7 @@ using MongoDB.Driver;
 using Revoa.Admin.Application.Queries;
 using Revoa.Admin.Domain.Repositories;
 using Revoa.Admin.Infrastructure.Persistence;
+using Revoa.Application;
 using Revoa.IntegrationContracts.Admin;
 
 namespace Revoa.Admin.Infrastructure;
@@ -34,7 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IParameterStore, ParameterStore>();
 
         // CQRS — MediatR (assembly da Application).
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(GetAllParametersQueryHandler).Assembly));
+        services.AddRevoaCQRS(typeof(GetAllParametersQueryHandler).Assembly);
 
         return services;
     }

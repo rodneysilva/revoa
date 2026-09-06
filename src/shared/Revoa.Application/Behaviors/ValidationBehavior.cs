@@ -1,12 +1,10 @@
 using FluentValidation;
 using MediatR;
 
-namespace Revoa.Identity.Application.Behaviors;
+namespace Revoa.Application.Behaviors;
 
-/// <summary>
-/// Executa os validadores FluentValidation no pipeline do MediatR antes do handler.
-/// Sem este behavior, os validadores (idade>=18, formatos) seriam registrados mas nunca rodariam.
-/// </summary>
+// Pipeline de validação FluentValidation compartilhado por todos os módulos (antes copiado à
+// mão em cada Application). Registrado automaticamente por AddRevoaCQRS.
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : notnull
 {
@@ -27,10 +25,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         var context = new ValidationContext<TRequest>(request);
         var results = await Task.WhenAll(
             _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
-        var failures = results
-            .SelectMany(r => r.Errors)
-            .Where(f => f is not null)
-            .ToList();
+        var failures = results.SelectMany(r => r.Errors).Where(f => f is not null).ToList();
 
         if (failures.Count > 0)
         {

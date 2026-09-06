@@ -123,6 +123,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revoa.IntegrationTests", "test\Revoa.IntegrationTests\Revoa.IntegrationTests.csproj", "{8A0D0932-16CD-4647-A4CF-E6A67D27D8AD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Revoa.Application", "shared\Revoa.Application\Revoa.Application.csproj", "{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -661,6 +663,18 @@ Global
 		{8A0D0932-16CD-4647-A4CF-E6A67D27D8AD}.Release|x64.Build.0 = Release|Any CPU
 		{8A0D0932-16CD-4647-A4CF-E6A67D27D8AD}.Release|x86.ActiveCfg = Release|Any CPU
 		{8A0D0932-16CD-4647-A4CF-E6A67D27D8AD}.Release|x86.Build.0 = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|x64.Build.0 = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Debug|x86.Build.0 = Debug|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|x64.ActiveCfg = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|x64.Build.0 = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|x86.ActiveCfg = Release|Any CPU
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -721,5 +735,6 @@ Global
 		{2F4D5853-8D32-4E09-AA7F-73BB95798381} = {E0F3FF92-BB8A-7B6F-817B-58792AAD083B}
 		{14DF0778-4DB2-448C-8B51-AAF8AEE7F3D8} = {E0F3FF92-BB8A-7B6F-817B-58792AAD083B}
 		{8A0D0932-16CD-4647-A4CF-E6A67D27D8AD} = {0C88DD14-F956-CE84-757C-A364CCF449FC}
+		{1C7C4346-E1BB-4DD4-BE73-BB8EE664A0B0} = {4F52FD11-658E-A102-6CD3-7D7C16FFA15B}
 	EndGlobalSection
 EndGlobal
