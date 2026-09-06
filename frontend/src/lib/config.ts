@@ -23,10 +23,13 @@ export const KIND_LABELS = {
 // Metadados por modo (emoji + classes Tailwind literais p/ o scanner gerar).
 // Cores por modo (docs/VISUAL_IDENTITY.md §6):
 // Trocar=esmeralda · Repassar=rosa · Doar=terracota · Voluntariar=lima.
+// `label` = forma verbal (CTAs, filtros); `badge` = forma do badge (§6, tabela
+// de badges) — Repassar vira "Acessível" na UI de anúncio (UF-08).
 export const MODO_META = {
   Trade: {
     emoji: "🔄",
     label: "Trocar",
+    badge: "Troca",
     desc: "Troca direta de produto ou serviço entre vizinhos.",
     text: "text-esmeralda",
     bg: "bg-esmeralda/15",
@@ -34,6 +37,7 @@ export const MODO_META = {
   Resell: {
     emoji: "💜",
     label: "Repassar",
+    badge: "Acessível",
     desc: "Repassa algo que você intermediou para a comunidade.",
     text: "text-rosa",
     bg: "bg-rosa/15",
@@ -41,6 +45,7 @@ export const MODO_META = {
   Donate: {
     emoji: "🎁",
     label: "Doar",
+    badge: "Doação",
     desc: "Dá de graça a quem precisa (produto).",
     text: "text-terracota",
     bg: "bg-terracota/15",
@@ -48,6 +53,7 @@ export const MODO_META = {
   Volunteer: {
     emoji: "🤝",
     label: "Voluntariar",
+    badge: "Voluntário",
     desc: "Ofereça seu tempo e habilidades (serviço).",
     text: "text-lima",
     bg: "bg-lima/15",

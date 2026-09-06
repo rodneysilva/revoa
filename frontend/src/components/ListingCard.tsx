@@ -1,21 +1,13 @@
 import { Link } from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { Badge } from "./Badge";
-import { timeAgo } from "../lib/time";
 import { brlEstimate } from "../lib/format";
 import { useBrlRate } from "../lib/useBrlRate";
 import type { FeedItem } from "../api/types";
 
-const CONDITION_LABEL: Record<string, string> = {
-  Novo: "Novo",
-  Seminovo: "Seminovo",
-  Usado: "Usado",
-};
-
-function serviceDurationLabel(item: FeedItem): string | null {
-  if (item.Kind !== "Service" || item.Duration == null) return null;
-  return item.UnitType === "Hours" ? `≈ ${item.Duration} h` : "por serviço";
-}
+// Card de anúncio (VISUAL_IDENTITY §8): imagem + badge por modo + título +
+// "Grátis · RM$ 0" ou preço com referência BRL + vendedor com local.
+// Condição/duração ficam na página de detalhe — no grid são ruído.
 
 // Placeholder de carregamento com a mesma forma do card real (imagem quadrada +
 // bloco de texto) — o layout não "pula" quando os dados chegam.
@@ -35,14 +27,12 @@ export function ListingCardSkeleton() {
 
 export function ListingCard({ item }: { item: FeedItem }) {
   const gratis = item.PriceRvm === 0;
-  const isService = item.Kind === "Service";
-  const condition = !isService && item.Condition
-    ? CONDITION_LABEL[item.Condition] ?? item.Condition
-    : null;
-  const duration = serviceDurationLabel(item);
-  const when = item.CreatedAt ? timeAgo(item.CreatedAt) : null;
   const { rate } = useBrlRate();
   const brl = !gratis ? brlEstimate(item.PriceRvm, rate ?? 0) : null;
+  const local =
+    item.DistanciaKm != null
+      ? `~${item.DistanciaKm.toFixed(1)} km`
+      : item.Neighborhood || item.City || null;
 
   return (
     <Link
@@ -61,35 +51,19 @@ export function ListingCard({ item }: { item: FeedItem }) {
             }}
           />
         ) : (
-          <span aria-hidden>{isService ? "🛠️" : "📦"}</span>
+          <span aria-hidden>{item.Kind === "Service" ? "🛠️" : "📦"}</span>
         )}
       </div>
       <div className="p-4 flex flex-col flex-1">
-        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-          <Badge modo={item.Mode} />
-          {isService ? (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-sky/15 text-sky font-medium">
-              Serviço
-            </span>
-          ) : condition ? (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-smoke text-silver font-medium">
-              {condition}
-            </span>
-          ) : null}
-          {duration && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-smoke text-silver font-medium">
-              ⏱ {duration}
-            </span>
-          )}
-        </div>
+        <Badge modo={item.Mode} />
 
-        <h3 className="font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
+        <h3 className="mt-2 font-semibold text-cream line-clamp-2 group-hover:text-esmeralda">
           {item.Title}
         </h3>
 
-        <div className="mt-1">
+        <div className="mt-1.5">
           {gratis ? (
-            <span className="rms text-lima">Grátis</span>
+            <span className="rms text-lima">Grátis · RM$ 0</span>
           ) : (
             <div className="flex flex-col gap-0.5">
               <span className="rms text-cream">
@@ -105,16 +79,8 @@ export function ListingCard({ item }: { item: FeedItem }) {
         <div className="mt-auto pt-3 flex items-center gap-2 text-xs text-silver">
           <Avatar name={item.SellerName} src={item.SellerAvatarUrl} size={20} />
           <span className="truncate">{item.SellerName}</span>
-          {item.DistanciaKm != null ? (
-            <span className="ml-auto whitespace-nowrap">~{item.DistanciaKm.toFixed(1)} km</span>
-          ) : item.City ? (
-            <span className="ml-auto truncate">{item.City}</span>
-          ) : null}
+          {local && <span className="ml-auto whitespace-nowrap truncate">{local}</span>}
         </div>
-
-        {when && (
-          <div className="mt-1.5 text-xs text-silver/70">{when}</div>
-        )}
       </div>
     </Link>
   );
