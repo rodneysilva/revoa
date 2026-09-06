@@ -61,9 +61,9 @@ services:
       - Ollama__Endpoint=http://ollama:11434
       - Bundler__Rpc=http://bundler:4337
       - Paymaster__Rpc=http://paymaster:3000
-      - Smtp__Host=mail                 # MailKit entrega ao Postfix local (ADR-0014)
-      - Smtp__Port=25
-      - Smtp__From=no-reply@revoa.me
+      - Email__Host=mail                # MailKit entrega ao Postfix local (ADR-0014)
+      - Email__Port=25
+      - Email__From=no-reply@revoa.me
       - Zenvia__Token=${ZENVIA_TOKEN:-} # WhatsApp/SMS OTP (anti-farming via secrets)
       - Jwt__Key=${JWT_KEY:-}           # chave de assinatura JWT (fail-fast em Production se vazio)
       - Jwt__Audience=revoa
@@ -221,9 +221,14 @@ services:
       - Chain__Contracts__EscrowVault=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
       - Chain__Contracts__CouponRedeemer=0x5FC8d32690cc91D4c39d9d3abcBD16989F875707
       - Admin__Emails=${ADMIN_EMAILS:-}
-      - Smtp__Host=mail
-      - Smtp__Port=25
-      - Smtp__From=no-reply@revoa.me
+      # SMTP real não entrega de IP residencial: o Postfix aceita na fila mas o
+      # Gmail não recebe. Em homologação o código de login fica visível no log
+      # do container (`docker logs revoa-app-dev`) — self-service do dono.
+      # NUNCA ativar no serviço `app` (artefato de produção).
+      - Email__Host=mail
+      - Email__Port=25
+      - Email__From=no-reply@revoa.me
+      - Email__LogVerificationTokenInDev=true
       - Zenvia__Token=${ZENVIA_TOKEN:-}
       - Jwt__Key=${JWT_KEY:-}
       - Jwt__Audience=revoa
