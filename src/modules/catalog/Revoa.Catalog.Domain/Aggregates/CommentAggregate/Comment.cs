@@ -4,22 +4,22 @@ namespace Revoa.Catalog.Domain.Aggregates.CommentAggregate;
 
 public enum CommentStatus
 {
-    Visivel,
-    Oculto
+    Visible,
+    Hidden
 }
 
 // Comentário recursivo de um anúncio (reuso do padrão de thread recursiva do Post de comunidade).
 // Materialized path (depth ≤ 6). Mesmo shape do Post p/ alimentar o componente <PostThread> no FE.
-// Coleção própria "Comments" (isolamento do módulo Catalog). AutorNome/AvatarUrl embed anti-N+1.
+// Coleção própria "Comments" (isolamento do módulo Catalog). AuthorName/AvatarUrl embed anti-N+1.
 public class Comment : AggregateRoot
 {
     public const int MaxDepth = 6;
 
     public Guid ListingId { get; private set; }
     public Guid AutorId { get; private set; }
-    public string AutorNome { get; private set; } = string.Empty;
+    public string AuthorName { get; private set; } = string.Empty;
     public string? AutorAvatarUrl { get; private set; }
-    public string Conteudo { get; private set; } = string.Empty;
+    public string Content { get; private set; } = string.Empty;
 
     public Guid? ParentId { get; private set; }
     public string Path { get; private set; } = string.Empty;
@@ -45,13 +45,13 @@ public class Comment : AggregateRoot
             Id = id,
             ListingId = listingId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
+            AuthorName = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
-            Conteudo = conteudo.Trim(),
+            Content = conteudo.Trim(),
             ParentId = null,
             Path = $"/{id}/",
             Depth = 0,
-            Status = CommentStatus.Visivel,
+            Status = CommentStatus.Visible,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -82,13 +82,13 @@ public class Comment : AggregateRoot
             Id = id,
             ListingId = parent.ListingId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
+            AuthorName = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
-            Conteudo = conteudo.Trim(),
+            Content = conteudo.Trim(),
             ParentId = parent.Id,
             Path = parent.Path + $"{id}/",
             Depth = parent.Depth + 1,
-            Status = CommentStatus.Visivel,
+            Status = CommentStatus.Visible,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };

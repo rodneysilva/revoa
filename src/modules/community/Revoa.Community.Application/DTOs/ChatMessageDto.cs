@@ -4,21 +4,21 @@ namespace Revoa.Community.Application.DTOs;
 
 public sealed record ChatMessageDto(
     Guid Id,
-    Guid ComunidadeId,
+    Guid CommunityId,
     Guid AutorId,
-    string AutorNome,
+    string AuthorName,
     string? AutorAvatarUrl,
-    string Conteudo,
+    string Content,
     DateTime CreatedAt);
 
 public static class ChatMessageDtoMapper
 {
     public static ChatMessageDto From(ChatMessage m) => new(
         m.Id,
-        m.ComunidadeId,
+        m.CommunityId,
         m.AutorId,
-        m.AutorNome,
+        m.AuthorName,
         m.AutorAvatarUrl,
-        m.Conteudo,
+        m.Content,
         m.CreatedAt);
 }

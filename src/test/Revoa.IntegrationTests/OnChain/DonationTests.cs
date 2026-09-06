@@ -27,19 +27,19 @@ public class DonationTests : IntegrationTestBase
         var create = await donorClient.PostAsync("/api/listings", JsonBody(new
         {
             Kind = "Product",
-            Modo = "Doar",
-            Titulo = "Item Doação E2E",
-            Descricao = "descrição",
+            Mode = "Donate",
+            Title = "Item Doação E2E",
+            Description = "descrição",
             Imagens = Array.Empty<string>(),
-            PrecoRvm = 0L,
+            PriceRvm = 0L,
             Lat = (double?)null,
             Lng = (double?)null,
-            Bairro = (string?)null,
-            Cidade = (string?)null,
-            Cep = (string?)null,
-            CategoriaId = categoriaId,
-            ComunidadeId = (Guid?)null,
-            Visibilidade = "Global",
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            PostalCode = (string?)null,
+            CategoryId = categoriaId,
+            CommunityId = (Guid?)null,
+            Visibility = "Global",
             Condition = "Usado",
             Stock = 1,
             UnitType = (string?)null,
@@ -52,7 +52,7 @@ public class DonationTests : IntegrationTestBase
         var request = await AuthedClient(receiver).PostAsync("/api/help", JsonBody(new
         {
             ListingId = listingId,
-            Mensagem = "Preciso deste item E2E",
+            Message = "Preciso deste item E2E",
         }));
         var helpRequestId = await request.Content.ReadFromJsonAsync<Guid>();
 

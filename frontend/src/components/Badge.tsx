@@ -1,7 +1,7 @@
 import { MODO_META } from "../lib/config";
-import type { Modo } from "../api/types";
+import type { Mode } from "../api/types";
 
-export function Badge({ modo, size = "sm" }: { modo: Modo; size?: "sm" | "md" }) {
+export function Badge({ modo, size = "sm" }: { modo: Mode; size?: "sm" | "md" }) {
   const meta = MODO_META[modo];
   const pad = size === "md" ? "px-3 py-1.5 text-sm" : "px-2 py-0.5 text-xs";
   return (

@@ -6,22 +6,22 @@ using Revoa.Community.Domain.Repositories;
 
 namespace Revoa.Community.Application.Commands;
 
-// Cria comunidade + vínculo de Criador. Ownership (CriadorId/Nome/Avatar) do token, nunca do body.
+// Cria comunidade + vínculo de Criador. Ownership (CreatorId/Nome/Avatar) do token, nunca do body.
 public sealed record CreateCommunityCommand(
-    Guid CriadorId,
-    string CriadorNome,
-    string? CriadorAvatarUrl,
-    string Nome,
-    string Descricao,
-    CommunityTipo Tipo,
-    CommunityEixo Eixo,
-    CommunityVisibilidade Visibilidade,
+    Guid CreatorId,
+    string CreatorName,
+    string? CreatorAvatarUrl,
+    string Name,
+    string Description,
+    CommunityType Type,
+    CommunityAxis Axis,
+    CommunityVisibility Visibility,
     string? Password,
     double? Lat,
     double? Lng,
-    string? Bairro,
-    string? Cidade,
-    string? Estado) : IRequest<Result<string>>;
+    string? Neighborhood,
+    string? City,
+    string? State) : IRequest<Result<string>>;
 
 public class CreateCommunityCommandHandler : IRequestHandler<CreateCommunityCommand, Result<string>>
 {
@@ -40,27 +40,27 @@ public class CreateCommunityCommandHandler : IRequestHandler<CreateCommunityComm
         try
         {
             community = CommunityGroup.Create(
-                request.Nome,
-                request.Descricao,
-                request.Tipo,
-                request.Eixo,
-                request.Visibilidade,
+                request.Name,
+                request.Description,
+                request.Type,
+                request.Axis,
+                request.Visibility,
                 request.Password,
                 request.Lat,
                 request.Lng,
-                request.Bairro,
-                request.Cidade,
-                request.Estado,
-                request.CriadorId,
-                request.CriadorNome,
-                request.CriadorAvatarUrl);
+                request.Neighborhood,
+                request.City,
+                request.State,
+                request.CreatorId,
+                request.CreatorName,
+                request.CreatorAvatarUrl);
         }
         catch (DomainException ex)
         {
             return Result<string>.Fail(ex.Message);
         }
 
-        if (community.Visibilidade == CommunityVisibilidade.Private)
+        if (community.Visibility == CommunityVisibility.Private)
         {
             community.SetPasswordHash(PasswordHasher.Hash(request.Password!));
         }
@@ -69,11 +69,11 @@ public class CreateCommunityCommandHandler : IRequestHandler<CreateCommunityComm
 
         // Criador vira membro com papel Criador.
         var criador = Membership.Create(
-            request.CriadorId,
-            request.CriadorNome,
-            request.CriadorAvatarUrl,
+            request.CreatorId,
+            request.CreatorName,
+            request.CreatorAvatarUrl,
             community.Id,
-            MembershipPapel.Criador);
+            MembershipRole.Creator);
         await _memberships.AddAsync(criador, ct);
 
         return Result<string>.Ok(community.Id.ToString());

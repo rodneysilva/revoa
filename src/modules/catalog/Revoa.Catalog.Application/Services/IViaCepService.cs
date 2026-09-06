@@ -1,7 +1,7 @@
 namespace Revoa.Catalog.Application.Services;
 
 // Resultado da consulta ViaCEP (bairro/cidade/estado por CEP).
-public record ViaCepAddress(string? Bairro, string? Cidade, string? Estado);
+public record ViaCepAddress(string? Neighborhood, string? City, string? State);
 
 // Porta para o ViaCEP (https://viacep.com.br). Implementação HttpClient no Infrastructure.
 public interface IViaCepService

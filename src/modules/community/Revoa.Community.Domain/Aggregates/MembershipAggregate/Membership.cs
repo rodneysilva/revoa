@@ -2,11 +2,11 @@
 
 namespace Revoa.Community.Domain.Aggregates.MembershipAggregate;
 
-public enum MembershipPapel
+public enum MembershipRole
 {
-    Membro,
-    Moderador,
-    Criador
+    Member,
+    Moderator,
+    Creator
 }
 
 public enum MembershipStatus
@@ -15,16 +15,16 @@ public enum MembershipStatus
     Bloqueada
 }
 
-// VÃ­nculo usuÃ¡rioâ†”comunidade (OOUX objeto 18). UsuarioNome/AvatarUrl embed anti-N+1.
-// Papel Criador Ã© imutÃ¡vel (nÃ£o pode ser rebaixado/bloqueado). Ãndice Ãºnico (UsuarioId, ComunidadeId).
+// VÃ­nculo usuÃ¡rioâ†”comunidade (OOUX objeto 18). UserName/AvatarUrl embed anti-N+1.
+// Papel Criador Ã© imutÃ¡vel (nÃ£o pode ser rebaixado/bloqueado). Ãndice Ãºnico (UsuarioId, CommunityId).
 public class Membership : AggregateRoot
 {
     public Guid UsuarioId { get; private set; }
-    public string UsuarioNome { get; private set; } = string.Empty;
+    public string UserName { get; private set; } = string.Empty;
     public string? UsuarioAvatarUrl { get; private set; }
 
-    public Guid ComunidadeId { get; private set; }
-    public MembershipPapel Papel { get; private set; }
+    public Guid CommunityId { get; private set; }
+    public MembershipRole Role { get; private set; }
     public DateTime JoinedAt { get; private set; }
     public MembershipStatus Status { get; private set; }
 
@@ -35,7 +35,7 @@ public class Membership : AggregateRoot
         string usuarioNome,
         string? usuarioAvatarUrl,
         Guid comunidadeId,
-        MembershipPapel papel)
+        MembershipRole papel)
     {
         if (usuarioId == Guid.Empty)
         {
@@ -51,10 +51,10 @@ public class Membership : AggregateRoot
         {
             Id = Guid.NewGuid(),
             UsuarioId = usuarioId,
-            UsuarioNome = string.IsNullOrWhiteSpace(usuarioNome) ? "UsuÃ¡rio" : usuarioNome,
+            UserName = string.IsNullOrWhiteSpace(usuarioNome) ? "UsuÃ¡rio" : usuarioNome,
             UsuarioAvatarUrl = usuarioAvatarUrl,
-            ComunidadeId = comunidadeId,
-            Papel = papel,
+            CommunityId = comunidadeId,
+            Role = papel,
             JoinedAt = DateTime.UtcNow,
             Status = MembershipStatus.Ativa,
             Version = 1
@@ -68,28 +68,28 @@ public class Membership : AggregateRoot
             throw new DomainException("Membro bloqueado nÃ£o pode ser promovido.");
         }
 
-        if (Papel == MembershipPapel.Criador)
+        if (Role == MembershipRole.Creator)
         {
             throw new DomainException("Criador jÃ¡ Ã© o papel mÃ¡ximo.");
         }
 
-        Papel = MembershipPapel.Moderador;
+        Role = MembershipRole.Moderator;
     }
 
     // Apenas Moderador â†’ Membro.
     public void RebaixarMembro()
     {
-        if (Papel != MembershipPapel.Moderador)
+        if (Role != MembershipRole.Moderator)
         {
             throw new DomainException("Apenas moderadores podem ser rebaixados a membro.");
         }
 
-        Papel = MembershipPapel.Membro;
+        Role = MembershipRole.Member;
     }
 
     public void Bloquear()
     {
-        if (Papel == MembershipPapel.Criador)
+        if (Role == MembershipRole.Creator)
         {
             throw new DomainException("Criador nÃ£o pode ser bloqueado.");
         }

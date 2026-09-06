@@ -7,7 +7,7 @@ public sealed record ReviewDto(
     Guid Id,
     Guid TradeId,
     Guid ReviewerId,
-    string ReviewerNome,
+    string ReviewerName,
     int Rating,
     string? Comment,
     DateTime CreatedAt);
@@ -18,7 +18,7 @@ public static class ReviewDtoMapper
         r.Id,
         r.TradeId,
         r.ReviewerId,
-        r.ReviewerNome,
+        r.ReviewerName,
         r.Rating,
         r.Comment,
         r.CreatedAt);

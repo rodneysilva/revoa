@@ -64,7 +64,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = null; // PascalCase (bate com os tipos do FE)
-        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // enums como string legível ("Ativo","Product")
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()); // enums como string legível ("Active","Product")
     });
 builder.Services.AddSignalR()
     .AddJsonProtocol(options => options.PayloadSerializerOptions.PropertyNamingPolicy = null);

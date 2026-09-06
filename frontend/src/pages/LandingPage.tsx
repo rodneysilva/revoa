@@ -4,10 +4,10 @@ import { Hero } from "../components/Hero";
 import { ListingCard } from "../components/ListingCard";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import type { FeedItem, Modo } from "../api/types";
+import type { FeedItem, Mode } from "../api/types";
 
 interface Guide {
-  modo: Modo;
+  modo: Mode;
   emoji: string;
   title: string;
   intro: string;
@@ -18,7 +18,7 @@ interface Guide {
 }
 
 const MODO_CARDS: {
-  modo: Modo;
+  modo: Mode;
   emoji: string;
   title: string;
   desc: string;
@@ -27,7 +27,7 @@ const MODO_CARDS: {
   hover: string;
 }[] = [
   {
-    modo: "Trocar",
+    modo: "Trade",
     emoji: "🔄",
     title: "Trocar",
     desc: "Troque produtos e serviços com o RVM, a moeda da comunidade.",
@@ -36,7 +36,7 @@ const MODO_CARDS: {
     hover: "hover:border-esmeralda/60",
   },
   {
-    modo: "Repassar",
+    modo: "Resell",
     emoji: "💜",
     title: "Repassar",
     desc: "Repassa por um valor baixo em RVM, acessível para mais gente.",
@@ -45,7 +45,7 @@ const MODO_CARDS: {
     hover: "hover:border-rosa/60",
   },
   {
-    modo: "Doar",
+    modo: "Donate",
     emoji: "🎁",
     title: "Doar",
     desc: "Dê nova vida ao que não usa — de graça, a quem precisa.",
@@ -54,7 +54,7 @@ const MODO_CARDS: {
     hover: "hover:border-terracota/60",
   },
   {
-    modo: "Voluntariar",
+    modo: "Volunteer",
     emoji: "🤝",
     title: "Voluntariar",
     desc: "Ofereça seu tempo e habilidades. A comunidade agradece.",
@@ -66,7 +66,7 @@ const MODO_CARDS: {
 
 const GUIDES: Guide[] = [
   {
-    modo: "Trocar",
+    modo: "Trade",
     emoji: "🔄",
     title: "Trocar",
     intro:
@@ -87,7 +87,7 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    modo: "Repassar",
+    modo: "Resell",
     emoji: "💜",
     title: "Repassar",
     intro:
@@ -107,7 +107,7 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    modo: "Doar",
+    modo: "Donate",
     emoji: "🎁",
     title: "Doar",
     intro:
@@ -128,7 +128,7 @@ const GUIDES: Guide[] = [
     ],
   },
   {
-    modo: "Voluntariar",
+    modo: "Volunteer",
     emoji: "🤝",
     title: "Voluntariar",
     intro:
@@ -161,7 +161,7 @@ export function LandingPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<FeedItem[] | null>(null);
   const [offline, setOffline] = useState(false);
-  const [activeModo, setActiveModo] = useState<Modo | null>(null);
+  const [activeModo, setActiveModo] = useState<Mode | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -181,7 +181,7 @@ export function LandingPage() {
     };
   }, []);
 
-  function focusModo(m: Modo) {
+  function focusModo(m: Mode) {
     setActiveModo(m);
     requestAnimationFrame(() => {
       document

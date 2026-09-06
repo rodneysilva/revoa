@@ -20,7 +20,7 @@ public class CategoriesRepository : MongoRepositoryBase<Category>, ICategoryRepo
     public async Task<IReadOnlyList<Category>> ListActiveAsync(CancellationToken ct)
     {
         return await Collection.Find(c => c.Status == CategoryStatus.Active)
-            .SortBy(c => c.Nome)
+            .SortBy(c => c.Name)
             .ToListAsync(ct);
     }
 

@@ -6,19 +6,19 @@ namespace Revoa.Catalog.Domain.Repositories;
 // no banco (Haversine é feita em memória no handler) e usa CandidateCap.
 public record FeedFilter(
     ListingKind? Kind,
-    Guid? CategoriaId,
-    Guid? ComunidadeId,
-    ListingModo? Modo,
-    long? PrecoMin,
-    long? PrecoMax,
-    bool? DoarApenas,
+    Guid? CategoryId,
+    Guid? CommunityId,
+    ListingMode? Mode,
+    long? PriceMin,
+    long? PriceMax,
+    bool? DonationOnly,
     string? Q,
     string? Sort,
     int Page,
     int PageSize,
     bool RadiusMode,
     int CandidateCap,
-    IReadOnlyList<Guid>? VendedorIds);
+    IReadOnlyList<Guid>? SellerIds);
 
 public interface IListingRepository
 {

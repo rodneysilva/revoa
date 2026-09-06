@@ -16,7 +16,7 @@ public class PriceReferencesRepository : IPriceReferenceRepository, IMongoIndexE
 
     public async Task<PriceReference?> GetByCategoryAsync(Guid categoriaId, CancellationToken ct)
     {
-        return await _priceReferences.Find(p => p.CategoriaId == categoriaId).FirstOrDefaultAsync(ct);
+        return await _priceReferences.Find(p => p.CategoryId == categoriaId).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<PriceReference>> GetAllAsync(CancellationToken ct)
@@ -27,14 +27,14 @@ public class PriceReferencesRepository : IPriceReferenceRepository, IMongoIndexE
             .ToListAsync(ct);
     }
 
-    // Upsert por CategoriaId (IsUpsert=true): cria se não existe, substitui se existe.
+    // Upsert por CategoryId (IsUpsert=true): cria se não existe, substitui se existe.
     // Bump de Version é aqui (repositório), nunca no aggregate. Sem optimistic locking —
-    // a unicidade de CategoriaId é o controle deste aggregate (refresh sempre recria o doc).
+    // a unicidade de CategoryId é o controle deste aggregate (refresh sempre recria o doc).
     public async Task UpsertAsync(PriceReference priceReference, CancellationToken ct)
     {
         priceReference.IncrementVersion();
 
-        var filter = Builders<PriceReference>.Filter.Eq(p => p.CategoriaId, priceReference.CategoriaId);
+        var filter = Builders<PriceReference>.Filter.Eq(p => p.CategoryId, priceReference.CategoryId);
         await _priceReferences.ReplaceOneAsync(
             filter, priceReference, new ReplaceOptions { IsUpsert = true }, ct);
     }
@@ -43,7 +43,7 @@ public class PriceReferencesRepository : IPriceReferenceRepository, IMongoIndexE
     {
         await _priceReferences.Indexes.CreateOneAsync(
             new CreateIndexModel<PriceReference>(
-                Builders<PriceReference>.IndexKeys.Ascending(p => p.CategoriaId),
+                Builders<PriceReference>.IndexKeys.Ascending(p => p.CategoryId),
                 new CreateIndexOptions { Name = "ux_CategoriaId", Unique = true }),
             cancellationToken: ct);
     }

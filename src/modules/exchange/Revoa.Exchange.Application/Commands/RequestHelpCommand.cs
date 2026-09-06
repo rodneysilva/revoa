@@ -9,10 +9,10 @@ namespace Revoa.Exchange.Application.Commands;
 // Pedido de ajuda (entra na fila de doação/voluntariado — OOUX 13). Anônimo NÃO pode; gate Verified.
 public sealed record RequestHelpCommand(
     Guid AuthorId,
-    string AuthorNome,
+    string AuthorName,
     string? AuthorAvatarUrl,
     Guid ListingId,
-    string Mensagem) : IRequest<Result<string>>;
+    string Message) : IRequest<Result<string>>;
 
 public class RequestHelpCommandHandler : IRequestHandler<RequestHelpCommand, Result<string>>
 {
@@ -46,9 +46,9 @@ public class RequestHelpCommandHandler : IRequestHandler<RequestHelpCommand, Res
             help = HelpRequest.Create(
                 request.ListingId,
                 request.AuthorId,
-                request.AuthorNome,
+                request.AuthorName,
                 request.AuthorAvatarUrl,
-                request.Mensagem);
+                request.Message);
         }
         catch (DomainException ex)
         {

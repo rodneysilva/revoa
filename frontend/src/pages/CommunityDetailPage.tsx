@@ -13,7 +13,7 @@ import {
   PAPEL_META,
   VISIBILIDADE_LABEL,
 } from "../lib/community";
-import type { Community, FeedItem, Membership, PapelMembro, Post } from "../api/types";
+import type { Community, FeedItem, Membership, MembershipRole, Post } from "../api/types";
 
 /* ═══════════════════════════════════════════════════════════════════════
    Navegação por objetos (OOUX — objects-first).
@@ -98,7 +98,7 @@ export function CommunityDetailPage() {
     [members]
   );
   const isMember = !!(user && activeMembers.some((m) => m.UsuarioId === user.userId));
-  const isPrivate = community?.Visibilidade === "Private";
+  const isPrivate = community?.Visibility === "Private";
 
   useEffect(() => {
     const ids = Array.from(new Set(activeMembers.map((m) => m.UsuarioId).filter(Boolean)));
@@ -111,7 +111,7 @@ export function CommunityDetailPage() {
     setMemberListings(null);
     setListingsError(false);
     api
-      .feed({ vendedorIds: ids.join(","), page: 1 })
+      .feed({ sellerIds: ids.join(","), page: 1 })
       .then((items) => {
         if (active) setMemberListings(items);
       })
@@ -171,14 +171,14 @@ export function CommunityDetailPage() {
       const createdId = await api.createPost(id, undefined, c);
       const optimistic: Post = {
         Id: String(createdId),
-        ComunidadeId: id,
+        CommunityId: id,
         AutorId: user.userId,
-        AutorNome: user.nome,
+        AuthorName: user.nome,
         AutorAvatarUrl: undefined,
-        Conteudo: c,
+        Content: c,
         Path: String(createdId),
         Depth: 0,
-        Status: "Visivel",
+        Status: "Visible",
         CreatedAt: new Date().toISOString(),
       };
       setPosts((prev) => [optimistic, ...prev]);
@@ -230,7 +230,7 @@ export function CommunityDetailPage() {
       </div>
     );
 
-  const local = [community.Bairro, community.Cidade, community.Estado]
+  const local = [community.Neighborhood, community.City, community.State]
     .filter(Boolean)
     .join(", ");
 
@@ -257,32 +257,32 @@ export function CommunityDetailPage() {
         <div className="relative p-6 sm:p-8 text-white">
           <div className="flex items-center gap-1.5 flex-wrap mb-3">
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm">
-              {EIXO_EMOJI[community.Eixo]} {EIXO_LABEL[community.Eixo]}
+              {EIXO_EMOJI[community.Axis]} {EIXO_LABEL[community.Axis]}
             </span>
-            {community.Tipo === "Default" && (
+            {community.Type === "Default" && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-esmeralda/40 backdrop-blur-sm">
                 Oficial
               </span>
             )}
             <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
-              {community.Visibilidade === "Private"
-                ? `🔒 ${VISIBILIDADE_LABEL[community.Visibilidade]}`
-                : VISIBILIDADE_LABEL[community.Visibilidade]}
+              {community.Visibility === "Private"
+                ? `🔒 ${VISIBILIDADE_LABEL[community.Visibility]}`
+                : VISIBILIDADE_LABEL[community.Visibility]}
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-bold drop-shadow">{community.Nome}</h1>
-          {community.Descricao && (
+          <h1 className="text-2xl sm:text-4xl font-bold drop-shadow">{community.Name}</h1>
+          {community.Description && (
             <p className="mt-2 max-w-3xl text-white/90 whitespace-pre-wrap drop-shadow">
-              {community.Descricao}
+              {community.Description}
             </p>
           )}
 
           <div className="mt-4 flex items-center gap-x-4 gap-y-2 text-sm flex-wrap">
             <div className="flex items-center gap-2">
-              <Avatar name={community.CriadorNome} src={community.CriadorAvatarUrl} size={26} />
+              <Avatar name={community.CreatorName} src={community.CreatorAvatarUrl} size={26} />
               <span className="text-white/90">
-                por <span className="font-semibold">{community.CriadorNome}</span>
+                por <span className="font-semibold">{community.CreatorName}</span>
               </span>
             </div>
             <button
@@ -634,17 +634,17 @@ function MembrosPanel({
   members: Membership[];
   currentUserId?: string;
 }) {
-  const [filtro, setFiltro] = useState<PapelMembro | "Todos">("Todos");
+  const [filtro, setFiltro] = useState<MembershipRole | "Todos">("Todos");
 
-  const papeis: (PapelMembro | "Todos")[] = ["Todos", "Criador", "Moderador", "Membro"];
+  const papeis: (MembershipRole | "Todos")[] = ["Todos", "Creator", "Moderator", "Member"];
   const visiveis =
-    filtro === "Todos" ? members : members.filter((m) => m.Papel === filtro);
+    filtro === "Todos" ? members : members.filter((m) => m.Role === filtro);
 
   return (
     <div>
       <div className="flex gap-2 flex-wrap mb-4">
         {papeis.map((p) => {
-          const n = p === "Todos" ? members.length : members.filter((m) => m.Papel === p).length;
+          const n = p === "Todos" ? members.length : members.filter((m) => m.Role === p).length;
           const active = filtro === p;
           return (
             <button
@@ -672,24 +672,24 @@ function MembrosPanel({
           <p className="text-silver">
             {filtro === "Todos"
               ? "Ninguém por aqui ainda."
-              : `Nenhum ${PAPEL_META[filtro as PapelMembro].label.toLowerCase()} ainda.`}
+              : `Nenhum ${PAPEL_META[filtro as MembershipRole].label.toLowerCase()} ainda.`}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {visiveis.map((m) => {
-            const papel = PAPEL_META[m.Papel];
+            const papel = PAPEL_META[m.Role];
             const voce = currentUserId && m.UsuarioId === currentUserId;
             return (
               <div
                 key={m.Id}
                 className="flex items-center gap-3 bg-charcoal border border-smoke rounded-xl p-3"
               >
-                <Avatar name={m.UsuarioNome} src={m.UsuarioAvatarUrl} size={44} />
+                <Avatar name={m.UserName} src={m.UsuarioAvatarUrl} size={44} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-semibold text-cream truncate">
-                      {m.UsuarioNome}
+                      {m.UserName}
                     </span>
                     {voce && <span className="text-xs text-esmeralda">você</span>}
                   </div>

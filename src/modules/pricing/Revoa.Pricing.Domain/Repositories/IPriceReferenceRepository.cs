@@ -8,8 +8,8 @@ public interface IPriceReferenceRepository
 
     Task<IReadOnlyList<PriceReference>> GetAllAsync(CancellationToken ct);
 
-    // Upsert por CategoriaId: cria se não existe, substitui se existe (sem optimistic locking —
-    // a unicidade de CategoriaId é o controle de concorrência deste aggregate; o refresh sempre
+    // Upsert por CategoryId: cria se não existe, substitui se existe (sem optimistic locking —
+    // a unicidade de CategoryId é o controle de concorrência deste aggregate; o refresh sempre
     // recria o documento inteiro). Bump de Version é aqui (repositório), nunca no aggregate.
     Task UpsertAsync(PriceReference priceReference, CancellationToken ct);
 

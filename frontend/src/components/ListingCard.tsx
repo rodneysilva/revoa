@@ -18,7 +18,7 @@ function serviceDurationLabel(item: FeedItem): string | null {
 }
 
 export function ListingCard({ item }: { item: FeedItem }) {
-  const gratis = item.PrecoRvm === 0;
+  const gratis = item.PriceRvm === 0;
   const isService = item.Kind === "Service";
   const condition = !isService && item.Condition
     ? CONDITION_LABEL[item.Condition] ?? item.Condition
@@ -26,7 +26,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
   const duration = serviceDurationLabel(item);
   const when = item.CreatedAt ? timeAgo(item.CreatedAt) : null;
   const { rate } = useBrlRate();
-  const brl = !gratis ? brlEstimate(item.PrecoRvm, rate ?? 0) : null;
+  const brl = !gratis ? brlEstimate(item.PriceRvm, rate ?? 0) : null;
 
   return (
     <Link
@@ -37,7 +37,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
         {item.PrimeiraImagem ? (
           <img
             src={item.PrimeiraImagem}
-            alt={item.Titulo}
+            alt={item.Title}
             className="w-full h-full object-cover"
             loading="lazy"
             onError={(e) => {
@@ -50,7 +50,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
       </div>
       <div className="p-4 flex flex-col flex-1">
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
-          <Badge modo={item.Modo} />
+          <Badge modo={item.Mode} />
           {isService ? (
             <span className="text-xs px-2 py-0.5 rounded-full bg-sky/15 text-sky font-medium">
               Serviço
@@ -68,7 +68,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
         </div>
 
         <h3 className="font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
-          {item.Titulo}
+          {item.Title}
         </h3>
 
         <div className="mt-1">
@@ -77,7 +77,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
           ) : (
             <div className="flex flex-col gap-0.5">
               <span className="rms text-cream">
-                RM$ {item.PrecoRvm.toLocaleString("pt-BR")}
+                RM$ {item.PriceRvm.toLocaleString("pt-BR")}
               </span>
               {brl && (
                 <span className="text-xs text-silver">≈ {brl}</span>
@@ -87,12 +87,12 @@ export function ListingCard({ item }: { item: FeedItem }) {
         </div>
 
         <div className="mt-auto pt-3 flex items-center gap-2 text-xs text-silver">
-          <Avatar name={item.VendedorNome} src={item.VendedorAvatarUrl} size={20} />
-          <span className="truncate">{item.VendedorNome}</span>
+          <Avatar name={item.SellerName} src={item.SellerAvatarUrl} size={20} />
+          <span className="truncate">{item.SellerName}</span>
           {item.DistanciaKm != null ? (
             <span className="ml-auto whitespace-nowrap">~{item.DistanciaKm.toFixed(1)} km</span>
-          ) : item.Cidade ? (
-            <span className="ml-auto truncate">{item.Cidade}</span>
+          ) : item.City ? (
+            <span className="ml-auto truncate">{item.City}</span>
           ) : null}
         </div>
 

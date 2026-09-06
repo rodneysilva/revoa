@@ -13,8 +13,8 @@ import {
 import type {
   Community,
   CreateCommunityBody,
-  EixoComunidade,
-  VisibilidadeComunidade,
+  CommunityAxis,
+  CommunityVisibility,
 } from "../api/types";
 
 type EixoFilter = (typeof EIXO_FILTERS)[number];
@@ -38,7 +38,7 @@ export function CommunityPage() {
     setLoading(true);
     setError(null);
     api
-      .communities({ eixo: filter === "Todos" ? undefined : filter })
+      .communities({ axis: filter === "Todos" ? undefined : filter })
       .then((d) => {
         if (active) setItems(d);
       })
@@ -141,7 +141,7 @@ export function CommunityPage() {
 }
 
 function CommunityCard({ c }: { c: Community }) {
-  const local = [c.Bairro, c.Cidade, c.Estado].filter(Boolean).join(", ");
+  const local = [c.Neighborhood, c.City, c.State].filter(Boolean).join(", ");
   return (
     <Link
       to={`/community/${c.Id}`}
@@ -149,15 +149,15 @@ function CommunityCard({ c }: { c: Community }) {
     >
       <div className="bg-community relative h-16 flex items-center px-4">
         <span className="text-2xl drop-shadow" aria-hidden>
-          {EIXO_EMOJI[c.Eixo]}
+          {EIXO_EMOJI[c.Axis]}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
-          {c.Tipo === "Default" && (
+          {c.Type === "Default" && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm text-white">
               Oficial
             </span>
           )}
-          {c.Visibilidade === "Private" && (
+          {c.Visibility === "Private" && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white">
               🔒
             </span>
@@ -166,13 +166,13 @@ function CommunityCard({ c }: { c: Community }) {
       </div>
       <div className="p-4">
         <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber/15 text-amber">
-          {EIXO_LABEL[c.Eixo]}
+          {EIXO_LABEL[c.Axis]}
         </span>
         <h3 className="mt-2 font-semibold text-cream group-hover:text-amber line-clamp-1">
-          {c.Nome}
+          {c.Name}
         </h3>
         <p className="mt-1 text-sm text-silver line-clamp-2 min-h-[2.5rem]">
-          {c.Descricao || "Sem descrição."}
+          {c.Description || "Sem descrição."}
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-silver">
           <span>
@@ -194,8 +194,8 @@ function CreateCommunityModal({
 }) {
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [eixo, setEixo] = useState<EixoComunidade>("Geo");
-  const [visibilidade, setVisibilidade] = useState<VisibilidadeComunidade>("Open");
+  const [eixo, setEixo] = useState<CommunityAxis>("Geo");
+  const [visibilidade, setVisibilidade] = useState<CommunityVisibility>("Open");
   const [password, setPassword] = useState("");
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
@@ -211,15 +211,15 @@ function CreateCommunityModal({
       return setError("Comunidades privadas precisam de uma senha de acesso.");
 
     const body: CreateCommunityBody = {
-      Nome: nome.trim(),
-      Descricao: descricao.trim(),
-      Tipo: "User",
-      Eixo: eixo,
-      Visibilidade: visibilidade,
+      Name: nome.trim(),
+      Description: descricao.trim(),
+      Type: "User",
+      Axis: eixo,
+      Visibility: visibilidade,
       Password: visibilidade === "Private" ? password : undefined,
-      Bairro: bairro.trim() || undefined,
-      Cidade: cidade.trim() || undefined,
-      Estado: estado.trim() || undefined,
+      Neighborhood: bairro.trim() || undefined,
+      City: cidade.trim() || undefined,
+      State: estado.trim() || undefined,
     };
 
     setLoading(true);
@@ -279,7 +279,7 @@ function CreateCommunityModal({
               <span className={labelTxtCls}>Eixo</span>
               <select
                 value={eixo}
-                onChange={(e) => setEixo(e.target.value as EixoComunidade)}
+                onChange={(e) => setEixo(e.target.value as CommunityAxis)}
                 className={inputCls}
               >
                 {EIXOS.map((x) => (
@@ -294,7 +294,7 @@ function CreateCommunityModal({
               <select
                 value={visibilidade}
                 onChange={(e) =>
-                  setVisibilidade(e.target.value as VisibilidadeComunidade)
+                  setVisibilidade(e.target.value as CommunityVisibility)
                 }
                 className={inputCls}
               >

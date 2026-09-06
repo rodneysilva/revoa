@@ -5,8 +5,8 @@ namespace Revoa.Pricing.Application.DTOs;
 // Leitura pública da referência de preço justo de uma categoria (GET /api/pricing/categories/{id}
 // e GET /api/pricing — transparência para revoa.org). Todos os campos do aggregate expostos.
 public sealed record PriceReferenceDto(
-    Guid CategoriaId,
-    string? CategoriaSlug,
+    Guid CategoryId,
+    string? CategorySlug,
     long RvmMedian,
     int SampleCount,
     decimal BrlRate,
@@ -20,8 +20,8 @@ public sealed record PriceReferenceDto(
 public static class PriceReferenceDtoMapper
 {
     public static PriceReferenceDto From(PriceReference p) => new(
-        p.CategoriaId,
-        p.CategoriaSlug,
+        p.CategoryId,
+        p.CategorySlug,
         p.RvmMedian,
         p.SampleCount,
         p.BrlRate,

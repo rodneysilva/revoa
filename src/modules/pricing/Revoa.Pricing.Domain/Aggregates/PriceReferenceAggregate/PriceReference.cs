@@ -2,16 +2,16 @@ using Revoa.Abstractions;
 
 namespace Revoa.Pricing.Domain.Aggregates.PriceReferenceAggregate;
 
-// Referência de preço justo por categoria (UF-28, Fase 3). Um documento por CategoriaId (coleção
-// PriceReferences, índice único por CategoriaId). Combina 4 fontes (resiliente — se uma falha,
+// Referência de preço justo por categoria (UF-28, Fase 3). Um documento por CategoryId (coleção
+// PriceReferences, índice único por CategoryId). Combina 4 fontes (resiliente — se uma falha,
 // segue sem ela): (1) comunidade (mediana RVM dos anúncios ativos), (2) BRL admin-seed
 // (rate global + override por slug), (3) IPCA IBGE (último mês %), (4) Ollama (refino opcional
 // da sugestão justa — fallback mediana). Imutável após create — o refresh sempre recria; o repo
-// faz Upsert por CategoriaId. Bump de Version é responsabilidade do repositório, nunca do aggregate.
+// faz Upsert por CategoryId. Bump de Version é responsabilidade do repositório, nunca do aggregate.
 public class PriceReference : AggregateRoot
 {
-    public Guid CategoriaId { get; private set; }
-    public string? CategoriaSlug { get; private set; }
+    public Guid CategoryId { get; private set; }
+    public string? CategorySlug { get; private set; }
 
     // Base estatística comunitária.
     public long RvmMedian { get; private set; }
@@ -61,8 +61,8 @@ public class PriceReference : AggregateRoot
         return new PriceReference
         {
             Id = Guid.NewGuid(),
-            CategoriaId = categoriaId,
-            CategoriaSlug = categoriaSlug,
+            CategoryId = categoriaId,
+            CategorySlug = categoriaSlug,
             RvmMedian = rvmMedian,
             SampleCount = sampleCount,
             BrlRate = brlRate,

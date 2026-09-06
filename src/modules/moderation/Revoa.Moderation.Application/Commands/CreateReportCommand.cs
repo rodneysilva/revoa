@@ -9,7 +9,7 @@ namespace Revoa.Moderation.Application.Commands;
 // ReporterId/Nome vêm do token, nunca do body. Gate Verified no controller.
 public sealed record CreateReportCommand(
     Guid ReporterId,
-    string ReporterNome,
+    string ReporterName,
     ReportTarget TargetType,
     Guid TargetId,
     ReportReason Reason,
@@ -30,7 +30,7 @@ public class CreateReportCommandHandler : IRequestHandler<CreateReportCommand, R
         {
             var report = Report.Create(
                 request.ReporterId,
-                request.ReporterNome,
+                request.ReporterName,
                 request.TargetType,
                 request.TargetId,
                 request.Reason,

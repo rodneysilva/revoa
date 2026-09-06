@@ -15,7 +15,7 @@ public class CommentsRepository : MongoRepositoryBase<Comment>, ICommentReposito
     {
         var fb = Builders<Comment>.Filter;
         var query = fb.Eq(c => c.ListingId, listingId)
-                    & fb.Eq(c => c.Status, CommentStatus.Visivel);
+                    & fb.Eq(c => c.Status, CommentStatus.Visible);
 
         query &= parentId is null
             ? fb.Eq(c => c.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull

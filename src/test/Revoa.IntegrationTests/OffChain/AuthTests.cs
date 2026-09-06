@@ -20,9 +20,9 @@ public class AuthTests : IntegrationTestBase
 
         var resp = await Http.PostAsync("/api/auth/register", JsonBody(new
         {
-            Nome = "Usuario Auth E2E",
+            Name = "Usuario Auth E2E",
             Email = email,
-            Telefone = "+5511980001111",
+            Phone = "+5511980001111",
             BirthDate = "1990-01-01",
             CouponCode = (string?)null,
         }));

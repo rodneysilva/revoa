@@ -40,7 +40,7 @@ public class ReleaseTradeCommandHandler : IRequestHandler<ReleaseTradeCommand, R
             return Result.Fail("Troca não encontrada.");
         }
 
-        if (trade.State is not (TradeState.Financiada or TradeState.Disputada))
+        if (trade.State is not (TradeState.Funded or TradeState.Disputed))
         {
             return Result.Fail("Troca não está em estado de liberação.");
         }
@@ -90,7 +90,7 @@ public class ReleaseTradeCommandHandler : IRequestHandler<ReleaseTradeCommand, R
         if (trade.IsDonation)
         {
             await _eventBus.PublishAsync(
-                new DonationCompletedEvent(trade.Id, trade.ListingId, trade.SellerId, trade.BuyerId, trade.Modo.ToString()),
+                new DonationCompletedEvent(trade.Id, trade.ListingId, trade.SellerId, trade.BuyerId, trade.Mode.ToString()),
                 ct);
         }
 

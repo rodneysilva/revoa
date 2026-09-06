@@ -147,20 +147,20 @@ export const api = {
   feed: (p: FeedParams): Promise<FeedItem[]> =>
     apiGet<FeedItem[]>(
       `/api/listings/feed${qs({
-        raio: p.raio,
+        radius: p.radius,
         lat: p.lat,
         lng: p.lng,
         kind: p.kind,
-        categoriaId: p.categoriaId,
-        comunidadeId: p.comunidadeId,
+        categoryId: p.categoryId,
+        communityId: p.communityId,
         page: p.page,
-        modo: p.modo,
-        precoMin: p.precoMin,
-        precoMax: p.precoMax,
-        doarApenas: p.doarApenas ? "true" : undefined,
+        mode: p.mode,
+        priceMin: p.priceMin,
+        priceMax: p.priceMax,
+        donationOnly: p.donationOnly ? "true" : undefined,
         sort: p.sort,
         q: p.q,
-        vendedorIds: p.vendedorIds,
+        sellerIds: p.sellerIds,
       })}`
     ),
   listing: (id: string): Promise<Listing> =>
@@ -172,7 +172,7 @@ export const api = {
   createComment: (listingId: string, parentId: string | null, conteudo: string): Promise<string> =>
     apiPost<string>(`/api/listings/${encodeURIComponent(listingId)}/comments`, {
       ParentId: parentId,
-      Conteudo: conteudo,
+      Content: conteudo,
     }),
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
@@ -202,7 +202,7 @@ export const api = {
       ReleaseToSeller: releaseToSeller,
     }),
   requestHelp: (listingId: string, mensagem: string): Promise<string> =>
-    apiPost<string>(`/api/help`, { ListingId: listingId, Mensagem: mensagem }),
+    apiPost<string>(`/api/help`, { ListingId: listingId, Message: mensagem }),
   helpQueue: (listingId: string): Promise<HelpRequest[]> =>
     apiGet<HelpRequest[]>(
       `/api/help${qs({ listingId })}`
@@ -242,10 +242,10 @@ export const api = {
   communities: (p: CommunityFeedParams = {}): Promise<Community[]> =>
     apiGet<Community[]>(
       `/api/communities${qs({
-        raio: p.raio,
+        radius: p.radius,
         lat: p.lat,
         lng: p.lng,
-        eixo: p.eixo,
+        axis: p.axis,
         page: p.page,
       })}`
     ),
@@ -275,7 +275,7 @@ export const api = {
   ): Promise<string> =>
     apiPost<string>(
       `/api/communities/${encodeURIComponent(communityId)}/posts`,
-      { ParentId: parentId, Conteudo: conteudo }
+      { ParentId: parentId, Content: conteudo }
     ),
   communityMembers: (id: string): Promise<Membership[]> =>
     apiGet<Membership[]>(`/api/communities/${encodeURIComponent(id)}/members`),
@@ -326,8 +326,8 @@ export const api = {
     apiPost<{ Updated: number }>(`/api/pricing/refresh`),
   brlRate: (): Promise<BrlRate> => apiGet<BrlRate>(`/api/pricing/rate`),
   pricing: (): Promise<PriceReference[]> => apiGet<PriceReference[]>(`/api/pricing`),
-  pricingByCategory: (categoriaId: string): Promise<PriceReference> =>
-    apiGet<PriceReference>(`/api/pricing/categories/${encodeURIComponent(categoriaId)}`),
+  pricingByCategory: (categoryId: string): Promise<PriceReference> =>
+    apiGet<PriceReference>(`/api/pricing/categories/${encodeURIComponent(categoryId)}`),
   demurragePreview: (): Promise<DemurragePreview> =>
     apiPost<DemurragePreview>(`/api/demurrage/preview`),
   demurrageRun: (): Promise<DemurrageRun> => apiPost<DemurrageRun>(`/api/demurrage/run`),

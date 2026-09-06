@@ -65,9 +65,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         telefone ??= $"+5511{Random.Shared.Next(100_000_000, 999_999_999)}";
         var resp = await Http.PostAsync("/api/auth/register", JsonBody(new
         {
-            Nome = nome,
+            Name = nome,
             Email = email,
-            Telefone = telefone,
+            Phone = telefone,
             BirthDate = "1990-01-01",
             CouponCode = (string?)null,
         }));

@@ -44,19 +44,19 @@ public class CatalogFeedTests : IntegrationTestBase
         var create = await client.PostAsync("/api/listings", JsonBody(new
         {
             Kind = "Service", // serviço NÃO minta ao listar (mint-on-purchase) → off-chain seguro
-            Modo = "Trocar",
-            Titulo = "Aula de violão E2E",
-            Descricao = "Descrição E2E do serviço",
+            Mode = "Trade",
+            Title = "Aula de violão E2E",
+            Description = "Descrição E2E do serviço",
             Imagens = Array.Empty<string>(),
-            PrecoRvm = 10L,
+            PriceRvm = 10L,
             Lat = (double?)null,
             Lng = (double?)null,
-            Bairro = (string?)null,
-            Cidade = (string?)null,
-            Cep = (string?)null,
-            CategoriaId = categoriaId,
-            ComunidadeId = (Guid?)null,
-            Visibilidade = "Global",
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            PostalCode = (string?)null,
+            CategoryId = categoriaId,
+            CommunityId = (Guid?)null,
+            Visibility = "Global",
             Condition = (string?)null,
             Stock = (int?)null,
             UnitType = "Hours",
@@ -72,7 +72,7 @@ public class CatalogFeedTests : IntegrationTestBase
         var detail = await client.GetAsync($"/api/listings/{listingId}");
         detail.StatusCode.Should().Be(HttpStatusCode.OK);
         var json = await detail.Content.ReadFromJsonAsync<JsonNode>();
-        json!["Status"]!.GetValue<string>().Should().Be("Ativo");
+        json!["Status"]!.GetValue<string>().Should().Be("Active");
         json["Kind"]!.GetValue<string>().Should().Be("Service");
     }
 }

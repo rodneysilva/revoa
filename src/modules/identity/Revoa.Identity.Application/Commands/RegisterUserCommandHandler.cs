@@ -40,7 +40,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
                 "Este e-mail já está cadastrado. Faça login ou reenvie a verificação para recuperar seu acesso.");
         }
 
-        if (await _users.GetByPhoneAsync(request.Telefone, ct) is not null)
+        if (await _users.GetByPhoneAsync(request.Phone, ct) is not null)
         {
             return Result<RegisterUserResult>.Fail("Este telefone já está cadastrado em outra conta.");
         }
@@ -54,7 +54,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         User user;
         try
         {
-            user = User.Create(request.Nome, request.Email, request.Telefone, idadeOk);
+            user = User.Create(request.Name, request.Email, request.Phone, idadeOk);
         }
         catch (DomainException ex)
         {
@@ -80,7 +80,7 @@ public class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommand, R
         // I/O independente (SMTP + Zenvia): paralelo para reduzir latência do cadastro.
         await Task.WhenAll(
             _emailSender.SendVerificationEmailAsync(user.Email, emailToken, ct),
-            _smsSender.SendOtpAsync(user.Telefone, otp, ct));
+            _smsSender.SendOtpAsync(user.Phone, otp, ct));
 
         await _eventBus.PublishAsync(
             new UserRegisteredEvent(user.Id, user.Email, request.CouponCode),

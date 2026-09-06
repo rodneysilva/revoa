@@ -6,7 +6,7 @@ public class RegisterUserCommandValidator : AbstractValidator<Commands.RegisterU
 {
     public RegisterUserCommandValidator()
     {
-        RuleFor(x => x.Nome)
+        RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Nome é obrigatório.")
             .MinimumLength(2).WithMessage("Nome deve ter ao menos 2 caracteres.");
 
@@ -14,7 +14,7 @@ public class RegisterUserCommandValidator : AbstractValidator<Commands.RegisterU
             .NotEmpty().WithMessage("E-mail é obrigatório.")
             .EmailAddress().WithMessage("E-mail inválido.");
 
-        RuleFor(x => x.Telefone)
+        RuleFor(x => x.Phone)
             .NotEmpty().WithMessage("Telefone é obrigatório.");
 
         RuleFor(x => x.BirthDate)

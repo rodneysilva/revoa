@@ -9,7 +9,7 @@ public class Review : AggregateRoot
 {
     public Guid TradeId { get; private set; }
     public Guid ReviewerId { get; private set; }
-    public string ReviewerNome { get; private set; } = string.Empty;
+    public string ReviewerName { get; private set; } = string.Empty;
     public Guid RevieweeId { get; private set; }
     public int Rating { get; private set; }
     public string? Comment { get; private set; }
@@ -51,7 +51,7 @@ public class Review : AggregateRoot
             Id = Guid.NewGuid(),
             TradeId = tradeId,
             ReviewerId = reviewerId,
-            ReviewerNome = string.IsNullOrWhiteSpace(reviewerNome) ? "Usuário" : reviewerNome,
+            ReviewerName = string.IsNullOrWhiteSpace(reviewerNome) ? "Usuário" : reviewerNome,
             RevieweeId = revieweeId,
             Rating = rating,
             Comment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim(),

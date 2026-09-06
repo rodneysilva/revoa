@@ -6,7 +6,7 @@ namespace Revoa.Moderation.Application.DTOs;
 public sealed record ReportDto(
     Guid Id,
     Guid ReporterId,
-    string ReporterNome,
+    string ReporterName,
     ReportTarget TargetType,
     Guid TargetId,
     ReportReason Reason,
@@ -23,7 +23,7 @@ public static class ReportDtoMapper
     public static ReportDto From(Report r) => new(
         r.Id,
         r.ReporterId,
-        r.ReporterNome,
+        r.ReporterName,
         r.TargetType,
         r.TargetId,
         r.Reason,

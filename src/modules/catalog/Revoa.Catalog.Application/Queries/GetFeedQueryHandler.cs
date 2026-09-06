@@ -32,12 +32,12 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
             kind = k;
         }
 
-        ListingModo? modo = null;
-        if (!string.IsNullOrWhiteSpace(request.Modo))
+        ListingMode? modo = null;
+        if (!string.IsNullOrWhiteSpace(request.Mode))
         {
-            if (!Enum.TryParse<ListingModo>(request.Modo, ignoreCase: true, out var m))
+            if (!Enum.TryParse<ListingMode>(request.Mode, ignoreCase: true, out var m))
             {
-                return Result<IReadOnlyList<FeedItemDto>>.Fail("Modo inválido (Trocar|Repassar|Doar|Voluntariar).");
+                return Result<IReadOnlyList<FeedItemDto>>.Fail("Modo inválido (Trade|Resell|Donate|Volunteer).");
             }
 
             modo = m;
@@ -45,25 +45,25 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
 
         // Filtro por raio (Haversine) exige lat+lng+raio. Nesse caso a paginação é feita em memória
         // (distância é computada no handler), então o banco devolve só candidatos (cap).
-        var useRadius = request.Raio is > 0 && request.Lat is not null && request.Lng is not null;
+        var useRadius = request.Radius is > 0 && request.Lat is not null && request.Lng is not null;
 
         var page = request.Page <= 0 ? 1 : request.Page;
 
         var filter = new FeedFilter(
             kind,
-            request.CategoriaId,
-            request.ComunidadeId,
+            request.CategoryId,
+            request.CommunityId,
             modo,
-            request.PrecoMin,
-            request.PrecoMax,
-            request.DoarApenas,
+            request.PriceMin,
+            request.PriceMax,
+            request.DonationOnly,
             request.Q,
             request.Sort,
             page,
             PageSize,
             useRadius,
             CandidateCap,
-            request.VendedorIds);
+            request.SellerIds);
 
         var candidates = await _listings.GetFeedAsync(filter, ct);
 
@@ -75,7 +75,7 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
 
         var lat = request.Lat!.Value;
         var lng = request.Lng!.Value;
-        var raio = request.Raio!.Value;
+        var raio = request.Radius!.Value;
 
         var withinRadius = candidates
             .Where(l => l.Localizacao.Lat is not null && l.Localizacao.Lng is not null)
@@ -100,15 +100,15 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
     private static FeedItemDto Map(Listing l) => new(
         l.Id,
         l.Kind.ToString(),
-        l.Modo.ToString(),
-        l.Titulo,
-        l.PrecoRvm,
+        l.Mode.ToString(),
+        l.Title,
+        l.PriceRvm,
         l.Imagens.FirstOrDefault(),
-        l.VendedorNome,
-        l.VendedorAvatarUrl,
-        l.Localizacao.Cidade,
-        l.Localizacao.Bairro,
-        l.CategoriaId,
+        l.SellerName,
+        l.SellerAvatarUrl,
+        l.Localizacao.City,
+        l.Localizacao.Neighborhood,
+        l.CategoryId,
         DistanciaKm: null,
         Condition: l.ProductDetails?.Condition.ToString(),
         UnitType: l.ServiceDetails?.UnitType.ToString(),

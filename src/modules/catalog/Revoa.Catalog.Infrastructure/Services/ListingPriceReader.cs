@@ -5,7 +5,7 @@ using Revoa.IntegrationContracts.Pricing;
 namespace Revoa.Catalog.Infrastructure.Services;
 
 // Adapter de IListingPriceReader: lê o aggregate Listing (coleção Listings) e devolve amostras de
-// preço (ativos com PrecoRvm > 0) + o slug da categoria p/ o módulo Pricing. Mantém o isolamento —
+// preço (ativos com PriceRvm > 0) + o slug da categoria p/ o módulo Pricing. Mantém o isolamento —
 // o Pricing consome só a porta (não acessa a coleção Listings). O slug é resolvido aqui (adapter
 // vive no Catalog, que é dono das Categories) para viabilizar o seed BRL por categoria.
 public class ListingPriceReader : IListingPriceReader
@@ -27,19 +27,19 @@ public class ListingPriceReader : IListingPriceReader
             return Array.Empty<ListingPriceSample>();
         }
 
-        // Resolve CategoriaId → Slug uma vez (batch).
+        // Resolve CategoryId → Slug uma vez (batch).
         var categories = await _categories.ListActiveAsync(ct);
         var slugByCategory = categories.ToDictionary(c => c.Id, c => c.Slug);
 
         return active
-            .Where(l => l.PrecoRvm > 0)
+            .Where(l => l.PriceRvm > 0)
             .Select(l => new ListingPriceSample(
                 l.Id,
-                l.PrecoRvm,
-                l.CategoriaId,
+                l.PriceRvm,
+                l.CategoryId,
                 l.Kind.ToString(),
-                l.Modo.ToString(),
-                slugByCategory.TryGetValue(l.CategoriaId, out var slug) ? slug : null))
+                l.Mode.ToString(),
+                slugByCategory.TryGetValue(l.CategoryId, out var slug) ? slug : null))
             .ToList();
     }
 }

@@ -2,20 +2,20 @@
 
 namespace Revoa.Community.Domain.Aggregates.CommunityAggregate;
 
-public enum CommunityTipo
+public enum CommunityType
 {
     Default,
     User
 }
 
-public enum CommunityEixo
+public enum CommunityAxis
 {
     Geo,
-    Interesse,
-    Causa
+    Interest,
+    Cause
 }
 
-public enum CommunityVisibilidade
+public enum CommunityVisibility
 {
     Open,
     Private
@@ -34,24 +34,24 @@ public enum CommunityStatus
 // (mesma convenÃ§Ã£o do mÃ³dulo Account, que nomeia o aggregate "UserAccount" em vez de "Account").
 public class CommunityGroup : AggregateRoot
 {
-    public string Nome { get; private set; } = string.Empty;
-    public string Descricao { get; private set; } = string.Empty;
-    public CommunityTipo Tipo { get; private set; }
-    public CommunityEixo Eixo { get; private set; }
-    public CommunityVisibilidade Visibilidade { get; private set; }
+    public string Name { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
+    public CommunityType Type { get; private set; }
+    public CommunityAxis Axis { get; private set; }
+    public CommunityVisibility Visibility { get; private set; }
 
     // SÃ³ para Private.
     public string? PasswordHash { get; private set; }
 
     public double? Lat { get; private set; }
     public double? Lng { get; private set; }
-    public string? Bairro { get; private set; }
-    public string? Cidade { get; private set; }
-    public string? Estado { get; private set; }
+    public string? Neighborhood { get; private set; }
+    public string? City { get; private set; }
+    public string? State { get; private set; }
 
-    public Guid CriadorId { get; private set; }
-    public string CriadorNome { get; private set; } = string.Empty;
-    public string? CriadorAvatarUrl { get; private set; }
+    public Guid CreatorId { get; private set; }
+    public string CreatorName { get; private set; } = string.Empty;
+    public string? CreatorAvatarUrl { get; private set; }
 
     public CommunityStatus Status { get; private set; }
 
@@ -60,9 +60,9 @@ public class CommunityGroup : AggregateRoot
     public static CommunityGroup Create(
         string nome,
         string descricao,
-        CommunityTipo tipo,
-        CommunityEixo eixo,
-        CommunityVisibilidade visibilidade,
+        CommunityType tipo,
+        CommunityAxis eixo,
+        CommunityVisibility visibilidade,
         string? password,
         double? lat,
         double? lng,
@@ -78,20 +78,20 @@ public class CommunityGroup : AggregateRoot
         return new CommunityGroup
         {
             Id = Guid.NewGuid(),
-            Nome = nome.Trim(),
-            Descricao = descricao?.Trim() ?? string.Empty,
-            Tipo = tipo,
-            Eixo = eixo,
-            Visibilidade = visibilidade,
+            Name = nome.Trim(),
+            Description = descricao?.Trim() ?? string.Empty,
+            Type = tipo,
+            Axis = eixo,
+            Visibility = visibilidade,
             PasswordHash = null,
             Lat = lat,
             Lng = lng,
-            Bairro = bairro,
-            Cidade = cidade,
-            Estado = estado,
-            CriadorId = criadorId,
-            CriadorNome = string.IsNullOrWhiteSpace(criadorNome) ? "UsuÃ¡rio" : criadorNome,
-            CriadorAvatarUrl = criadorAvatarUrl,
+            Neighborhood = bairro,
+            City = cidade,
+            State = estado,
+            CreatorId = criadorId,
+            CreatorName = string.IsNullOrWhiteSpace(criadorNome) ? "UsuÃ¡rio" : criadorNome,
+            CreatorAvatarUrl = criadorAvatarUrl,
             Status = CommunityStatus.Active,
             Version = 1
         };
@@ -100,7 +100,7 @@ public class CommunityGroup : AggregateRoot
     // Seta o hash da senha (apenas Private). Usado na criaÃ§Ã£o (handler) e na rotaÃ§Ã£o de senha.
     public void SetPasswordHash(string hash)
     {
-        if (Visibilidade != CommunityVisibilidade.Private)
+        if (Visibility != CommunityVisibility.Private)
         {
             throw new DomainException("Apenas comunidades privadas possuem senha.");
         }
@@ -120,8 +120,8 @@ public class CommunityGroup : AggregateRoot
 
     private static void ValidateInvariants(
         string nome,
-        CommunityTipo tipo,
-        CommunityVisibilidade visibilidade,
+        CommunityType tipo,
+        CommunityVisibility visibilidade,
         string? password,
         Guid criadorId)
     {
@@ -131,12 +131,12 @@ public class CommunityGroup : AggregateRoot
         }
 
         // Default (uma por cidade) Ã© sempre Open.
-        if (tipo == CommunityTipo.Default && visibilidade != CommunityVisibilidade.Open)
+        if (tipo == CommunityType.Default && visibilidade != CommunityVisibility.Open)
         {
             throw new DomainException("Comunidades Default sÃ£o sempre Open.");
         }
 
-        if (visibilidade == CommunityVisibilidade.Private && string.IsNullOrWhiteSpace(password))
+        if (visibilidade == CommunityVisibility.Private && string.IsNullOrWhiteSpace(password))
         {
             throw new DomainException("Comunidades privadas exigem senha.");
         }

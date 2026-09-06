@@ -8,7 +8,7 @@ public sealed record TradeInfo(
     Guid Id,
     Guid SellerId,
     Guid BuyerId,
-    string State); // "Ofertada" | "Financiada" | "Liberada" | "Disputada" | "Reembolsada" | "Cancelada"
+    string State); // "Offered" | "Funded" | "Released" | "Disputed" | "Refunded" | "Cancelled"
 
 public interface ITradeInfoProvider
 {

@@ -123,17 +123,17 @@ export function LiveChat({
         ) : (
           messages.map((m) => (
             <div key={m.Id} className="flex gap-2.5">
-              <Avatar name={m.AutorNome} src={m.AutorAvatarUrl} size={28} />
+              <Avatar name={m.AuthorName} src={m.AutorAvatarUrl} size={28} />
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold text-cream">{m.AutorNome}</span>
+                  <span className="text-sm font-semibold text-cream">{m.AuthorName}</span>
                   {user && m.AutorId === user.userId && (
                     <span className="text-[10px] text-esmeralda">você</span>
                   )}
                   <span className="text-[10px] text-silver">{timeAgo(m.CreatedAt)}</span>
                 </div>
                 <p className="text-sm text-cream/90 whitespace-pre-wrap break-words">
-                  {m.Conteudo}
+                  {m.Content}
                 </p>
               </div>
             </div>

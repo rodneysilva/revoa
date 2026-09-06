@@ -33,7 +33,7 @@ public class ReviewsController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new CreateReviewCommand(user.UserId, user.Nome, id, request.Rating, request.Comment), ct);
+            new CreateReviewCommand(user.UserId, user.Name, id, request.Rating, request.Comment), ct);
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))

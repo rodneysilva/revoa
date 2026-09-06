@@ -14,7 +14,7 @@ public class ChatMessageRepository : MongoRepositoryBase<ChatMessage>, IChatMess
     public async Task<IReadOnlyList<ChatMessage>> GetRecentAsync(Guid comunidadeId, int limit, CancellationToken ct)
     {
         var fb = Builders<ChatMessage>.Filter;
-        var query = fb.Eq(m => m.ComunidadeId, comunidadeId) & fb.Eq(m => m.Ocultado, false);
+        var query = fb.Eq(m => m.CommunityId, comunidadeId) & fb.Eq(m => m.Ocultado, false);
 
         var safeLimit = limit > 0 ? limit : 50;
 
@@ -33,7 +33,7 @@ public class ChatMessageRepository : MongoRepositoryBase<ChatMessage>, IChatMess
         {
             new CreateIndexModel<ChatMessage>(
                 Builders<ChatMessage>.IndexKeys
-                    .Ascending(m => m.ComunidadeId)
+                    .Ascending(m => m.CommunityId)
                     .Descending(m => m.CreatedAt),
                 new CreateIndexOptions { Name = "ix_Comunidade_CreatedAt" }),
             new CreateIndexModel<ChatMessage>(

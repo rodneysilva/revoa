@@ -16,13 +16,13 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
     {
         var fb = Builders<Membership>.Filter;
         return await Collection.Find(
-            fb.Eq(m => m.UsuarioId, usuarioId) & fb.Eq(m => m.ComunidadeId, comunidadeId))
+            fb.Eq(m => m.UsuarioId, usuarioId) & fb.Eq(m => m.CommunityId, comunidadeId))
             .FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Membership>> ListByComunidadeAsync(Guid comunidadeId, CancellationToken ct)
     {
-        return await Collection.Find(m => m.ComunidadeId == comunidadeId)
+        return await Collection.Find(m => m.CommunityId == comunidadeId)
             .SortBy(m => m.JoinedAt)
             .ToListAsync(ct);
     }
@@ -44,14 +44,14 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
         }
 
         var fb = Builders<Membership>.Filter;
-        var query = fb.In(m => m.ComunidadeId, ids) & fb.Eq(m => m.Status, MembershipStatus.Ativa);
+        var query = fb.In(m => m.CommunityId, ids) & fb.Eq(m => m.Status, MembershipStatus.Ativa);
 
         var matchDoc = query.Render(Collection.DocumentSerializer, Collection.Settings.SerializerRegistry);
 
         var pipeline = new BsonDocument[]
         {
             new() { ["$match"] = matchDoc },
-            new() { ["$group"] = new BsonDocument { ["_id"] = "$ComunidadeId", ["count"] = new BsonDocument("$sum", 1) } }
+            new() { ["$group"] = new BsonDocument { ["_id"] = "$CommunityId", ["count"] = new BsonDocument("$sum", 1) } }
         };
 
         var result = new Dictionary<Guid, int>();
@@ -71,7 +71,7 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
     }
 
     /// <summary>
-    /// Índice único composto (UsuarioId, ComunidadeId) — garante 1 membership por usuário/comunidade.
+    /// Índice único composto (UsuarioId, CommunityId) — garante 1 membership por usuário/comunidade.
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
@@ -80,10 +80,10 @@ public class MembershipsRepository : MongoRepositoryBase<Membership>, IMembershi
             new CreateIndexModel<Membership>(
                 Builders<Membership>.IndexKeys
                     .Ascending(m => m.UsuarioId)
-                    .Ascending(m => m.ComunidadeId),
+                    .Ascending(m => m.CommunityId),
                 new CreateIndexOptions { Name = "ux_Usuario_Comunidade", Unique = true }),
             new CreateIndexModel<Membership>(
-                Builders<Membership>.IndexKeys.Ascending(m => m.ComunidadeId),
+                Builders<Membership>.IndexKeys.Ascending(m => m.CommunityId),
                 new CreateIndexOptions { Name = "ix_ComunidadeId" })
         }, ct);
     }

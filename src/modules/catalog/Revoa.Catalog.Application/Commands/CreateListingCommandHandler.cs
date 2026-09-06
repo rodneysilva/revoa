@@ -26,20 +26,20 @@ public class CreateListingCommandHandler : IRequestHandler<CreateListingCommand,
     public async Task<Result<string>> Handle(CreateListingCommand request, CancellationToken ct)
     {
         // Enrijece localização: se CEP presente e bairro/cidade ausentes, consulta ViaCEP.
-        var bairro = request.Bairro;
-        var cidade = request.Cidade;
-        if (!string.IsNullOrWhiteSpace(request.Cep)
+        var bairro = request.Neighborhood;
+        var cidade = request.City;
+        if (!string.IsNullOrWhiteSpace(request.PostalCode)
             && (string.IsNullOrWhiteSpace(bairro) || string.IsNullOrWhiteSpace(cidade)))
         {
-            var addr = await _viaCep.GetByCepAsync(request.Cep!, ct);
+            var addr = await _viaCep.GetByCepAsync(request.PostalCode!, ct);
             if (addr is not null)
             {
-                bairro ??= addr.Bairro;
-                cidade ??= addr.Cidade;
+                bairro ??= addr.Neighborhood;
+                cidade ??= addr.City;
             }
         }
 
-        var location = Location.Create(request.Lat, request.Lng, bairro, cidade, request.Cep);
+        var location = Location.Create(request.Lat, request.Lng, bairro, cidade, request.PostalCode);
 
         ProductDetails? productDetails = null;
         ServiceDetails? serviceDetails = null;
@@ -60,18 +60,18 @@ public class CreateListingCommandHandler : IRequestHandler<CreateListingCommand,
         {
             listing = Listing.Create(
                 request.Kind,
-                request.Modo,
-                request.Titulo,
-                request.Descricao,
+                request.Mode,
+                request.Title,
+                request.Description,
                 request.Imagens,
-                request.PrecoRvm,
-                request.VendedorId,
-                request.VendedorNome,
-                request.VendedorAvatarUrl,
+                request.PriceRvm,
+                request.SellerId,
+                request.SellerName,
+                request.SellerAvatarUrl,
                 location,
-                request.CategoriaId,
-                request.ComunidadeId,
-                request.Visibilidade,
+                request.CategoryId,
+                request.CommunityId,
+                request.Visibility,
                 productDetails,
                 serviceDetails);
         }

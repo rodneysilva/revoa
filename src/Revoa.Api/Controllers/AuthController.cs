@@ -40,7 +40,7 @@ public class AuthController : ControllerBase
         [FromBody] RegisterUserRequest request, CancellationToken ct)
     {
         var command = new RegisterUserCommand(
-            request.Nome, request.Email, request.Telefone, request.BirthDate, request.CouponCode);
+            request.Name, request.Email, request.Phone, request.BirthDate, request.CouponCode);
 
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
@@ -101,8 +101,8 @@ public class AuthController : ControllerBase
 
         var c = result.Value;
         var roles = RolesFor(c.Email, c.Role);
-        var token = IssueJwt(c.UserId, c.Nome, c.Email, c.EmailVerified, c.PhoneVerified, roles);
-        return Ok(new LoginResult(token, c.UserId, c.Nome, c.Email, roles));
+        var token = IssueJwt(c.UserId, c.Name, c.Email, c.EmailVerified, c.PhoneVerified, roles);
+        return Ok(new LoginResult(token, c.UserId, c.Name, c.Email, roles));
     }
 
     // DEV-ONLY: emite JWT para um usuário já verificado (Status=Active). A auth real é passkey/AA
@@ -129,8 +129,8 @@ public class AuthController : ControllerBase
         }
 
         var roles = RolesFor(user.Email, user.Role);
-        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified, roles);
-        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email, roles));
+        var token = IssueJwt(user.Id, user.Name, user.Email, user.EmailVerified, user.PhoneVerified, roles);
+        return Ok(new LoginResult(token, user.Id, user.Name, user.Email, roles));
     }
 
     // DEV-ONLY: verifica e-mail + telefone e ativa o usuário automaticamente (Status=Active).
@@ -160,8 +160,8 @@ public class AuthController : ControllerBase
         await _users.UpdateAsync(user, ct);
 
         var roles = RolesFor(user.Email, user.Role);
-        var token = IssueJwt(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified, roles);
-        return Ok(new LoginResult(token, user.Id, user.Nome, user.Email, roles));
+        var token = IssueJwt(user.Id, user.Name, user.Email, user.EmailVerified, user.PhoneVerified, roles);
+        return Ok(new LoginResult(token, user.Id, user.Name, user.Email, roles));
     }
 
     // Roles do JWT: role do aggregate + "Admin" quando o e-mail está no allowlist Admin:Emails.
@@ -216,9 +216,9 @@ public class AuthController : ControllerBase
 }
 
 public sealed record RegisterUserRequest(
-    string Nome,
+    string Name,
     string Email,
-    string Telefone,
+    string Phone,
     DateOnly BirthDate,
     string? CouponCode);
 
@@ -232,4 +232,4 @@ public sealed record LoginConfirmRequest(string Email, string Code);
 
 public sealed record ResendRequest(string Email);
 
-public sealed record LoginResult(string Token, Guid UserId, string Nome, string Email, string[] Roles);
+public sealed record LoginResult(string Token, Guid UserId, string Name, string Email, string[] Roles);

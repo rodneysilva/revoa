@@ -9,11 +9,11 @@ namespace Revoa.Community.Application.Commands;
 // Cria post (raiz ou resposta). Exige autor membro ativo. Resposta valida depth ≤ 6.
 public sealed record CreatePostCommand(
     Guid AutorId,
-    string AutorNome,
+    string AuthorName,
     string? AutorAvatarUrl,
-    Guid ComunidadeId,
+    Guid CommunityId,
     Guid? ParentId,
-    string Conteudo) : IRequest<Result<string>>;
+    string Content) : IRequest<Result<string>>;
 
 public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, Result<string>>
 {
@@ -29,7 +29,7 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, Resul
     public async Task<Result<string>> Handle(CreatePostCommand request, CancellationToken ct)
     {
         // Gate: autor deve ser membro ativo da comunidade.
-        var membership = await _memberships.GetByUsuarioEComunidadeAsync(request.AutorId, request.ComunidadeId, ct);
+        var membership = await _memberships.GetByUsuarioEComunidadeAsync(request.AutorId, request.CommunityId, ct);
         if (membership is null || membership.Status != MembershipStatus.Ativa)
         {
             return Result<string>.Fail("Apenas membros ativos podem postar nesta comunidade.");
@@ -41,16 +41,16 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, Resul
             if (request.ParentId is null)
             {
                 post = Post.CreateRoot(
-                    request.ComunidadeId,
+                    request.CommunityId,
                     request.AutorId,
-                    request.AutorNome,
+                    request.AuthorName,
                     request.AutorAvatarUrl,
-                    request.Conteudo);
+                    request.Content);
             }
             else
             {
                 var parent = await _posts.GetByIdAsync(request.ParentId.Value, ct);
-                if (parent is null || parent.ComunidadeId != request.ComunidadeId)
+                if (parent is null || parent.CommunityId != request.CommunityId)
                 {
                     return Result<string>.Fail("Post pai não encontrado nesta comunidade.");
                 }
@@ -58,9 +58,9 @@ public class CreatePostCommandHandler : IRequestHandler<CreatePostCommand, Resul
                 post = Post.CreateReply(
                     parent,
                     request.AutorId,
-                    request.AutorNome,
+                    request.AuthorName,
                     request.AutorAvatarUrl,
-                    request.Conteudo);
+                    request.Content);
             }
         }
         catch (DomainException ex)

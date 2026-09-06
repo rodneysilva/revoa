@@ -55,7 +55,7 @@ public class ExchangeController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new PurchaseCommand(user.UserId, user.Nome, user.AvatarUrl, request.ListingId), ct);
+            new PurchaseCommand(user.UserId, user.Name, user.AvatarUrl, request.ListingId), ct);
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))
@@ -103,7 +103,7 @@ public class ExchangeController : ControllerBase
             return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
-        var result = await _mediator.Send(new OpenDisputeCommand(user.UserId, user.Nome, id), ct);
+        var result = await _mediator.Send(new OpenDisputeCommand(user.UserId, user.Name, id), ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(new ResourceId(id));
     }
 
@@ -156,7 +156,7 @@ public class ExchangeController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new RequestHelpCommand(user.UserId, user.Nome, user.AvatarUrl, request.ListingId, request.Mensagem), ct);
+            new RequestHelpCommand(user.UserId, user.Name, user.AvatarUrl, request.ListingId, request.Message), ct);
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))
@@ -184,6 +184,6 @@ public class ExchangeController : ControllerBase
 
 public sealed record PurchaseRequest(Guid ListingId);
 
-public sealed record RequestHelpRequest(Guid ListingId, string Mensagem);
+public sealed record RequestHelpRequest(Guid ListingId, string Message);
 
 public sealed record ResolveRequest(bool ReleaseToSeller);

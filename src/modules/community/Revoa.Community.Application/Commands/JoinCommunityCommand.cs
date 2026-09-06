@@ -9,9 +9,9 @@ namespace Revoa.Community.Application.Commands;
 // Entra em comunidade. Private valida senha. Não permite reentrar se já ativo ou bloqueado.
 public sealed record JoinCommunityCommand(
     Guid UsuarioId,
-    string UsuarioNome,
+    string UserName,
     string? UsuarioAvatarUrl,
-    Guid ComunidadeId,
+    Guid CommunityId,
     string? Password) : IRequest<Result<string>>;
 
 public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand, Result<string>>
@@ -27,7 +27,7 @@ public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand,
 
     public async Task<Result<string>> Handle(JoinCommunityCommand request, CancellationToken ct)
     {
-        var community = await _communities.GetByIdAsync(request.ComunidadeId, ct);
+        var community = await _communities.GetByIdAsync(request.CommunityId, ct);
         if (community is null)
         {
             return Result<string>.Fail("Comunidade não encontrada.");
@@ -38,21 +38,21 @@ public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand,
             return Result<string>.Fail("Comunidade arquivada.");
         }
 
-        if (community.Visibilidade == CommunityVisibilidade.Private
+        if (community.Visibility == CommunityVisibility.Private
             && !PasswordHasher.Verify(request.Password ?? string.Empty, community.PasswordHash))
         {
             return Result<string>.Fail("Senha incorreta.");
         }
 
         // Upgrade transparente: senha legada (SHA256+salt estático) confirmada → rehash PBKDF2.
-        if (community.Visibilidade == CommunityVisibilidade.Private
+        if (community.Visibility == CommunityVisibility.Private
             && PasswordHasher.IsLegacy(community.PasswordHash))
         {
             community.SetPasswordHash(PasswordHasher.Hash(request.Password!));
             await _communities.UpdateAsync(community, ct);
         }
 
-        var existing = await _memberships.GetByUsuarioEComunidadeAsync(request.UsuarioId, request.ComunidadeId, ct);
+        var existing = await _memberships.GetByUsuarioEComunidadeAsync(request.UsuarioId, request.CommunityId, ct);
         if (existing is not null)
         {
             return Result<string>.Fail(existing.Status == MembershipStatus.Bloqueada
@@ -62,12 +62,12 @@ public class JoinCommunityCommandHandler : IRequestHandler<JoinCommunityCommand,
 
         var membership = Membership.Create(
             request.UsuarioId,
-            request.UsuarioNome,
+            request.UserName,
             request.UsuarioAvatarUrl,
-            request.ComunidadeId,
-            MembershipPapel.Membro);
+            request.CommunityId,
+            MembershipRole.Member);
         await _memberships.AddAsync(membership, ct);
 
-        return Result<string>.Ok(request.ComunidadeId.ToString());
+        return Result<string>.Ok(request.CommunityId.ToString());
     }
 }

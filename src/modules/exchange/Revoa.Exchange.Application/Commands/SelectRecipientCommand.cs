@@ -56,7 +56,7 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
         }
 
         // Só o dono do anúncio (doador) escolhe o receptor.
-        if (listing.VendedorId != request.SellerId)
+        if (listing.SellerId != request.SellerId)
         {
             return Result<string>.Fail("Apenas o doador pode selecionar o receptor.");
         }
@@ -69,7 +69,7 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
         // Guarda anti-doação-dupla: o NFT/voucher é único. Rejeita se já existe troca ativa/concluída
         // para este listing (evita revert on-chain ao tentar doar o mesmo item duas vezes).
         var existing = await _tradeRepo.GetByListingAsync(help.ListingId, ct);
-        if (existing.Any(t => t.State != TradeState.Cancelada))
+        if (existing.Any(t => t.State != TradeState.Cancelled))
         {
             return Result<string>.Fail("Este anúncio já foi doado ou está em doação.");
         }
@@ -81,7 +81,7 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
             return Result<string>.Fail("Carteira indisponível.");
         }
 
-        if (!Enum.TryParse<TradeModo>(listing.Modo, out var modoEnum))
+        if (!Enum.TryParse<TradeMode>(listing.Mode, out var modoEnum))
         {
             return Result<string>.Fail("Modo do anúncio inválido.");
         }
@@ -137,11 +137,11 @@ public class SelectRecipientCommandHandler : IRequestHandler<SelectRecipientComm
             kind,
             request.SellerId,
             sellerWallet.Address,
-            listing.VendedorNome,
-            listing.VendedorAvatarUrl,
+            listing.SellerName,
+            listing.SellerAvatarUrl,
             help.AuthorId,
             buyerWallet.Address,
-            help.AuthorNome,
+            help.AuthorName,
             help.AuthorAvatarUrl,
             0,
             assetContract,

@@ -9,24 +9,24 @@ public enum TradeKind
     Service
 }
 
-// Espelha ListingModo do Catalog (passado como string pela porta IListingSummaryProvider).
-public enum TradeModo
+// Espelha ListingMode do Catalog (passado como string pela porta IListingSummaryProvider).
+public enum TradeMode
 {
-    Trocar,
-    Repassar,
-    Doar,
-    Voluntariar
+    Trade,
+    Resell,
+    Donate,
+    Volunteer
 }
 
 // Espelha EscrowVault.State (OOUX 11 = Troca, 12 = DoaÃ§Ã£o = trade total 0).
 public enum TradeState
 {
-    Ofertada,
-    Financiada,
-    Liberada,
-    Disputada,
-    Reembolsada,
-    Cancelada
+    Offered,
+    Funded,
+    Released,
+    Disputed,
+    Refunded,
+    Cancelled
 }
 
 // Aggregate "Troca" (OOUX 11) â€” tambÃ©m cobre doaÃ§Ã£o (OOUX 12) quando Modo âˆˆ {Doar, Voluntariar}
@@ -34,17 +34,17 @@ public enum TradeState
 public class Trade : AggregateRoot
 {
     public Guid ListingId { get; private set; }
-    public TradeModo Modo { get; private set; }
+    public TradeMode Mode { get; private set; }
     public TradeKind Kind { get; private set; }
 
     public Guid SellerId { get; private set; }
     public string SellerWallet { get; private set; } = string.Empty;
-    public string SellerNome { get; private set; } = string.Empty;
+    public string SellerName { get; private set; } = string.Empty;
     public string? SellerAvatarUrl { get; private set; }
 
     public Guid BuyerId { get; private set; }
     public string BuyerWallet { get; private set; } = string.Empty;
-    public string BuyerNome { get; private set; } = string.Empty;
+    public string BuyerName { get; private set; } = string.Empty;
     public string? BuyerAvatarUrl { get; private set; }
 
     public long TotalRvm { get; private set; }
@@ -71,12 +71,12 @@ public class Trade : AggregateRoot
 
     private Trade() { }
 
-    public bool IsDonation => Modo is TradeModo.Doar or TradeModo.Voluntariar;
+    public bool IsDonation => Mode is TradeMode.Donate or TradeMode.Volunteer;
 
     // O trade nasce financiado (compra/doaÃ§Ã£o jÃ¡ funded on-chain no command handler).
     public static Trade Create(
         Guid listingId,
-        TradeModo modo,
+        TradeMode modo,
         TradeKind kind,
         Guid sellerId,
         string sellerWallet,
@@ -99,21 +99,21 @@ public class Trade : AggregateRoot
         {
             Id = Guid.NewGuid(),
             ListingId = listingId,
-            Modo = modo,
+            Mode = modo,
             Kind = kind,
             SellerId = sellerId,
             SellerWallet = sellerWallet,
-            SellerNome = string.IsNullOrWhiteSpace(sellerNome) ? "UsuÃ¡rio" : sellerNome,
+            SellerName = string.IsNullOrWhiteSpace(sellerNome) ? "UsuÃ¡rio" : sellerNome,
             SellerAvatarUrl = sellerAvatarUrl,
             BuyerId = buyerId,
             BuyerWallet = buyerWallet,
-            BuyerNome = string.IsNullOrWhiteSpace(buyerNome) ? "UsuÃ¡rio" : buyerNome,
+            BuyerName = string.IsNullOrWhiteSpace(buyerNome) ? "UsuÃ¡rio" : buyerNome,
             BuyerAvatarUrl = buyerAvatarUrl,
             TotalRvm = totalRvm,
             AssetContract = assetContract,
             TokenId = tokenId,
             OnChainTradeId = onChainTradeId,
-            State = TradeState.Financiada,
+            State = TradeState.Funded,
             FundedAt = fundedAt,
             LastTxHash = lastTxHash,
             Version = 1
@@ -123,14 +123,14 @@ public class Trade : AggregateRoot
     // TransiÃ§Ã£o reservada p/ fluxo assÃ­ncrono futuro (criar â†’ financiar em passos separados).
     public void MarkFunded(long onChainTradeId, DateTime fundedAt, string? tx)
     {
-        if (State != TradeState.Ofertada)
+        if (State != TradeState.Offered)
         {
             throw new DomainException("Apenas trade no estado Ofertada pode ser financiada.");
         }
 
         OnChainTradeId = onChainTradeId;
         FundedAt = fundedAt;
-        State = TradeState.Financiada;
+        State = TradeState.Funded;
         LastTxHash = tx ?? LastTxHash;
     }
 
@@ -142,7 +142,7 @@ public class Trade : AggregateRoot
             throw new DomainException("Redeem aplica apenas a serviÃ§os.");
         }
 
-        if (State != TradeState.Financiada)
+        if (State != TradeState.Funded)
         {
             throw new DomainException("Apenas trade financiada pode ter voucher redeemado.");
         }
@@ -159,12 +159,12 @@ public class Trade : AggregateRoot
     // LiberaÃ§Ã£o cooperativa (seller OU buyer) ou por Ã¡rbitro (resolve dispute).
     public void MarkLiberada(string? tx, string? resolvedBy = null)
     {
-        if (State is not (TradeState.Financiada or TradeState.Disputada))
+        if (State is not (TradeState.Funded or TradeState.Disputed))
         {
             throw new DomainException("LiberaÃ§Ã£o exige trade financiada ou disputada.");
         }
 
-        State = TradeState.Liberada;
+        State = TradeState.Released;
         ReleasedAt = DateTime.UtcNow;
         LastTxHash = tx ?? LastTxHash;
         if (!string.IsNullOrWhiteSpace(resolvedBy))
@@ -175,24 +175,24 @@ public class Trade : AggregateRoot
 
     public void MarkDisputada(string openedBy)
     {
-        if (State != TradeState.Financiada)
+        if (State != TradeState.Funded)
         {
             throw new DomainException("Apenas trade financiada pode entrar em disputa.");
         }
 
-        State = TradeState.Disputada;
+        State = TradeState.Disputed;
         DisputeOpenedBy = string.IsNullOrWhiteSpace(openedBy) ? null : openedBy;
     }
 
     // Reembolso (cancelamento cooperativo ou Ã¡rbitro decide a favor do comprador).
     public void MarkReembolsada(string? tx, string? resolvedBy = null)
     {
-        if (State is not (TradeState.Financiada or TradeState.Disputada))
+        if (State is not (TradeState.Funded or TradeState.Disputed))
         {
             throw new DomainException("Reembolso exige trade financiada ou disputada.");
         }
 
-        State = TradeState.Reembolsada;
+        State = TradeState.Refunded;
         LastTxHash = tx ?? LastTxHash;
         if (!string.IsNullOrWhiteSpace(resolvedBy))
         {
@@ -202,17 +202,17 @@ public class Trade : AggregateRoot
 
     public void MarkCancelada(string? tx)
     {
-        if (State is not (TradeState.Financiada or TradeState.Ofertada))
+        if (State is not (TradeState.Funded or TradeState.Offered))
         {
             throw new DomainException("Cancelamento exige trade ofertada ou financiada.");
         }
 
-        State = TradeState.Cancelada;
+        State = TradeState.Cancelled;
         LastTxHash = tx ?? LastTxHash;
     }
 
     private static void ValidateInvariants(
-        TradeModo modo,
+        TradeMode modo,
         TradeKind kind,
         long totalRvm,
         long tokenId,
@@ -228,7 +228,7 @@ public class Trade : AggregateRoot
         }
 
         // Doar/Voluntariar â‡’ total 0.
-        if ((modo == TradeModo.Doar || modo == TradeModo.Voluntariar) && totalRvm != 0)
+        if ((modo == TradeMode.Donate || modo == TradeMode.Volunteer) && totalRvm != 0)
         {
             throw new DomainException("DoaÃ§Ã£o/voluntariado deve ter total 0 RVM.");
         }

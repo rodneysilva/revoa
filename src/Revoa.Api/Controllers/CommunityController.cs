@@ -25,20 +25,20 @@ public class CommunityController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<CommunityDto>>> Feed(
-        [FromQuery] double? raio,
+        [FromQuery] double? radius,
         [FromQuery] double? lat,
         [FromQuery] double? lng,
-        [FromQuery] string? eixo,
+        [FromQuery] string? axis,
         [FromQuery] int page = 1,
         CancellationToken ct = default)
     {
-        CommunityEixo? eixoEnum = null;
-        if (!string.IsNullOrWhiteSpace(eixo) && TryParse(eixo, out CommunityEixo e))
+        CommunityAxis? eixoEnum = null;
+        if (!string.IsNullOrWhiteSpace(axis) && TryParse(axis, out CommunityAxis e))
         {
             eixoEnum = e;
         }
 
-        var result = await _mediator.Send(new GetCommunitiesQuery(raio, lat, lng, eixoEnum, page), ct);
+        var result = await _mediator.Send(new GetCommunitiesQuery(radius, lat, lng, eixoEnum, page), ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
@@ -63,25 +63,25 @@ public class CommunityController : ControllerBase
             return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
-        if (!TryParse(request.Tipo, out CommunityTipo tipo))
+        if (!TryParse(request.Type, out CommunityType tipo))
         {
             return BadRequest(new ApiError("Tipo inválido (Default|User)."));
         }
 
-        if (!TryParse(request.Eixo, out CommunityEixo eixo))
+        if (!TryParse(request.Axis, out CommunityAxis axis))
         {
-            return BadRequest(new ApiError("Eixo inválido (Geo|Interesse|Causa)."));
+            return BadRequest(new ApiError("Eixo inválido (Geo|Interest|Cause)."));
         }
 
-        if (!TryParse(request.Visibilidade, out CommunityVisibilidade visibilidade))
+        if (!TryParse(request.Visibility, out CommunityVisibility visibilidade))
         {
             return BadRequest(new ApiError("Visibilidade inválida (Open|Private)."));
         }
 
         var command = new CreateCommunityCommand(
-            user.UserId, user.Nome, user.AvatarUrl,
-            request.Nome, request.Descricao, tipo, eixo, visibilidade, request.Password,
-            request.Lat, request.Lng, request.Bairro, request.Cidade, request.Estado);
+            user.UserId, user.Name, user.AvatarUrl,
+            request.Name, request.Description, tipo, axis, visibilidade, request.Password,
+            request.Lat, request.Lng, request.Neighborhood, request.City, request.State);
 
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
@@ -104,7 +104,7 @@ public class CommunityController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new JoinCommunityCommand(user.UserId, user.Nome, user.AvatarUrl, id, request?.Password), ct);
+            new JoinCommunityCommand(user.UserId, user.Name, user.AvatarUrl, id, request?.Password), ct);
 
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(new ResourceId(id));
     }
@@ -150,7 +150,7 @@ public class CommunityController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new CreatePostCommand(user.UserId, user.Nome, user.AvatarUrl, id, request.ParentId, request.Conteudo), ct);
+            new CreatePostCommand(user.UserId, user.Name, user.AvatarUrl, id, request.ParentId, request.Content), ct);
 
         if (result.IsFailure)
         {
@@ -171,7 +171,7 @@ public class CommunityController : ControllerBase
             return Unauthorized(new ApiError("Token sem claim 'sub'."));
         }
 
-        var result = await _mediator.Send(new HidePostCommand(postId, user.Nome, user.UserId), ct);
+        var result = await _mediator.Send(new HidePostCommand(postId, user.Name, user.UserId), ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
@@ -189,18 +189,18 @@ public class CommunityController : ControllerBase
 }
 
 public sealed record CreateCommunityRequest(
-    string Nome,
-    string Descricao,
-    string Tipo,
-    string Eixo,
-    string Visibilidade,
+    string Name,
+    string Description,
+    string Type,
+    string Axis,
+    string Visibility,
     string? Password,
     double? Lat,
     double? Lng,
-    string? Bairro,
-    string? Cidade,
-    string? Estado);
+    string? Neighborhood,
+    string? City,
+    string? State);
 
-public sealed record CreatePostRequest(Guid? ParentId, string Conteudo);
+public sealed record CreatePostRequest(Guid? ParentId, string Content);
 
 public sealed record JoinCommunityRequest(string? Password);

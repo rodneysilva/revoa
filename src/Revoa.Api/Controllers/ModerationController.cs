@@ -46,7 +46,7 @@ public class ModerationController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new CreateReportCommand(user.UserId, user.Nome, targetType, targetId, reason, request.Details), ct);
+            new CreateReportCommand(user.UserId, user.Name, targetType, targetId, reason, request.Details), ct);
 
         return result.IsFailure
             ? BadRequest(new ApiError(result.Error))

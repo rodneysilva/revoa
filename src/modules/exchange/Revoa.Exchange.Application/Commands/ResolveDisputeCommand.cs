@@ -40,7 +40,7 @@ public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeComman
             return Result.Fail("Troca não encontrada.");
         }
 
-        if (trade.State != TradeState.Disputada)
+        if (trade.State != TradeState.Disputed)
         {
             return Result.Fail("Apenas troca disputada pode ser resolvida por árbitro.");
         }
@@ -81,7 +81,7 @@ public class ResolveDisputeCommandHandler : IRequestHandler<ResolveDisputeComman
         if (request.ReleaseToSeller && trade.IsDonation)
         {
             await _eventBus.PublishAsync(
-                new DonationCompletedEvent(trade.Id, trade.ListingId, trade.SellerId, trade.BuyerId, trade.Modo.ToString()),
+                new DonationCompletedEvent(trade.Id, trade.ListingId, trade.SellerId, trade.BuyerId, trade.Mode.ToString()),
                 ct);
         }
 

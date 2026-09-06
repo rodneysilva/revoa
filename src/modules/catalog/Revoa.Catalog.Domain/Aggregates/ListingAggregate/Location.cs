@@ -7,9 +7,9 @@ public class Location : ValueObject
 {
     public double? Lat { get; private set; }
     public double? Lng { get; private set; }
-    public string? Bairro { get; private set; }
-    public string? Cidade { get; private set; }
-    public string? Cep { get; private set; }
+    public string? Neighborhood { get; private set; }
+    public string? City { get; private set; }
+    public string? PostalCode { get; private set; }
 
     private Location() { }
 
@@ -19,9 +19,9 @@ public class Location : ValueObject
         {
             Lat = lat,
             Lng = lng,
-            Bairro = bairro,
-            Cidade = cidade,
-            Cep = cep
+            Neighborhood = bairro,
+            City = cidade,
+            PostalCode = cep
         };
     }
 
@@ -29,8 +29,8 @@ public class Location : ValueObject
     {
         yield return Lat;
         yield return Lng;
-        yield return Bairro;
-        yield return Cidade;
-        yield return Cep;
+        yield return Neighborhood;
+        yield return City;
+        yield return PostalCode;
     }
 }

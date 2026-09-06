@@ -3,7 +3,7 @@ using Revoa.Community.Domain.Aggregates.CommunityAggregate;
 namespace Revoa.Community.Domain.Repositories;
 
 // Filtro de comunidades públicas (aplicado no MongoDB).
-public record PublicFilter(CommunityEixo? Eixo, string? Cidade, int Limit);
+public record PublicFilter(CommunityAxis? Axis, string? City, int Limit);
 
 public interface ICommunityRepository
 {

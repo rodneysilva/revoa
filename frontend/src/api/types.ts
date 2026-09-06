@@ -1,35 +1,35 @@
 // Tipos TS dos DTOs do backend .NET (PascalCase, conforme o driver Mongo).
 
 export type Kind = "Product" | "Service";
-export type Modo = "Trocar" | "Repassar" | "Doar" | "Voluntariar";
-export type Visibilidade = "Comunidade" | "Global" | "Ambos";
+export type Mode = "Trade" | "Resell" | "Donate" | "Volunteer";
+export type Visibility = "Community" | "Global" | "Both";
 export type TradeState =
-  | "Ofertada"
-  | "Financiada"
-  | "Liberada"
-  | "Disputada"
-  | "Reembolsada"
-  | "Cancelada";
+  | "Offered"
+  | "Funded"
+  | "Released"
+  | "Disputed"
+  | "Refunded"
+  | "Cancelled";
 
 export interface Category {
   Id: string;
-  Nome: string;
+  Name: string;
   Slug: string;
-  Descricao?: string;
+  Description?: string;
 }
 
 export interface FeedItem {
   Id: string;
   Kind: Kind;
-  Modo: Modo;
-  Titulo: string;
-  PrecoRvm: number;
+  Mode: Mode;
+  Title: string;
+  PriceRvm: number;
   PrimeiraImagem?: string;
-  VendedorNome: string;
-  VendedorAvatarUrl?: string;
-  Cidade?: string;
-  Bairro?: string;
-  CategoriaId: string;
+  SellerName: string;
+  SellerAvatarUrl?: string;
+  City?: string;
+  Neighborhood?: string;
+  CategoryId: string;
   DistanciaKm?: number;
   Condition?: string;
   UnitType?: string;
@@ -51,22 +51,22 @@ export interface ServiceDetails {
 export interface Listing {
   Id: string;
   Kind: Kind;
-  Modo: Modo;
-  Titulo: string;
-  Descricao: string;
+  Mode: Mode;
+  Title: string;
+  Description: string;
   Imagens: string[];
-  PrecoRvm: number;
-  VendedorId: string;
-  VendedorNome: string;
-  VendedorAvatarUrl?: string;
+  PriceRvm: number;
+  SellerId: string;
+  SellerName: string;
+  SellerAvatarUrl?: string;
   Lat?: number;
   Lng?: number;
-  Bairro?: string;
-  Cidade?: string;
-  Cep?: string;
-  CategoriaId: string;
-  ComunidadeId?: string;
-  Visibilidade: Visibilidade;
+  Neighborhood?: string;
+  City?: string;
+  PostalCode?: string;
+  CategoryId: string;
+  CommunityId?: string;
+  Visibility: Visibility;
   NftTokenId?: string;
   Status: string;
   CreatedAt?: string;
@@ -77,13 +77,13 @@ export interface Listing {
 export interface Trade {
   Id: string;
   ListingId: string;
-  Modo: Modo;
+  Mode: Mode;
   Kind: Kind;
   SellerId: string;
-  SellerNome: string;
+  SellerName: string;
   SellerAvatarUrl?: string;
   BuyerId: string;
-  BuyerNome: string;
+  BuyerName: string;
   BuyerAvatarUrl?: string;
   TotalRvm: number;
   State: TradeState;
@@ -97,9 +97,9 @@ export interface HelpRequest {
   Id: string;
   ListingId: string;
   AuthorId: string;
-  AuthorNome: string;
+  AuthorName: string;
   AuthorAvatarUrl?: string;
-  Mensagem: string;
+  Message: string;
   State: string;
   CreatedAt: string;
   SelectedTradeId?: string;
@@ -110,7 +110,7 @@ export interface Review {
   Id: string;
   TradeId: string;
   ReviewerId: string;
-  ReviewerNome: string;
+  ReviewerName: string;
   Rating: number;
   Comment?: string;
   CreatedAt: string;
@@ -137,7 +137,7 @@ export interface RegisterResult {
 export interface LoginResult {
   Token: string;
   UserId: string;
-  Nome: string;
+  Name: string;
   Email: string;
   Roles: string[];
 }
@@ -145,28 +145,28 @@ export interface LoginResult {
 // Corpos de requisição.
 
 export interface RegisterBody {
-  Nome: string;
+  Name: string;
   Email: string;
-  Telefone: string;
+  Phone: string;
   BirthDate: string; // YYYY-MM-DD
   CouponCode?: string;
 }
 
 export interface CreateListingBody {
   Kind: Kind;
-  Modo: Modo;
-  Titulo: string;
-  Descricao: string;
+  Mode: Mode;
+  Title: string;
+  Description: string;
   Imagens: string[];
-  PrecoRvm: number;
+  PriceRvm: number;
   Lat?: number;
   Lng?: number;
-  Bairro?: string;
-  Cidade?: string;
-  Cep?: string;
-  CategoriaId: string;
-  ComunidadeId?: string;
-  Visibilidade: Visibilidade;
+  Neighborhood?: string;
+  City?: string;
+  PostalCode?: string;
+  CategoryId: string;
+  CommunityId?: string;
+  Visibility: Visibility;
   Condition?: string;
   Stock?: number;
   UnitType?: string;
@@ -175,20 +175,20 @@ export interface CreateListingBody {
 }
 
 export interface FeedParams {
-  raio?: number;
+  radius?: number;
   lat?: number;
   lng?: number;
   kind?: Kind;
-  categoriaId?: string;
-  comunidadeId?: string;
+  categoryId?: string;
+  communityId?: string;
   page?: number;
-  modo?: Modo;
-  precoMin?: number;
-  precoMax?: number;
-  doarApenas?: boolean;
+  mode?: Mode;
+  priceMin?: number;
+  priceMax?: number;
+  donationOnly?: boolean;
   sort?: string;
   q?: string;
-  vendedorIds?: string;
+  sellerIds?: string;
 }
 
 export interface TradesParams {
@@ -199,37 +199,37 @@ export interface TradesParams {
 
 // Comunidades (Fase 2B).
 
-export type TipoComunidade = "Default" | "User";
-export type EixoComunidade = "Geo" | "Interesse" | "Causa";
-export type VisibilidadeComunidade = "Open" | "Private";
-export type PapelMembro = "Membro" | "Moderador" | "Criador";
-export type StatusMembro = "Ativa" | "Bloqueada";
+export type CommunityType = "Default" | "User";
+export type CommunityAxis = "Geo" | "Interest" | "Cause";
+export type CommunityVisibility = "Open" | "Private";
+export type MembershipRole = "Member" | "Moderator" | "Creator";
+export type MembershipStatus = "Ativa" | "Bloqueada";
 
 export interface Community {
   Id: string;
-  Nome: string;
-  Descricao: string;
-  Tipo: TipoComunidade;
-  Eixo: EixoComunidade;
-  Visibilidade: VisibilidadeComunidade;
+  Name: string;
+  Description: string;
+  Type: CommunityType;
+  Axis: CommunityAxis;
+  Visibility: CommunityVisibility;
   Lat?: number;
   Lng?: number;
-  Bairro?: string;
-  Cidade?: string;
-  Estado?: string;
-  CriadorId: string;
-  CriadorNome: string;
-  CriadorAvatarUrl?: string;
+  Neighborhood?: string;
+  City?: string;
+  State?: string;
+  CreatorId: string;
+  CreatorName: string;
+  CreatorAvatarUrl?: string;
   MembrosCount: number;
 }
 
 export interface Post {
   Id: string;
-  ComunidadeId: string;
+  CommunityId: string;
   AutorId: string;
-  AutorNome: string;
+  AuthorName: string;
   AutorAvatarUrl?: string;
-  Conteudo: string;
+  Content: string;
   ParentId?: string;
   Path: string;
   Depth: number;
@@ -247,43 +247,43 @@ export interface Comment extends Post {
 export interface Membership {
   Id: string;
   UsuarioId: string;
-  UsuarioNome: string;
+  UserName: string;
   UsuarioAvatarUrl?: string;
-  ComunidadeId: string;
-  Papel: PapelMembro;
-  Status: StatusMembro;
+  CommunityId: string;
+  Role: MembershipRole;
+  Status: MembershipStatus;
   JoinedAt: string;
 }
 
 export interface ChatMessage {
   Id: string;
-  ComunidadeId: string;
+  CommunityId: string;
   AutorId: string;
-  AutorNome: string;
+  AuthorName: string;
   AutorAvatarUrl?: string;
-  Conteudo: string;
+  Content: string;
   CreatedAt: string;
 }
 
 export interface CreateCommunityBody {
-  Nome: string;
-  Descricao: string;
-  Tipo: TipoComunidade;
-  Eixo: EixoComunidade;
-  Visibilidade: VisibilidadeComunidade;
+  Name: string;
+  Description: string;
+  Type: CommunityType;
+  Axis: CommunityAxis;
+  Visibility: CommunityVisibility;
   Password?: string;
   Lat?: number;
   Lng?: number;
-  Bairro?: string;
-  Cidade?: string;
-  Estado?: string;
+  Neighborhood?: string;
+  City?: string;
+  State?: string;
 }
 
 export interface CommunityFeedParams {
-  raio?: number;
+  radius?: number;
   lat?: number;
   lng?: number;
-  eixo?: EixoComunidade;
+  axis?: CommunityAxis;
   page?: number;
 }
 
@@ -297,7 +297,7 @@ export type ResolutionAction = "Dismissed" | "Warned" | "Banned";
 export interface Report {
   Id: string;
   ReporterId: string;
-  ReporterNome: string;
+  ReporterName: string;
   TargetType: ReportTarget;
   TargetId: string;
   Reason: ReportReason;
@@ -387,8 +387,8 @@ export interface BrlRate {
 // Referência de preço justo por categoria (PricingIntelligence — GET /api/pricing, leitura anônima).
 // PascalCase como os demais DTOs. Mediana comunitária + semente BRL + IPCA + Ollama.
 export interface PriceReference {
-  CategoriaId: string;
-  CategoriaSlug?: string;
+  CategoryId: string;
+  CategorySlug?: string;
   RvmMedian: number;
   SampleCount: number;
   BrlRate: number;

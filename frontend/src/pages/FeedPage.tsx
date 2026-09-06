@@ -45,7 +45,7 @@ export function FeedPage() {
       .feed({
         page: 1,
         kind: filter === "Todos" ? undefined : filter,
-        categoriaId: categoriaId || undefined,
+        categoryId: categoriaId || undefined,
       })
       .then((data) => {
         if (!active) return;
@@ -75,7 +75,7 @@ export function FeedPage() {
       const data = await api.feed({
         page: next,
         kind: filter === "Todos" ? undefined : filter,
-        categoriaId: categoriaId || undefined,
+        categoryId: categoriaId || undefined,
       });
       setItems((prev) => [...prev, ...data]);
       setPage(next);
@@ -138,7 +138,7 @@ export function FeedPage() {
                 <option value="">Todas as categorias</option>
                 {categories.map((c) => (
                   <option key={c.Id} value={c.Id}>
-                    {c.Nome}
+                    {c.Name}
                   </option>
                 ))}
               </select>

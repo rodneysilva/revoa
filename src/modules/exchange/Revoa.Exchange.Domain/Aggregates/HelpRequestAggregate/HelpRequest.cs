@@ -18,10 +18,10 @@ public class HelpRequest : AggregateRoot
     public Guid ListingId { get; private set; }
 
     public Guid AuthorId { get; private set; }
-    public string AuthorNome { get; private set; } = string.Empty;
+    public string AuthorName { get; private set; } = string.Empty;
     public string? AuthorAvatarUrl { get; private set; }
 
-    public string Mensagem { get; private set; } = string.Empty;
+    public string Message { get; private set; } = string.Empty;
 
     public HelpRequestState State { get; private set; }
 
@@ -63,9 +63,9 @@ public class HelpRequest : AggregateRoot
             Id = Guid.NewGuid(),
             ListingId = listingId,
             AuthorId = authorId,
-            AuthorNome = string.IsNullOrWhiteSpace(authorNome) ? "UsuÃ¡rio" : authorNome,
+            AuthorName = string.IsNullOrWhiteSpace(authorNome) ? "UsuÃ¡rio" : authorNome,
             AuthorAvatarUrl = authorAvatarUrl,
-            Mensagem = mensagem,
+            Message = mensagem,
             State = HelpRequestState.Open,
             CreatedAt = DateTime.UtcNow,
             Version = 1

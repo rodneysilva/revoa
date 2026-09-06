@@ -92,17 +92,17 @@ function PostItem({
   return (
     <article className="rounded-lg bg-charcoal/60 border border-smoke px-3 py-3">
       <div className="flex gap-3">
-        <Avatar name={post.AutorNome} src={post.AutorAvatarUrl} size={36} />
+        <Avatar name={post.AuthorName} src={post.AutorAvatarUrl} size={36} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-cream">{post.AutorNome}</span>
+            <span className="font-semibold text-cream">{post.AuthorName}</span>
             {currentUserId && post.AutorId === currentUserId && (
               <span className="text-xs text-esmeralda">você</span>
             )}
             <span className="text-xs text-silver">· {timeAgo(post.CreatedAt)}</span>
           </div>
           <p className="mt-1 text-sm text-cream/90 whitespace-pre-wrap break-words">
-            {post.Conteudo}
+            {post.Content}
           </p>
 
           <div className="mt-2 flex items-center gap-4 text-xs">

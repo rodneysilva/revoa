@@ -77,7 +77,7 @@ public class DevController : ControllerBase
             }
         }
 
-        // Mapeia slug → CategoriaId uma única vez (evita N queries no loop de listings).
+        // Mapeia slug → CategoryId uma única vez (evita N queries no loop de listings).
         var catBySlug = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
         foreach (var c in CategorySeed.All)
         {
@@ -96,7 +96,7 @@ public class DevController : ControllerBase
         var usuarios = await SeedUsersAsync(mocks, ct);
         var carteiras = await SeedAccountsAsync(mocks, ct);
 
-        // 4) Catálogo vinculado aos mocks (VendedorId rotaciona entre os 10 mocks).
+        // 4) Catálogo vinculado aos mocks (SellerId rotaciona entre os 10 mocks).
         var (produtos, servicos, erros) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
 
         // 5) Comunidades (5) + memberships + posts.
@@ -135,14 +135,14 @@ public class DevController : ControllerBase
 
         var listings = _db.GetCollection<BsonDocument>("Listings");
         var demoFilter = bf.Regex(
-            "Descricao", new BsonRegularExpression("^" + System.Text.RegularExpressions.Regex.Escape(DemoPrefix)));
+            "Description", new BsonRegularExpression("^" + System.Text.RegularExpressions.Regex.Escape(DemoPrefix)));
         var removed = (await listings.DeleteManyAsync(demoFilter, ct)).DeletedCount;
 
         removed += await DeleteByAsync("Users", bf.In("_id", userBin));
         removed += await DeleteByAsync("Accounts", bf.In("UserId", userBin));
         removed += await DeleteByAsync("Communities", bf.In("_id", commBin));
-        removed += await DeleteByAsync("Memberships", bf.In("ComunidadeId", commBin));
-        removed += await DeleteByAsync("Posts", bf.In("ComunidadeId", commBin));
+        removed += await DeleteByAsync("Memberships", bf.In("CommunityId", commBin));
+        removed += await DeleteByAsync("Posts", bf.In("CommunityId", commBin));
         removed += await DeleteByAsync("Reviews", bf.In("ReviewerId", userBin));
         removed += await DeleteByAsync("Reputations", bf.In("UserId", userBin));
         return removed;
@@ -162,7 +162,7 @@ public class DevController : ControllerBase
         var docs = new List<BsonDocument>(mocks.Count);
         foreach (var m in mocks)
         {
-            var user = AppUser.Create(m.Nome, m.Email, m.Telefone, idadeOk: true);
+            var user = AppUser.Create(m.Name, m.Email, m.Phone, idadeOk: true);
             // DEV only: bypassa a dupla verificação (e-mail + telefone) e ativa o usuário.
             user.DevActivate();
             var doc = user.ToBsonDocument();
@@ -193,7 +193,7 @@ public class DevController : ControllerBase
         return docs.Count;
     }
 
-    // --- Catálogo (56 produtos + 57 serviços) vinculado aos mocks: VendedorId/Nome/AvatarUrl
+    // --- Catálogo (56 produtos + 57 serviços) vinculado aos mocks: SellerId/Nome/AvatarUrl
     //     rotacionam entre os 10 usuários. CreatedAt espalhado nos últimos 30 dias (feed variado).
     private async Task<(int produtos, int servicos, int erros)> SeedListingsAsync(
         IReadOnlyList<MockUser> mocks,
@@ -222,7 +222,7 @@ public class DevController : ControllerBase
             {
                 var seller = mocks[i % mocks.Count];
                 var place = places[i % places.Count];
-                var local = Location.Create(place.Lat, place.Lng, place.Bairro, place.Cidade, place.Cep);
+                var local = Location.Create(place.Lat, place.Lng, place.Neighborhood, place.City, place.PostalCode);
 
                 ProductDetails? pd = seed.Condition is null ? null : ProductDetails.Create(seed.Condition.Value, 1);
                 ServiceDetails? sd = seed.UnitType is null
@@ -231,18 +231,18 @@ public class DevController : ControllerBase
 
                 var listing = Listing.Create(
                     kind: seed.Kind,
-                    modo: seed.Modo,
-                    titulo: seed.Titulo,
-                    descricao: DemoPrefix + " " + seed.Descricao,
+                    modo: seed.Mode,
+                    titulo: seed.Title,
+                    descricao: DemoPrefix + " " + seed.Description,
                     imagens: new List<string> { $"https://picsum.photos/seed/revoa-{i}/600/400" },
-                    precoRvm: seed.PrecoRvm,
+                    precoRvm: seed.PriceRvm,
                     vendedorId: seller.Id,
-                    vendedorNome: seller.Nome,
+                    vendedorNome: seller.Name,
                     vendedorAvatarUrl: seller.AvatarUrl,
                     localizacao: local,
                     categoriaId: catId,
                     comunidadeId: null,
-                    visibilidade: ListingVisibilidade.Global,
+                    visibilidade: ListingVisibility.Global,
                     productDetails: pd,
                     serviceDetails: sd);
 
@@ -262,7 +262,7 @@ public class DevController : ControllerBase
             catch (DomainException ex)
             {
                 erros++;
-                _logger.LogWarning(ex, "Seed pulou listing por violação de domínio: {Titulo}", seed.Titulo);
+                _logger.LogWarning(ex, "Seed pulou listing por violação de domínio: {Title}", seed.Title);
             }
         }
 
@@ -275,7 +275,7 @@ public class DevController : ControllerBase
     }
 
     // --- 5 comunidades (Tipo=User, Open) com memberships (Criador/Moderador/Membro) e posts.
-    //     ComunidadeId determinístico; memberships/posts limpos por ComunidadeId.
+    //     CommunityId determinístico; memberships/posts limpos por CommunityId.
     private async Task<(int comunidades, int memberships, int posts)> SeedCommunitiesAsync(
         IReadOnlyList<MockUser> mocks, Random rnd, CancellationToken ct)
     {
@@ -292,19 +292,19 @@ public class DevController : ControllerBase
             var creator = mocks[sp.CriadorIndex];
 
             var comm = CommunityGroup.Create(
-                nome: sp.Nome,
-                descricao: sp.Descricao,
-                tipo: CommunityTipo.User,
-                eixo: sp.Eixo,
-                visibilidade: CommunityVisibilidade.Open,
+                nome: sp.Name,
+                descricao: sp.Description,
+                tipo: CommunityType.User,
+                eixo: sp.Axis,
+                visibilidade: CommunityVisibility.Open,
                 password: null,
                 lat: sp.Lat,
                 lng: sp.Lng,
-                bairro: sp.Bairro,
-                cidade: sp.Cidade,
-                estado: sp.Estado,
+                bairro: sp.Neighborhood,
+                cidade: sp.City,
+                estado: sp.State,
                 criadorId: creator.Id,
-                criadorNome: creator.Nome,
+                criadorNome: creator.Name,
                 criadorAvatarUrl: creator.AvatarUrl);
 
             var commDoc = comm.ToBsonDocument();
@@ -326,22 +326,22 @@ public class DevController : ControllerBase
             foreach (var idx in memberIndices)
             {
                 var u = mocks[idx];
-                MembershipPapel papel;
+                MembershipRole papel;
                 if (idx == sp.CriadorIndex)
                 {
-                    papel = MembershipPapel.Criador;
+                    papel = MembershipRole.Creator;
                 }
                 else if (!assignedModerador)
                 {
                     assignedModerador = true;
-                    papel = MembershipPapel.Moderador;
+                    papel = MembershipRole.Moderator;
                 }
                 else
                 {
-                    papel = MembershipPapel.Membro;
+                    papel = MembershipRole.Member;
                 }
 
-                var mem = Membership.Create(u.Id, u.Nome, u.AvatarUrl, commId, papel);
+                var mem = Membership.Create(u.Id, u.Name, u.AvatarUrl, commId, papel);
                 var memDoc = mem.ToBsonDocument();
                 memDoc["JoinedAt"] = new BsonDateTime(RandomRecent(rnd));
                 memDocs.Add(memDoc);
@@ -353,7 +353,7 @@ public class DevController : ControllerBase
             {
                 var author = mocks[memberIndices[rnd.Next(memberIndices.Count)]];
                 var content = contents[rnd.Next(contents.Count)];
-                var post = Post.CreateRoot(commId, author.Id, author.Nome, author.AvatarUrl, content);
+                var post = Post.CreateRoot(commId, author.Id, author.Name, author.AvatarUrl, content);
                 var postDoc = post.ToBsonDocument();
                 postDoc["CreatedAt"] = new BsonDateTime(RandomRecent(rnd));
                 postDocs.Add(postDoc);
@@ -394,7 +394,7 @@ public class DevController : ControllerBase
             var review = Review.Create(
                 tradeId: Guid.NewGuid(),
                 reviewerId: reviewer.Id,
-                reviewerNome: reviewer.Nome,
+                reviewerNome: reviewer.Name,
                 revieweeId: reviewee.Id,
                 rating: rating,
                 comment: comment);
@@ -450,11 +450,11 @@ public class DevController : ControllerBase
 
     private sealed record SeedListing(
         ListingKind Kind,
-        ListingModo Modo,
-        string Titulo,
-        string Descricao,
+        ListingMode Mode,
+        string Title,
+        string Description,
         string CategorySlug,
-        long PrecoRvm,
+        long PriceRvm,
         ProductCondition? Condition,
         ServiceUnitType? UnitType,
         int Duration);
@@ -462,25 +462,25 @@ public class DevController : ControllerBase
     // Usuário mock (não é o aggregate User — é o "elenco" com avatar embutido usado nos embeds).
     private sealed record MockUser(
         Guid Id,
-        string Nome,
+        string Name,
         string Email,
-        string Telefone,
+        string Phone,
         string AvatarUrl,
-        string Cidade,
-        string Bairro);
+        string City,
+        string Neighborhood);
 
     private sealed record CommunitySpec(
-        string Nome,
-        string Descricao,
-        CommunityEixo Eixo,
-        string Cidade,
-        string Estado,
-        string Bairro,
+        string Name,
+        string Description,
+        CommunityAxis Axis,
+        string City,
+        string State,
+        string Neighborhood,
         double Lat,
         double Lng,
         int CriadorIndex);
 
-    private sealed record Place(double Lat, double Lng, string Bairro, string Cidade, string Cep);
+    private sealed record Place(double Lat, double Lng, string Neighborhood, string City, string PostalCode);
 
     // 10 chaves determinísticas (idempotência: mesma seed → mesmos IDs).
     private static readonly Guid[] DemoUserIds =
@@ -513,9 +513,9 @@ public class DevController : ControllerBase
     private static IReadOnlyList<SeedListing> BuildProducts()
     {
         var p = ListingKind.Product;
-        var T = ListingModo.Trocar;
-        var R = ListingModo.Repassar;
-        var D = ListingModo.Doar;
+        var T = ListingMode.Trade;
+        var R = ListingMode.Resell;
+        var D = ListingMode.Donate;
 
         return new List<SeedListing>
         {
@@ -581,8 +581,8 @@ public class DevController : ControllerBase
     private static IReadOnlyList<SeedListing> BuildServices()
     {
         var s = ListingKind.Service;
-        var T = ListingModo.Trocar;
-        var V = ListingModo.Voluntariar;
+        var T = ListingMode.Trade;
+        var V = ListingMode.Volunteer;
 
         return new List<SeedListing>
         {
@@ -647,7 +647,7 @@ public class DevController : ControllerBase
     }
 
     // Elenco de 10 usuários mock determinísticos (mesmos IDs a cada seed). Avatar é usado nos
-    // embeds (VendedorAvatarUrl, CriadorAvatarUrl, etc.) — o aggregate User não tem AvatarUrl.
+    // embeds (SellerAvatarUrl, CreatorAvatarUrl, etc.) — o aggregate User não tem AvatarUrl.
     private static IReadOnlyList<MockUser> MockUsers()
     {
         var nomes = new[]
@@ -671,12 +671,12 @@ public class DevController : ControllerBase
             var n = i + 1;
             list.Add(new MockUser(
                 Id: DemoUserIds[i],
-                Nome: nome,
+                Name: nome,
                 Email: $"mock{n:00}@revoa.dev",
-                Telefone: $"+55{ddd}9{10000000 + n}",
+                Phone: $"+55{ddd}9{10000000 + n}",
                 AvatarUrl: AvatarFor(nome),
-                Cidade: cidade,
-                Bairro: bairro));
+                City: cidade,
+                Neighborhood: bairro));
         }
 
         return list;
@@ -687,15 +687,15 @@ public class DevController : ControllerBase
         return new List<CommunitySpec>
         {
             new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da cidade.",
-                CommunityEixo.Geo, "São Paulo", "SP", "Pinheiros", -23.5641, -46.6361, 0),
+                CommunityAxis.Geo, "São Paulo", "SP", "Pinheiros", -23.5641, -46.6361, 0),
             new("Doações Vila Mariana", "Solidariedade de quem mora na Vila Mariana e arredores.",
-                CommunityEixo.Geo, "São Paulo", "SP", "Vila Mariana", -23.5868, -46.6353, 4),
+                CommunityAxis.Geo, "São Paulo", "SP", "Vila Mariana", -23.5868, -46.6353, 4),
             new("Reparos e Ajuda", "Conecta quem precisa de um reparo a quem sabe fazer.",
-                CommunityEixo.Interesse, "Rio de Janeiro", "RJ", "Tijuca", -22.9230, -43.2340, 1),
+                CommunityAxis.Interest, "Rio de Janeiro", "RJ", "Tijuca", -22.9230, -43.2340, 1),
             new("Mães da Comunidade", "Acolhimento, troca de roupinhas e dicas entre mães.",
-                CommunityEixo.Causa, "Belo Horizonte", "MG", "Savassi", -19.9386, -43.9362, 2),
+                CommunityAxis.Cause, "Belo Horizonte", "MG", "Savassi", -19.9386, -43.9362, 2),
             new("Tech Solidário", "Voluntariado em tecnologia: informática, formatação e dicas.",
-                CommunityEixo.Interesse, "Porto Alegre", "RS", "Moinhos de Vento", -30.0277, -51.2058, 9)
+                CommunityAxis.Interest, "Porto Alegre", "RS", "Moinhos de Vento", -30.0277, -51.2058, 9)
         };
     }
 

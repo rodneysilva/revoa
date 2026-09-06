@@ -13,7 +13,7 @@ namespace Revoa.Exchange.Application.Commands;
 // O trade nasce financiado (State=Financiada). Doação/voluntariado NÃO passa por aqui (fila).
 public sealed record PurchaseCommand(
     Guid BuyerId,
-    string BuyerNome,
+    string BuyerName,
     string? BuyerAvatarUrl,
     Guid ListingId) : IRequest<Result<string>>;
 
@@ -44,7 +44,7 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
             return Result<string>.Fail("Anúncio não encontrado.");
         }
 
-        if (!string.Equals(listing.Status, "Ativo", StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(listing.Status, "Active", StringComparison.OrdinalIgnoreCase))
         {
             return Result<string>.Fail("Anúncio não está ativo.");
         }
@@ -54,7 +54,7 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
             return Result<string>.Fail("Anúncio de doação/voluntariado usa a fila de ajuda.");
         }
 
-        if (!Enum.TryParse<TradeModo>(listing.Modo, out var modoEnum))
+        if (!Enum.TryParse<TradeMode>(listing.Mode, out var modoEnum))
         {
             return Result<string>.Fail("Modo do anúncio inválido.");
         }
@@ -68,19 +68,19 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
         // reverte on-chain ("Smart contract error") porque o ativo já foi consumido pela 1ª troca.
         // Rejeita se já existe troca ativa/concluída (só Cancelada libera o listing de novo).
         var existing = await _tradeRepo.GetByListingAsync(request.ListingId, ct);
-        if (existing.Any(t => t.State != TradeState.Cancelada))
+        if (existing.Any(t => t.State != TradeState.Cancelled))
         {
             return Result<string>.Fail("Este anúncio já está em uma troca ou já foi concluído.");
         }
 
-        var sellerWallet = await _walletProvider.GetByUserIdAsync(listing.VendedorId, ct);
+        var sellerWallet = await _walletProvider.GetByUserIdAsync(listing.SellerId, ct);
         var buyerWallet = await _walletProvider.GetByUserIdAsync(request.BuyerId, ct);
         if (sellerWallet is null || buyerWallet is null)
         {
             return Result<string>.Fail("Carteira indisponível.");
         }
 
-        var total = listing.PrecoRvm;
+        var total = listing.PriceRvm;
         long onChainTradeId;
         long tokenId;
         string assetContract;
@@ -140,13 +140,13 @@ public class PurchaseCommandHandler : IRequestHandler<PurchaseCommand, Result<st
             request.ListingId,
             modoEnum,
             kind,
-            listing.VendedorId,
+            listing.SellerId,
             sellerWallet.Address,
-            listing.VendedorNome,
-            listing.VendedorAvatarUrl,
+            listing.SellerName,
+            listing.SellerAvatarUrl,
             request.BuyerId,
             buyerWallet.Address,
-            request.BuyerNome,
+            request.BuyerName,
             request.BuyerAvatarUrl,
             total,
             assetContract,

@@ -21,7 +21,7 @@ public class DonationCompletedEventHandler : INotificationHandler<DonationComple
     public async Task Handle(DonationCompletedEvent notification, CancellationToken ct)
     {
         var tradeId = notification.TradeId;
-        var payload = $"{{\"tradeId\":\"{tradeId}\",\"modo\":\"{notification.Modo}\"}}";
+        var payload = $"{{\"tradeId\":\"{tradeId}\",\"modo\":\"{notification.Mode}\"}}";
 
         // Doador (ofertante): agradecimento + recompensa aplicada.
         await NotifyUserSafe(

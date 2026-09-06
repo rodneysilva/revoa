@@ -2,7 +2,7 @@ using System.Security.Claims;
 
 namespace Revoa.Api.Controllers;
 
-public sealed record RevoaUser(Guid UserId, string Nome, string? AvatarUrl);
+public sealed record RevoaUser(Guid UserId, string Name, string? AvatarUrl);
 
 public static class ClaimsPrincipalExtensions
 {

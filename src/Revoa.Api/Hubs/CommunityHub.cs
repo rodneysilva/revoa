@@ -21,7 +21,7 @@ public class CommunityHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        var comunidadeIdStr = Context.GetHttpContext()?.Request.Query["comunidadeId"].ToString();
+        var comunidadeIdStr = Context.GetHttpContext()?.Request.Query["communityId"].ToString();
         if (Guid.TryParse(comunidadeIdStr, out var comunidadeId))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"comunidade-{comunidadeId}");
@@ -69,11 +69,11 @@ public class CommunityHub : Hub
         var dto = new
         {
             message.Id,
-            message.ComunidadeId,
+            message.CommunityId,
             message.AutorId,
-            message.AutorNome,
+            message.AuthorName,
             message.AutorAvatarUrl,
-            message.Conteudo,
+            message.Content,
             message.CreatedAt
         };
 

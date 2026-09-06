@@ -8,25 +8,25 @@ import { KIND_LABELS } from "../lib/config";
 import { timeAgo } from "../lib/time";
 import type { Trade, TradeState } from "../api/types";
 
-const HAPPY: TradeState[] = ["Ofertada", "Financiada", "Liberada"];
-const BRANCH: TradeState[] = ["Disputada", "Reembolsada", "Cancelada"];
+const HAPPY: TradeState[] = ["Offered", "Funded", "Released"];
+const BRANCH: TradeState[] = ["Disputed", "Refunded", "Cancelled"];
 
 const STATE_STYLE: Record<TradeState, string> = {
-  Ofertada: "text-silver border-smoke",
-  Financiada: "text-sky border-sky/40",
-  Liberada: "text-esmeralda border-esmeralda/40",
-  Disputada: "text-amber border-amber/40",
-  Reembolsada: "text-sky border-sky/40",
-  Cancelada: "text-rosa border-rosa/40",
+  Offered: "text-silver border-smoke",
+  Funded: "text-sky border-sky/40",
+  Released: "text-esmeralda border-esmeralda/40",
+  Disputed: "text-amber border-amber/40",
+  Refunded: "text-sky border-sky/40",
+  Cancelled: "text-rosa border-rosa/40",
 };
 
 const BRANCH_STYLE: Record<TradeState, string> = {
-  Ofertada: "",
-  Financiada: "",
-  Liberada: "",
-  Disputada: "text-amber",
-  Reembolsada: "text-sky",
-  Cancelada: "text-rosa",
+  Offered: "",
+  Funded: "",
+  Released: "",
+  Disputed: "text-amber",
+  Refunded: "text-sky",
+  Cancelled: "text-rosa",
 };
 
 const BTN_PRI =
@@ -37,10 +37,10 @@ const BTN_WARN =
   "bg-rosa/15 text-rosa text-xs font-semibold px-3 py-2 rounded-lg disabled:opacity-60 border border-rosa/40";
 
 function happyIndex(state: TradeState, funded: boolean): number {
-  if (state === "Liberada") return 2;
-  if (state === "Financiada") return 1;
-  if (state === "Disputada" || state === "Reembolsada") return 1;
-  if (state === "Cancelada") return funded ? 1 : 0;
+  if (state === "Released") return 2;
+  if (state === "Funded") return 1;
+  if (state === "Disputed" || state === "Refunded") return 1;
+  if (state === "Cancelled") return funded ? 1 : 0;
   return 0;
 }
 
@@ -92,7 +92,7 @@ function Stepper({ trade }: { trade: Trade }) {
       {branch && (
         <div className={`text-xs font-semibold ${BRANCH_STYLE[branch]}`}>
           ↳ {branch}
-          {branch === "Disputada" && " · aguardando resolução"}
+          {branch === "Disputed" && " · aguardando resolução"}
         </div>
       )}
     </div>
@@ -200,7 +200,7 @@ function TradeCard({
   onReload: () => void;
 }) {
   const isSeller = trade.SellerId === userId;
-  const counterNome = isSeller ? trade.BuyerNome : trade.SellerNome;
+  const counterNome = isSeller ? trade.BuyerName : trade.SellerName;
   const counterAvatar = isSeller ? trade.BuyerAvatarUrl : trade.SellerAvatarUrl;
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -228,7 +228,7 @@ function TradeCard({
   return (
     <div className="bg-charcoal rounded-xl border border-smoke p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
-        <Badge modo={trade.Modo} />
+        <Badge modo={trade.Mode} />
         <span className="text-xs text-silver">{KIND_LABELS[trade.Kind]}</span>
         <span
           className={`ml-auto text-xs font-semibold px-2 py-0.5 rounded-full border ${STATE_STYLE[trade.State]}`}
@@ -267,13 +267,13 @@ function TradeCard({
         </div>
       )}
 
-      {trade.State === "Liberada" && (
+      {trade.State === "Released" && (
         <ReviewBox trade={trade} counterNome={counterNome} />
       )}
 
       {err && <p className="text-rosa text-xs mt-2">{err}</p>}
 
-      {trade.State === "Financiada" && (
+      {trade.State === "Funded" && (
         <div className="mt-3 flex flex-wrap gap-2">
           {trade.Kind === "Service" && !isSeller && !trade.VoucherRedeemed && (
             <button
@@ -330,7 +330,7 @@ function TradeCard({
         </div>
       )}
 
-      {trade.State === "Disputada" && (
+      {trade.State === "Disputed" && (
         <div className="mt-3">
           <p className="text-xs text-silver mb-2">
             Aguardando resolução da equipe.

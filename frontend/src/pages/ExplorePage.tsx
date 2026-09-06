@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ListingCard } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
-import type { Category, FeedItem, FeedParams, Kind, Modo } from "../api/types";
+import type { Category, FeedItem, FeedParams, Kind, Mode } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 
 const PAGE_SIZE = 24;
 
 type KindFilter = "Todos" | Kind;
-type ModoFilter = "Todos" | Modo;
+type ModoFilter = "Todos" | Mode;
 type SortKey = "recente" | "preco-asc" | "preco-desc";
 
 const KIND_OPTIONS: KindFilter[] = ["Todos", "Product", "Service"];
@@ -17,7 +17,7 @@ const KIND_LABEL: Record<KindFilter, string> = {
   Product: "Produtos",
   Service: "Serviços",
 };
-const MODO_OPTIONS: ModoFilter[] = ["Todos", "Trocar", "Repassar", "Doar", "Voluntariar"];
+const MODO_OPTIONS: ModoFilter[] = ["Todos", "Trade", "Resell", "Donate", "Volunteer"];
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "recente", label: "Mais recentes" },
   { value: "preco-asc", label: "Preço ↑" },
@@ -65,11 +65,11 @@ export function ExplorePage() {
         page: p,
         q: debouncedQ || undefined,
         kind: kind === "Todos" ? undefined : kind,
-        modo: modo === "Todos" ? undefined : modo,
-        categoriaId: categoriaId || undefined,
-        precoMin: precoMin ? Number(precoMin) : undefined,
-        precoMax: precoMax ? Number(precoMax) : undefined,
-        doarApenas: doarApenas || undefined,
+        mode: modo === "Todos" ? undefined : modo,
+        categoryId: categoriaId || undefined,
+        priceMin: precoMin ? Number(precoMin) : undefined,
+        priceMax: precoMax ? Number(precoMax) : undefined,
+        donationOnly: doarApenas || undefined,
         sort,
       }),
     [debouncedQ, kind, modo, categoriaId, precoMin, precoMax, doarApenas, sort]
@@ -196,7 +196,7 @@ export function ExplorePage() {
             <option value="">Todas as categorias</option>
             {categories.map((c) => (
               <option key={c.Id} value={c.Id}>
-                {c.Nome}
+                {c.Name}
               </option>
             ))}
           </select>

@@ -97,8 +97,8 @@ export function TransparencyPage() {
 
   const catName = useMemo(() => {
     const map = new Map<string, string>();
-    for (const c of cats) map.set(c.Id, c.Nome);
-    return (r: PriceReference) => map.get(r.CategoriaId) ?? prettifySlug(r.CategoriaSlug);
+    for (const c of cats) map.set(c.Id, c.Name);
+    return (r: PriceReference) => map.get(r.CategoryId) ?? prettifySlug(r.CategorySlug);
   }, [cats]);
 
   const ctaTo = user ? "/feed" : "/register";
@@ -256,7 +256,7 @@ export function TransparencyPage() {
                 const fairBrl = brlEstimate(r.FairSuggestionRvm, rate ?? r.BrlRate ?? 0);
                 return (
                   <article
-                    key={r.CategoriaId}
+                    key={r.CategoryId}
                     className="bg-charcoal rounded-2xl border border-smoke p-5 flex flex-col"
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">

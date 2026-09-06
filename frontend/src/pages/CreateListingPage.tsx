@@ -7,12 +7,12 @@ import type {
   Category,
   CreateListingBody,
   Kind,
-  Modo,
-  Visibilidade,
+  Mode,
+  Visibility,
 } from "../api/types";
 
 const KINDS: Kind[] = ["Product", "Service"];
-const VISIBILIDADES: Visibilidade[] = ["Global"];
+const VISIBILIDADES: Visibility[] = ["Global"];
 
 const inputCls =
   "mt-1 w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none";
@@ -27,7 +27,7 @@ export function CreateListingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [kind, setKind] = useState<Kind>("Product");
-  const [modo, setModo] = useState<Modo>("Trocar");
+  const [modo, setModo] = useState<Mode>("Trade");
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const [imagens, setImagens] = useState<string[]>([]);
@@ -44,7 +44,7 @@ export function CreateListingPage() {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
-  const [visibilidade, setVisibilidade] = useState<Visibilidade>("Global");
+  const [visibilidade, setVisibilidade] = useState<Visibility>("Global");
 
   useEffect(() => {
     api
@@ -66,7 +66,7 @@ export function CreateListingPage() {
     if (!valid.includes(modo)) setModo(valid[0]);
   }, [kind, modo]);
 
-  const isFree = modo === "Doar" || modo === "Voluntariar";
+  const isFree = modo === "Donate" || modo === "Volunteer";
 
   function addImagem() {
     const url = imgInput.trim();
@@ -90,16 +90,16 @@ export function CreateListingPage() {
 
     const body: CreateListingBody = {
       Kind: kind,
-      Modo: modo,
-      Titulo: titulo.trim(),
-      Descricao: descricao.trim(),
+      Mode: modo,
+      Title: titulo.trim(),
+      Description: descricao.trim(),
       Imagens: imagens,
-      PrecoRvm: precoNum,
-      Visibilidade: visibilidade,
-      CategoriaId: categoriaId,
-      Bairro: bairro.trim() || undefined,
-      Cidade: cidade.trim() || undefined,
-      Cep: cep.trim() || undefined,
+      PriceRvm: precoNum,
+      Visibility: visibilidade,
+      CategoryId: categoriaId,
+      Neighborhood: bairro.trim() || undefined,
+      City: cidade.trim() || undefined,
+      PostalCode: cep.trim() || undefined,
       Lat: lat ? Number(lat) : undefined,
       Lng: lng ? Number(lng) : undefined,
     };
@@ -344,7 +344,7 @@ export function CreateListingPage() {
             {categories.length === 0 && <option value="">(carregando…)</option>}
             {categories.map((c) => (
               <option key={c.Id} value={c.Id}>
-                {c.Nome}
+                {c.Name}
               </option>
             ))}
           </select>
@@ -355,7 +355,7 @@ export function CreateListingPage() {
           <span className={labelTxtCls}>Visibilidade</span>
           <select
             value={visibilidade}
-            onChange={(e) => setVisibilidade(e.target.value as Visibilidade)}
+            onChange={(e) => setVisibilidade(e.target.value as Visibility)}
             className={inputCls}
           >
             {VISIBILIDADES.map((v) => (

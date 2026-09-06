@@ -3,14 +3,14 @@ using Revoa.Abstractions;
 namespace Revoa.Community.Domain.Aggregates.ChatMessageAggregate;
 
 // Mensagem de chat tempo-real (OOUX objeto 20). Append-only (SignalR). TTL de 90d no repositório.
-// AutorNome/AvatarUrl embed anti-N+1. Herda Entity (Id + Version), embora seja append-only.
+// AuthorName/AvatarUrl embed anti-N+1. Herda Entity (Id + Version), embora seja append-only.
 public class ChatMessage : Entity
 {
-    public Guid ComunidadeId { get; private set; }
+    public Guid CommunityId { get; private set; }
     public Guid AutorId { get; private set; }
-    public string AutorNome { get; private set; } = string.Empty;
+    public string AuthorName { get; private set; } = string.Empty;
     public string? AutorAvatarUrl { get; private set; }
-    public string Conteudo { get; private set; } = string.Empty;
+    public string Content { get; private set; } = string.Empty;
     public DateTime CreatedAt { get; private set; }
     public bool Ocultado { get; private set; }
 
@@ -41,11 +41,11 @@ public class ChatMessage : Entity
         return new ChatMessage
         {
             Id = Guid.NewGuid(),
-            ComunidadeId = comunidadeId,
+            CommunityId = comunidadeId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
+            AuthorName = string.IsNullOrWhiteSpace(autorNome) ? "Usuário" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
-            Conteudo = conteudo.Trim(),
+            Content = conteudo.Trim(),
             CreatedAt = DateTime.UtcNow,
             Ocultado = false
         };

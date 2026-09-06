@@ -6,7 +6,7 @@ using Revoa.Community.Domain.Repositories;
 namespace Revoa.Community.Application.Queries;
 
 // Posts de uma comunidade (anônimo vê — UF-19). ParentId → filhos diretos; senão raízes. Só Visivel.
-public sealed record GetCommunityPostsQuery(Guid ComunidadeId, Guid? ParentId, int Page) : IRequest<Result<IReadOnlyList<PostDto>>>;
+public sealed record GetCommunityPostsQuery(Guid CommunityId, Guid? ParentId, int Page) : IRequest<Result<IReadOnlyList<PostDto>>>;
 
 public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQuery, Result<IReadOnlyList<PostDto>>>
 {
@@ -21,7 +21,7 @@ public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQu
 
     public async Task<Result<IReadOnlyList<PostDto>>> Handle(GetCommunityPostsQuery request, CancellationToken ct)
     {
-        var posts = await _posts.GetByComunidadeAsync(request.ComunidadeId, request.ParentId, ct);
+        var posts = await _posts.GetByComunidadeAsync(request.CommunityId, request.ParentId, ct);
 
         var page = request.Page <= 0 ? 1 : request.Page;
         var paged = posts

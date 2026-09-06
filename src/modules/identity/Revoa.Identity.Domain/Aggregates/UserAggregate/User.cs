@@ -26,9 +26,9 @@ public class User : AggregateRoot
 {
     private const int OtpMaxAttempts = 5;
 
-    public string Nome { get; private set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
-    public string Telefone { get; private set; } = string.Empty;
+    public string Phone { get; private set; } = string.Empty;
     public UserRole Role { get; private set; }
     public bool IdadeOk { get; private set; }
     public UserStatus Status { get; private set; }
@@ -63,9 +63,9 @@ public class User : AggregateRoot
         return new User
         {
             Id = Guid.NewGuid(),
-            Nome = nome,
+            Name = nome,
             Email = email,
-            Telefone = telefone,
+            Phone = telefone,
             Role = UserRole.User,
             IdadeOk = idadeOk,
             Status = UserStatus.PendingVerification,

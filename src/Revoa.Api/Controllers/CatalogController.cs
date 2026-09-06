@@ -26,7 +26,7 @@ public class CatalogController : ControllerBase
     public async Task<ActionResult<string>> Create(
         [FromBody] CreateListingRequest request, CancellationToken ct)
     {
-        // Ownership: VendedorId/Nome/Avatar vêm do token (claim sub + name), NUNCA do body.
+        // Ownership: SellerId/Nome/Avatar vêm do token (claim sub + name), NUNCA do body.
         var user = User.GetRevoaUser();
         if (user is null)
         {
@@ -34,7 +34,7 @@ public class CatalogController : ControllerBase
         }
 
         var vendedorGuid = user.UserId;
-        var vendedorNome = user.Nome;
+        var vendedorNome = user.Name;
         var avatar = user.AvatarUrl;
 
         if (!TryParse(request.Kind, out ListingKind kind))
@@ -42,14 +42,14 @@ public class CatalogController : ControllerBase
             return BadRequest(new ApiError("Kind inválido (Product|Service)."));
         }
 
-        if (!TryParse(request.Modo, out ListingModo modo))
+        if (!TryParse(request.Mode, out ListingMode mode))
         {
-            return BadRequest(new ApiError("Modo inválido (Trocar|Repassar|Doar|Voluntariar)."));
+            return BadRequest(new ApiError("Modo inválido (Trade|Resell|Donate|Volunteer)."));
         }
 
-        if (!TryParse(request.Visibilidade, out ListingVisibilidade visibilidade))
+        if (!TryParse(request.Visibility, out ListingVisibility visibilidade))
         {
-            return BadRequest(new ApiError("Visibilidade inválida (Comunidade|Global|Ambos)."));
+            return BadRequest(new ApiError("Visibilidade inválida (Community|Global|Both)."));
         }
 
         ProductCondition? condition = null;
@@ -65,10 +65,10 @@ public class CatalogController : ControllerBase
         }
 
         var command = new CreateListingCommand(
-            kind, modo, request.Titulo, request.Descricao, request.Imagens, request.PrecoRvm,
+            kind, mode, request.Title, request.Description, request.Imagens, request.PriceRvm,
             vendedorGuid, vendedorNome, avatar,
-            request.Lat, request.Lng, request.Bairro, request.Cidade, request.Cep,
-            request.CategoriaId, request.ComunidadeId, visibilidade,
+            request.Lat, request.Lng, request.Neighborhood, request.City, request.PostalCode,
+            request.CategoryId, request.CommunityId, visibilidade,
             condition, request.Stock, unitType, request.Duration, request.VoucherExpiryDays);
 
         var result = await _mediator.Send(command, ct);
@@ -84,28 +84,28 @@ public class CatalogController : ControllerBase
     [HttpGet("feed")]
     [AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<FeedItemDto>>> Feed(
-        [FromQuery] double? raio,
+        [FromQuery] double? radius,
         [FromQuery] double? lat,
         [FromQuery] double? lng,
         [FromQuery] string? kind,
-        [FromQuery] Guid? categoriaId,
-        [FromQuery] Guid? comunidadeId,
+        [FromQuery] Guid? categoryId,
+        [FromQuery] Guid? communityId,
         [FromQuery] int page = 1,
-        [FromQuery] string? modo = null,
-        [FromQuery] long? precoMin = null,
-        [FromQuery] long? precoMax = null,
-        [FromQuery] bool? doarApenas = null,
+        [FromQuery] string? mode = null,
+        [FromQuery] long? priceMin = null,
+        [FromQuery] long? priceMax = null,
+        [FromQuery] bool? donationOnly = null,
         [FromQuery] string? sort = null,
         [FromQuery] string? q = null,
-        [FromQuery] string? vendedorIds = null,
+        [FromQuery] string? sellerIds = null,
         CancellationToken ct = default)
     {
             IReadOnlyList<Guid>? vendedorGuids = null;
-            if (!string.IsNullOrWhiteSpace(vendedorIds))
+            if (!string.IsNullOrWhiteSpace(sellerIds))
             {
                 // Endpoint público/anônimo: parse defensivo (ignora tokens inválidos em vez de
                 // lançar FormatException → 500) + cap anti-abuso da cláusula $in do MongoDB.
-                vendedorGuids = vendedorIds
+                vendedorGuids = sellerIds
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .Select(t => Guid.TryParse(t, out var g) ? g : (Guid?)null)
                     .Where(g => g.HasValue)
@@ -116,8 +116,8 @@ public class CatalogController : ControllerBase
             }
 
         var result = await _mediator.Send(
-            new GetFeedQuery(raio, lat, lng, kind, categoriaId, comunidadeId, page,
-                modo, precoMin, precoMax, doarApenas, sort, q, vendedorGuids),
+            new GetFeedQuery(radius, lat, lng, kind, categoryId, communityId, page,
+                mode, priceMin, priceMax, donationOnly, sort, q, vendedorGuids),
             ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
@@ -164,7 +164,7 @@ public class CatalogController : ControllerBase
         }
 
         var result = await _mediator.Send(
-            new CreateCommentCommand(user.UserId, user.Nome, user.AvatarUrl, id, request.ParentId, request.Conteudo), ct);
+            new CreateCommentCommand(user.UserId, user.Name, user.AvatarUrl, id, request.ParentId, request.Content), ct);
 
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
@@ -173,23 +173,23 @@ public class CatalogController : ControllerBase
         => Enum.TryParse(value, ignoreCase: true, out result);
 }
 
-public sealed record CreateCommentRequest(Guid? ParentId, string Conteudo);
+public sealed record CreateCommentRequest(Guid? ParentId, string Content);
 
 public sealed record CreateListingRequest(
     string Kind,
-    string Modo,
-    string Titulo,
-    string Descricao,
+    string Mode,
+    string Title,
+    string Description,
     List<string> Imagens,
-    long PrecoRvm,
+    long PriceRvm,
     double? Lat,
     double? Lng,
-    string? Bairro,
-    string? Cidade,
-    string? Cep,
-    Guid CategoriaId,
-    Guid? ComunidadeId,
-    string Visibilidade,
+    string? Neighborhood,
+    string? City,
+    string? PostalCode,
+    Guid CategoryId,
+    Guid? CommunityId,
+    string Visibility,
     string? Condition,
     int? Stock,
     string? UnitType,

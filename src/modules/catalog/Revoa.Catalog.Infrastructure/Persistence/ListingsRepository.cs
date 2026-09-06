@@ -18,22 +18,22 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
         var fb = Builders<Listing>.Filter;
 
         // Só anúncios ativos.
-        var query = fb.Eq(l => l.Status, ListingStatus.Ativo);
+        var query = fb.Eq(l => l.Status, ListingStatus.Active);
 
-        // Visibilidade: Global/Ambos sempre aparecem. Comunidade só se ComunidadeId bate.
-        // Sem ComunidadeId no filtro → exclui os escopados a comunidade.
-        if (filter.ComunidadeId is not null)
+        // Visibility: Global/Ambos sempre aparecem. Comunidade só se CommunityId bate.
+        // Sem CommunityId no filtro → exclui os escopados a comunidade.
+        if (filter.CommunityId is not null)
         {
             var comunidadeOuGlobal = fb.And(
-                fb.Ne(l => l.Visibilidade, ListingVisibilidade.Comunidade)) // Global/Ambos
+                fb.Ne(l => l.Visibility, ListingVisibility.Community)) // Global/Ambos
                 | fb.And(
-                    fb.Eq(l => l.Visibilidade, ListingVisibilidade.Comunidade),
-                    fb.Eq(l => l.ComunidadeId, filter.ComunidadeId));
+                    fb.Eq(l => l.Visibility, ListingVisibility.Community),
+                    fb.Eq(l => l.CommunityId, filter.CommunityId));
             query &= comunidadeOuGlobal;
         }
         else
         {
-            query &= fb.Ne(l => l.Visibilidade, ListingVisibilidade.Comunidade);
+            query &= fb.Ne(l => l.Visibility, ListingVisibility.Community);
         }
 
         if (filter.Kind is not null)
@@ -41,46 +41,46 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
             query &= fb.Eq(l => l.Kind, filter.Kind);
         }
 
-        if (filter.Modo is not null)
+        if (filter.Mode is not null)
         {
-            query &= fb.Eq(l => l.Modo, filter.Modo);
+            query &= fb.Eq(l => l.Mode, filter.Mode);
         }
 
-        if (filter.CategoriaId is not null)
+        if (filter.CategoryId is not null)
         {
-            query &= fb.Eq(l => l.CategoriaId, filter.CategoriaId);
+            query &= fb.Eq(l => l.CategoryId, filter.CategoryId);
         }
 
-        if (filter.PrecoMin is not null)
+        if (filter.PriceMin is not null)
         {
-            query &= fb.Gte(l => l.PrecoRvm, filter.PrecoMin.Value);
+            query &= fb.Gte(l => l.PriceRvm, filter.PriceMin.Value);
         }
 
-        if (filter.PrecoMax is not null)
+        if (filter.PriceMax is not null)
         {
-            query &= fb.Lte(l => l.PrecoRvm, filter.PrecoMax.Value);
+            query &= fb.Lte(l => l.PriceRvm, filter.PriceMax.Value);
         }
 
-        if (filter.DoarApenas is true)
+        if (filter.DonationOnly is true)
         {
-            query &= fb.Eq(l => l.PrecoRvm, 0L);
+            query &= fb.Eq(l => l.PriceRvm, 0L);
         }
 
         if (!string.IsNullOrWhiteSpace(filter.Q))
         {
             var rx = new BsonRegularExpression(Regex.Escape(filter.Q.Trim()), "i");
-            query &= fb.Regex(l => l.Titulo, rx) | fb.Regex(l => l.Descricao, rx);
+            query &= fb.Regex(l => l.Title, rx) | fb.Regex(l => l.Description, rx);
         }
 
-        if (filter.VendedorIds is { Count: > 0 })
+        if (filter.SellerIds is { Count: > 0 })
         {
-            query &= fb.In(l => l.VendedorId, filter.VendedorIds);
+            query &= fb.In(l => l.SellerId, filter.SellerIds);
         }
 
         var sort = filter.Sort switch
         {
-            "preco-asc" => Builders<Listing>.Sort.Ascending(l => l.PrecoRvm),
-            "preco-desc" => Builders<Listing>.Sort.Descending(l => l.PrecoRvm),
+            "preco-asc" => Builders<Listing>.Sort.Ascending(l => l.PriceRvm),
+            "preco-desc" => Builders<Listing>.Sort.Descending(l => l.PriceRvm),
             _ => Builders<Listing>.Sort.Descending(l => l.CreatedAt)
         };
 
@@ -105,12 +105,12 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
     public async Task<IReadOnlyList<Listing>> GetActiveAsync(CancellationToken ct)
     {
         return await Collection
-            .Find(l => l.Status == ListingStatus.Ativo)
+            .Find(l => l.Status == ListingStatus.Active)
             .ToListAsync(ct);
     }
 
     /// <summary>
-    /// Cria índices do feed (Status+Visibilidade, CategoriaId, ComunidadeId, Lat/Lng, CreatedAt). Idempotente.
+    /// Cria índices do feed (Status+Visibilidade, CategoryId, CommunityId, Lat/Lng, CreatedAt). Idempotente.
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
@@ -119,13 +119,13 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
             new CreateIndexModel<Listing>(
                 Builders<Listing>.IndexKeys
                     .Ascending(l => l.Status)
-                    .Ascending(l => l.Visibilidade),
+                    .Ascending(l => l.Visibility),
                 new CreateIndexOptions { Name = "ix_Status_Visibilidade" }),
             new CreateIndexModel<Listing>(
-                Builders<Listing>.IndexKeys.Ascending(l => l.CategoriaId),
+                Builders<Listing>.IndexKeys.Ascending(l => l.CategoryId),
                 new CreateIndexOptions { Name = "ix_CategoriaId" }),
             new CreateIndexModel<Listing>(
-                Builders<Listing>.IndexKeys.Ascending(l => l.ComunidadeId),
+                Builders<Listing>.IndexKeys.Ascending(l => l.CommunityId),
                 new CreateIndexOptions { Name = "ix_ComunidadeId", Sparse = true }),
             new CreateIndexModel<Listing>(
                 Builders<Listing>.IndexKeys
@@ -136,7 +136,7 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
                 Builders<Listing>.IndexKeys.Descending(l => l.CreatedAt),
                 new CreateIndexOptions { Name = "ix_CreatedAt_Desc" }),
             new CreateIndexModel<Listing>(
-                Builders<Listing>.IndexKeys.Ascending(l => l.PrecoRvm),
+                Builders<Listing>.IndexKeys.Ascending(l => l.PriceRvm),
                 new CreateIndexOptions { Name = "ix_PrecoRvm" })
         }, ct);
     }

@@ -8,7 +8,7 @@ using Revoa.Identity.Domain.Repositories;
 namespace Revoa.Identity.Application.Commands;
 
 // Claims suficientes p/ o controller emitir o JWT após login confirmado (sem vazar o aggregate User).
-public sealed record LoginClaims(Guid UserId, string Nome, string Email, bool EmailVerified, bool PhoneVerified, UserRole Role);
+public sealed record LoginClaims(Guid UserId, string Name, string Email, bool EmailVerified, bool PhoneVerified, UserRole Role);
 
 // Etapa 1 do login passwordless: solicita um código de acesso por e-mail.
 // Anti-enumeração: sempre Ok (não revela se a conta existe); só envia o código se a conta existir
@@ -73,6 +73,6 @@ public class LoginConfirmCommandHandler : IRequestHandler<LoginConfirmCommand, R
         }
 
         await _users.UpdateAsync(user, ct);
-        return Result<LoginClaims>.Ok(new LoginClaims(user.Id, user.Nome, user.Email, user.EmailVerified, user.PhoneVerified, user.Role));
+        return Result<LoginClaims>.Ok(new LoginClaims(user.Id, user.Name, user.Email, user.EmailVerified, user.PhoneVerified, user.Role));
     }
 }

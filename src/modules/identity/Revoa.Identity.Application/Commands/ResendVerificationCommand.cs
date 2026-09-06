@@ -53,7 +53,7 @@ public class ResendVerificationCommandHandler : IRequestHandler<ResendVerificati
 
         await Task.WhenAll(
             _emailSender.SendVerificationEmailAsync(user.Email, emailToken, ct),
-            _smsSender.SendOtpAsync(user.Telefone, otp, ct));
+            _smsSender.SendOtpAsync(user.Phone, otp, ct));
 
         return Result<RegisterUserResult>.Ok(
             new RegisterUserResult(user.Id, NeedsEmailVerification: true, NeedsPhoneVerification: true));

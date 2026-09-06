@@ -189,7 +189,7 @@ export function AdminReportsPage() {
                 </div>
 
                 <div className="text-sm text-silver mb-2">
-                  <span className="text-cream/80">{r.ReporterNome}</span> denunciou
+                  <span className="text-cream/80">{r.ReporterName}</span> denunciou
                   {" "}
                   <span className="text-silver/70">
                     {r.TargetType === "Listing" ? (

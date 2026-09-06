@@ -6,7 +6,7 @@ using Revoa.Pricing.Domain.Repositories;
 namespace Revoa.Pricing.Application.Queries;
 
 // Consulta a referência de preço justo de UMA categoria (leitura anônima). Retorna null se inexistente.
-public sealed record GetPriceReferenceQuery(Guid CategoriaId) : IRequest<Result<PriceReferenceDto?>>;
+public sealed record GetPriceReferenceQuery(Guid CategoryId) : IRequest<Result<PriceReferenceDto?>>;
 
 public class GetPriceReferenceQueryHandler : IRequestHandler<GetPriceReferenceQuery, Result<PriceReferenceDto?>>
 {
@@ -19,7 +19,7 @@ public class GetPriceReferenceQueryHandler : IRequestHandler<GetPriceReferenceQu
 
     public async Task<Result<PriceReferenceDto?>> Handle(GetPriceReferenceQuery request, CancellationToken ct)
     {
-        var reference = await _repo.GetByCategoryAsync(request.CategoriaId, ct);
+        var reference = await _repo.GetByCategoryAsync(request.CategoryId, ct);
         return Result<PriceReferenceDto?>.Ok(reference is null ? null : PriceReferenceDtoMapper.From(reference));
     }
 }

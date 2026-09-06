@@ -8,28 +8,28 @@ public enum ListingKind
     Service
 }
 
-public enum ListingModo
+public enum ListingMode
 {
-    Trocar,
-    Repassar,
-    Doar,
-    Voluntariar
+    Trade,
+    Resell,
+    Donate,
+    Volunteer
 }
 
-public enum ListingVisibilidade
+public enum ListingVisibility
 {
-    Comunidade,
+    Community,
     Global,
-    Ambos
+    Both
 }
 
 public enum ListingStatus
 {
-    Rascunho,
-    Ativo,
-    EmAndamento,
-    Concluido,
-    Cancelado
+    Draft,
+    Active,
+    InProgress,
+    Completed,
+    Cancelled
 }
 
 // Aggregate "AnÃºncio" (OOUX objeto 7). kind (product|service) + modo + visibilidade.
@@ -38,28 +38,28 @@ public enum ListingStatus
 public class Listing : AggregateRoot
 {
     public ListingKind Kind { get; private set; }
-    public ListingModo Modo { get; private set; }
+    public ListingMode Mode { get; private set; }
 
-    public string Titulo { get; private set; } = string.Empty;
-    public string Descricao { get; private set; } = string.Empty;
+    public string Title { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
     public List<string> Imagens { get; private set; } = new();
 
     // long RVM (0 para doar/voluntariar).
-    public long PrecoRvm { get; private set; }
+    public long PriceRvm { get; private set; }
 
     // Embed anti-N+1.
-    public Guid VendedorId { get; private set; }
-    public string VendedorNome { get; private set; } = string.Empty;
-    public string? VendedorAvatarUrl { get; private set; }
+    public Guid SellerId { get; private set; }
+    public string SellerName { get; private set; } = string.Empty;
+    public string? SellerAvatarUrl { get; private set; }
 
     public Location Localizacao { get; private set; } = Location.Create(null, null, null, null, null);
 
-    public Guid CategoriaId { get; private set; }
+    public Guid CategoryId { get; private set; }
 
-    // YAGNI: ComunidadeId nullable (mÃ³dulo Community ainda nÃ£o existe).
-    public Guid? ComunidadeId { get; private set; }
+    // YAGNI: CommunityId nullable (mÃ³dulo Community ainda nÃ£o existe).
+    public Guid? CommunityId { get; private set; }
 
-    public ListingVisibilidade Visibilidade { get; private set; }
+    public ListingVisibility Visibility { get; private set; }
 
     // Preenchido ao mintar produto (mint-to-escrow). long dev (sequential tokenIds).
     public long? NftTokenId { get; private set; }
@@ -76,7 +76,7 @@ public class Listing : AggregateRoot
 
     public static Listing Create(
         ListingKind kind,
-        ListingModo modo,
+        ListingMode modo,
         string titulo,
         string descricao,
         List<string> imagens,
@@ -87,7 +87,7 @@ public class Listing : AggregateRoot
         Location localizacao,
         Guid categoriaId,
         Guid? comunidadeId,
-        ListingVisibilidade visibilidade,
+        ListingVisibility visibilidade,
         ProductDetails? productDetails = null,
         ServiceDetails? serviceDetails = null)
     {
@@ -97,19 +97,19 @@ public class Listing : AggregateRoot
         {
             Id = Guid.NewGuid(),
             Kind = kind,
-            Modo = modo,
-            Titulo = titulo,
-            Descricao = descricao,
+            Mode = modo,
+            Title = titulo,
+            Description = descricao,
             Imagens = imagens ?? new List<string>(),
-            PrecoRvm = precoRvm,
-            VendedorId = vendedorId,
-            VendedorNome = string.IsNullOrWhiteSpace(vendedorNome) ? "UsuÃ¡rio" : vendedorNome,
-            VendedorAvatarUrl = vendedorAvatarUrl,
+            PriceRvm = precoRvm,
+            SellerId = vendedorId,
+            SellerName = string.IsNullOrWhiteSpace(vendedorNome) ? "UsuÃ¡rio" : vendedorNome,
+            SellerAvatarUrl = vendedorAvatarUrl,
             Localizacao = localizacao ?? Location.Create(null, null, null, null, null),
-            CategoriaId = categoriaId,
-            ComunidadeId = comunidadeId,
-            Visibilidade = visibilidade,
-            Status = ListingStatus.Ativo,
+            CategoryId = categoriaId,
+            CommunityId = comunidadeId,
+            Visibility = visibilidade,
+            Status = ListingStatus.Active,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -128,29 +128,29 @@ public class Listing : AggregateRoot
 
     public void MarcarConcluido()
     {
-        if (Status is ListingStatus.Concluido or ListingStatus.Cancelado)
+        if (Status is ListingStatus.Completed or ListingStatus.Cancelled)
         {
             throw new DomainException("AnÃºncio jÃ¡ estÃ¡ concluÃ­do ou cancelado.");
         }
 
-        Status = ListingStatus.Concluido;
+        Status = ListingStatus.Completed;
     }
 
     public void MarcarCancelado()
     {
-        if (Status is ListingStatus.Concluido or ListingStatus.Cancelado)
+        if (Status is ListingStatus.Completed or ListingStatus.Cancelled)
         {
             throw new DomainException("AnÃºncio jÃ¡ estÃ¡ concluÃ­do ou cancelado.");
         }
 
-        Status = ListingStatus.Cancelado;
+        Status = ListingStatus.Cancelled;
     }
 
     private static void ValidateInvariants(
         ListingKind kind,
-        ListingModo modo,
+        ListingMode modo,
         long precoRvm,
-        ListingVisibilidade visibilidade,
+        ListingVisibility visibilidade,
         Guid? comunidadeId,
         ProductDetails? productDetails,
         ServiceDetails? serviceDetails)
@@ -160,17 +160,17 @@ public class Listing : AggregateRoot
         //   Repassar   â†’ product
         //   Doar       â†’ product
         //   Voluntariarâ†’ service
-        if (modo == ListingModo.Repassar && kind != ListingKind.Product)
+        if (modo == ListingMode.Resell && kind != ListingKind.Product)
         {
             throw new DomainException("Repassar Ã© exclusivo de produtos.");
         }
 
-        if (modo == ListingModo.Doar && kind != ListingKind.Product)
+        if (modo == ListingMode.Donate && kind != ListingKind.Product)
         {
             throw new DomainException("Doar Ã© exclusivo de produtos.");
         }
 
-        if (modo == ListingModo.Voluntariar && kind != ListingKind.Service)
+        if (modo == ListingMode.Volunteer && kind != ListingKind.Service)
         {
             throw new DomainException("Voluntariar Ã© exclusivo de serviÃ§os.");
         }
@@ -181,7 +181,7 @@ public class Listing : AggregateRoot
             throw new DomainException("PreÃ§o RVM nÃ£o pode ser negativo.");
         }
 
-        if ((modo == ListingModo.Doar || modo == ListingModo.Voluntariar) && precoRvm != 0)
+        if ((modo == ListingMode.Donate || modo == ListingMode.Volunteer) && precoRvm != 0)
         {
             throw new DomainException("Doar/voluntariar deve ter preÃ§o 0 RVM.");
         }
@@ -207,10 +207,10 @@ public class Listing : AggregateRoot
             throw new DomainException("Detalhes de serviÃ§o nÃ£o aplicam a kind=Product.");
         }
 
-        // Visibilidade Comunidade exige ComunidadeId.
-        if (visibilidade == ListingVisibilidade.Comunidade && comunidadeId is null)
+        // Visibilidade Comunidade exige CommunityId.
+        if (visibilidade == ListingVisibility.Community && comunidadeId is null)
         {
-            throw new DomainException("Visibilidade Comunidade exige ComunidadeId.");
+            throw new DomainException("Visibilidade Comunidade exige CommunityId.");
         }
     }
 }

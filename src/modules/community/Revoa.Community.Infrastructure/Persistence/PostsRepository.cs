@@ -16,8 +16,8 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
     public async Task<IReadOnlyList<Post>> GetByComunidadeAsync(Guid comunidadeId, Guid? parentId, CancellationToken ct)
     {
         var fb = Builders<Post>.Filter;
-        var query = fb.Eq(p => p.ComunidadeId, comunidadeId)
-                    & fb.Eq(p => p.Status, PostStatus.Visivel);
+        var query = fb.Eq(p => p.CommunityId, comunidadeId)
+                    & fb.Eq(p => p.Status, PostStatus.Visible);
 
         query &= parentId is null
             ? fb.Eq(p => p.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull
@@ -31,8 +31,8 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
     public async Task<IReadOnlyList<Post>> GetByComunidadeRecentAsync(Guid comunidadeId, int limit, CancellationToken ct)
     {
         var fb = Builders<Post>.Filter;
-        var query = fb.Eq(p => p.ComunidadeId, comunidadeId)
-                    & fb.Eq(p => p.Status, PostStatus.Visivel);
+        var query = fb.Eq(p => p.CommunityId, comunidadeId)
+                    & fb.Eq(p => p.Status, PostStatus.Visible);
 
         var safeLimit = limit > 0 ? limit : 50;
 
@@ -53,7 +53,7 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
 
         var fb = Builders<Post>.Filter;
         var query = fb.In(p => p.ParentId, parentIds.Select(id => (Guid?)id))
-                    & fb.Eq(p => p.Status, PostStatus.Visivel);
+                    & fb.Eq(p => p.Status, PostStatus.Visible);
 
         var grouped = await Collection.Aggregate()
             .Match(query)
@@ -85,7 +85,7 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
             new BsonRegularExpression("^" + Regex.Escape(path)));
 
         var update = Builders<Post>.Update
-            .Set(p => p.Status, PostStatus.Oculto)
+            .Set(p => p.Status, PostStatus.Hidden)
             .Set(p => p.OcultadoPor, ocultadoPor);
 
         await Collection.UpdateManyAsync(filter, update, cancellationToken: ct);
@@ -100,7 +100,7 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
         {
             new CreateIndexModel<Post>(
                 Builders<Post>.IndexKeys
-                    .Ascending(p => p.ComunidadeId)
+                    .Ascending(p => p.CommunityId)
                     .Ascending(p => p.CreatedAt),
                 new CreateIndexOptions { Name = "ix_Comunidade_CreatedAt" }),
             new CreateIndexModel<Post>(

@@ -10,4 +10,4 @@ public sealed record DonationCompletedEvent(
     Guid ListingId,
     Guid DonorId,
     Guid ReceptorId,
-    string Modo) : INotification;
+    string Mode) : INotification;

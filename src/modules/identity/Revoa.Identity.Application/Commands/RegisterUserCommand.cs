@@ -5,8 +5,8 @@ using Revoa.Identity.Application.DTOs;
 namespace Revoa.Identity.Application.Commands;
 
 public sealed record RegisterUserCommand(
-    string Nome,
+    string Name,
     string Email,
-    string Telefone,
+    string Phone,
     DateOnly BirthDate,
     string? CouponCode) : IRequest<Result<RegisterUserResult>>;

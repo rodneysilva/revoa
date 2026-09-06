@@ -4,11 +4,11 @@ namespace Revoa.Community.Application.DTOs;
 
 public sealed record PostDto(
     Guid Id,
-    Guid ComunidadeId,
+    Guid CommunityId,
     Guid AutorId,
-    string AutorNome,
+    string AuthorName,
     string? AutorAvatarUrl,
-    string Conteudo,
+    string Content,
     Guid? ParentId,
     string Path,
     int Depth,
@@ -21,11 +21,11 @@ public static class PostDtoMapper
 {
     public static PostDto From(Post p, int childrenCount = 0) => new(
         p.Id,
-        p.ComunidadeId,
+        p.CommunityId,
         p.AutorId,
-        p.AutorNome,
+        p.AuthorName,
         p.AutorAvatarUrl,
-        p.Conteudo,
+        p.Content,
         p.ParentId,
         p.Path,
         p.Depth,

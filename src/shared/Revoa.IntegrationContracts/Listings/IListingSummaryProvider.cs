@@ -7,15 +7,15 @@ namespace Revoa.IntegrationContracts.Listings;
 public sealed record ListingSummary(
     Guid Id,
     string Kind,               // "Product" | "Service"
-    string Modo,               // "Trocar" | "Repassar" | "Doar" | "Voluntariar"
-    long PrecoRvm,             // 0 p/ doar/voluntariar
-    Guid VendedorId,
-    string VendedorNome,
-    string? VendedorAvatarUrl,
+    string Mode,               // "Trade" | "Resell" | "Donate" | "Volunteer"
+    long PriceRvm,             // 0 p/ doar/voluntariar
+    Guid SellerId,
+    string SellerName,
+    string? SellerAvatarUrl,
     long? NftTokenId,          // produto: id do NFT (mint-to-escrow); serviço: null
     int VoucherExpiryDays,     // serviço: validade do voucher (default 30)
-    string Status,             // "Ativo" | "EmAndamento" | "Concluido" | "Cancelado"
-    bool IsDonation);          // true se Modo ∈ {Doar, Voluntariar}
+    string Status,             // "Active" | "InProgress" | "Completed" | "Cancelled"
+    bool IsDonation);          // true se Mode ∈ {Donate, Volunteer}
 
 public interface IListingSummaryProvider
 {

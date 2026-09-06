@@ -12,7 +12,7 @@ namespace Revoa.Reputation.Application.Commands;
 // p/ o handler aplicar reputation.ApplyReview no avaliado (fecha o loop do rating).
 public sealed record CreateReviewCommand(
     Guid ReviewerId,
-    string ReviewerNome,
+    string ReviewerName,
     Guid TradeId,
     int Rating,
     string? Comment) : IRequest<Result<string>>;
@@ -43,7 +43,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, R
                 return Result<string>.Fail("Troca não encontrada.");
             }
 
-            if (!string.Equals(trade.State, "Liberada", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(trade.State, "Released", StringComparison.OrdinalIgnoreCase))
             {
                 return Result<string>.Fail("Só é possível avaliar trocas concluídas (liberadas).");
             }
@@ -64,7 +64,7 @@ public class CreateReviewCommandHandler : IRequestHandler<CreateReviewCommand, R
             var review = Review.Create(
                 request.TradeId,
                 request.ReviewerId,
-                request.ReviewerNome,
+                request.ReviewerName,
                 revieweeId,
                 request.Rating,
                 request.Comment);

@@ -5,7 +5,7 @@ namespace Revoa.Notifications.Application.DTOs;
 public sealed record NotificationDto(
     Guid Id,
     string Type,
-    string Titulo,
+    string Title,
     string Corpo,
     string? Payload,
     bool Lida,
@@ -17,7 +17,7 @@ public static class NotificationDtoMapper
     public static NotificationDto From(Notification n) => new(
         n.Id,
         n.Type.ToString(),
-        n.Titulo,
+        n.Title,
         n.Corpo,
         n.Payload,
         n.Lida,

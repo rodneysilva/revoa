@@ -7,12 +7,12 @@ using Revoa.Community.Domain.Repositories;
 
 namespace Revoa.Community.Application.Queries;
 
-// Feed de comunidades públicas (UF-18). Raio opcional aplica Haversine. Ordena por mais recente (Version desc).
+// Feed de comunidades públicas (UF-18). Radius opcional aplica Haversine. Ordena por mais recente (Version desc).
 public sealed record GetCommunitiesQuery(
-    double? Raio,
+    double? Radius,
     double? Lat,
     double? Lng,
-    CommunityEixo? Eixo,
+    CommunityAxis? Axis,
     int Page) : IRequest<Result<IReadOnlyList<CommunityDto>>>;
 
 public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, Result<IReadOnlyList<CommunityDto>>>
@@ -32,16 +32,16 @@ public class GetCommunitiesQueryHandler : IRequestHandler<GetCommunitiesQuery, R
     public async Task<Result<IReadOnlyList<CommunityDto>>> Handle(GetCommunitiesQuery request, CancellationToken ct)
     {
         var candidates = await _communities.GetPublicAsync(
-            new PublicFilter(request.Eixo, null, CandidateCap), ct);
+            new PublicFilter(request.Axis, null, CandidateCap), ct);
 
-        var useRadius = request.Raio is > 0 && request.Lat is not null && request.Lng is not null;
+        var useRadius = request.Radius is > 0 && request.Lat is not null && request.Lng is not null;
 
         IEnumerable<CommunityGroup> stream = candidates;
         if (useRadius)
         {
             var lat = request.Lat!.Value;
             var lng = request.Lng!.Value;
-            var raio = request.Raio!.Value;
+            var raio = request.Radius!.Value;
 
             stream = candidates
                 .Where(c => c.Lat is not null && c.Lng is not null)

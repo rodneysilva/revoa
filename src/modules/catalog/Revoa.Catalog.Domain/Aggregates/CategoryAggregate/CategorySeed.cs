@@ -6,7 +6,7 @@ namespace Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
 /// </summary>
 public static class CategorySeed
 {
-    public sealed record Item(string Nome, string Slug, string? Descricao);
+    public sealed record Item(string Name, string Slug, string? Description);
 
     public static readonly IReadOnlyList<Item> All = new Item[]
     {

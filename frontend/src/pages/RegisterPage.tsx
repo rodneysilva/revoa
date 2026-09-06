@@ -58,9 +58,9 @@ export function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.register({
-        Nome: nome.trim(),
+        Name: nome.trim(),
         Email: email.trim(),
-        Telefone: telefone.trim(),
+        Phone: telefone.trim(),
         BirthDate: birthDate,
         CouponCode: coupon.trim() || undefined,
       });

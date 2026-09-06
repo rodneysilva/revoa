@@ -11,9 +11,9 @@ public enum CategoryStatus
 // Aggregate "Categoria" (OOUX objeto 8). Filtro do feed; soft-delete via Status inactive.
 public class Category : AggregateRoot
 {
-    public string Nome { get; private set; } = string.Empty;
+    public string Name { get; private set; } = string.Empty;
     public string Slug { get; private set; } = string.Empty;
-    public string? Descricao { get; private set; }
+    public string? Description { get; private set; }
     public CategoryStatus Status { get; private set; }
 
     private Category() { }
@@ -33,9 +33,9 @@ public class Category : AggregateRoot
         return new Category
         {
             Id = Guid.NewGuid(),
-            Nome = nome,
+            Name = nome,
             Slug = slug.ToLowerInvariant(),
-            Descricao = descricao,
+            Description = descricao,
             Status = CategoryStatus.Active,
             Version = 1
         };

@@ -4,21 +4,21 @@ namespace Revoa.Community.Domain.Aggregates.PostAggregate;
 
 public enum PostStatus
 {
-    Visivel,
-    Oculto
+    Visible,
+    Hidden
 }
 
 // Post recursivo (OOUX objeto 19). Materialized path (depth â‰¤ 6). Ex.: Path "/{rootId}/{replyId}/{thisId}/".
-// Cascade de ocultaÃ§Ã£o via prefix regex no Path. AutorNome/AvatarUrl embed anti-N+1.
+// Cascade de ocultaÃ§Ã£o via prefix regex no Path. AuthorName/AvatarUrl embed anti-N+1.
 public class Post : AggregateRoot
 {
     public const int MaxDepth = 6;
 
-    public Guid ComunidadeId { get; private set; }
+    public Guid CommunityId { get; private set; }
     public Guid AutorId { get; private set; }
-    public string AutorNome { get; private set; } = string.Empty;
+    public string AuthorName { get; private set; } = string.Empty;
     public string? AutorAvatarUrl { get; private set; }
-    public string Conteudo { get; private set; } = string.Empty;
+    public string Content { get; private set; } = string.Empty;
 
     public Guid? ParentId { get; private set; }
     public string Path { get; private set; } = string.Empty;
@@ -43,15 +43,15 @@ public class Post : AggregateRoot
         return new Post
         {
             Id = id,
-            ComunidadeId = comunidadeId,
+            CommunityId = comunidadeId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
+            AuthorName = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
-            Conteudo = conteudo.Trim(),
+            Content = conteudo.Trim(),
             ParentId = null,
             Path = $"/{id}/",
             Depth = 0,
-            Status = PostStatus.Visivel,
+            Status = PostStatus.Visible,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -74,21 +74,21 @@ public class Post : AggregateRoot
             throw new DomainException($"Profundidade mÃ¡xima ({MaxDepth}) excedida â€” inicie uma nova conversa.");
         }
 
-        ValidateInvariants(parent.ComunidadeId, autorId, conteudo);
+        ValidateInvariants(parent.CommunityId, autorId, conteudo);
 
         var id = Guid.NewGuid();
         return new Post
         {
             Id = id,
-            ComunidadeId = parent.ComunidadeId,
+            CommunityId = parent.CommunityId,
             AutorId = autorId,
-            AutorNome = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
+            AuthorName = string.IsNullOrWhiteSpace(autorNome) ? "UsuÃ¡rio" : autorNome,
             AutorAvatarUrl = autorAvatarUrl,
-            Conteudo = conteudo.Trim(),
+            Content = conteudo.Trim(),
             ParentId = parent.Id,
             Path = parent.Path + $"{id}/",
             Depth = parent.Depth + 1,
-            Status = PostStatus.Visivel,
+            Status = PostStatus.Visible,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -96,12 +96,12 @@ public class Post : AggregateRoot
 
     public void Ocultar(string ocultadoPor)
     {
-        if (Status == PostStatus.Oculto)
+        if (Status == PostStatus.Hidden)
         {
             throw new DomainException("Post jÃ¡ estÃ¡ oculto.");
         }
 
-        Status = PostStatus.Oculto;
+        Status = PostStatus.Hidden;
         OcultadoPor = string.IsNullOrWhiteSpace(ocultadoPor) ? "moderador" : ocultadoPor;
     }
 

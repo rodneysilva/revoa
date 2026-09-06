@@ -41,7 +41,7 @@ public enum ResolutionAction
 public class Report : AggregateRoot
 {
     public Guid ReporterId { get; private set; }
-    public string ReporterNome { get; private set; } = string.Empty;
+    public string ReporterName { get; private set; } = string.Empty;
     public ReportTarget TargetType { get; private set; }
     public Guid TargetId { get; private set; }
     public ReportReason Reason { get; private set; }
@@ -88,7 +88,7 @@ public class Report : AggregateRoot
         {
             Id = Guid.NewGuid(),
             ReporterId = reporterId,
-            ReporterNome = string.IsNullOrWhiteSpace(reporterNome) ? "Usuário" : reporterNome,
+            ReporterName = string.IsNullOrWhiteSpace(reporterNome) ? "Usuário" : reporterNome,
             TargetType = targetType,
             TargetId = targetId,
             Reason = reason,

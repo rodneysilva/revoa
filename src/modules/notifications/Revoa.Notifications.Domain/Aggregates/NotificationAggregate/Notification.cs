@@ -22,7 +22,7 @@ public class Notification : AggregateRoot
 {
     public Guid UserId { get; private set; }
     public NotificationType Type { get; private set; }
-    public string Titulo { get; private set; } = string.Empty;
+    public string Title { get; private set; } = string.Empty;
     public string Corpo { get; private set; } = string.Empty;
     public string? Payload { get; private set; }
     public bool Lida { get; private set; }
@@ -45,7 +45,7 @@ public class Notification : AggregateRoot
             Id = Guid.NewGuid(),
             UserId = userId,
             Type = type,
-            Titulo = titulo.Trim(),
+            Title = titulo.Trim(),
             Corpo = corpo,
             Payload = payload,
             Lida = false,

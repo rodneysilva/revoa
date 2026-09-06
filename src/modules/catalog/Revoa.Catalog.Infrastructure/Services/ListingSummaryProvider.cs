@@ -24,16 +24,16 @@ public class ListingSummaryProvider : IListingSummaryProvider
         }
 
         var voucherExpiryDays = listing.ServiceDetails?.VoucherExpiryDays ?? 30;
-        var modo = listing.Modo.ToString();
+        var modo = listing.Mode.ToString();
 
         return new ListingSummary(
             listing.Id,
             listing.Kind.ToString(),
             modo,
-            listing.PrecoRvm,
-            listing.VendedorId,
-            listing.VendedorNome,
-            listing.VendedorAvatarUrl,
+            listing.PriceRvm,
+            listing.SellerId,
+            listing.SellerName,
+            listing.SellerAvatarUrl,
             listing.NftTokenId,
             voucherExpiryDays,
             listing.Status.ToString(),
@@ -41,6 +41,6 @@ public class ListingSummaryProvider : IListingSummaryProvider
     }
 
     private static bool IsDonation(string modo)
-        => string.Equals(modo, nameof(ListingModo.Doar), StringComparison.OrdinalIgnoreCase)
-           || string.Equals(modo, nameof(ListingModo.Voluntariar), StringComparison.OrdinalIgnoreCase);
+        => string.Equals(modo, nameof(ListingMode.Donate), StringComparison.OrdinalIgnoreCase)
+           || string.Equals(modo, nameof(ListingMode.Volunteer), StringComparison.OrdinalIgnoreCase);
 }

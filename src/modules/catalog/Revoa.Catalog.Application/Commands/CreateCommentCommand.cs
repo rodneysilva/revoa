@@ -8,11 +8,11 @@ namespace Revoa.Catalog.Application.Commands;
 // Cria comentário (raiz ou resposta) num anúncio. Autor do token (controller injeta). Depth ≤ 6.
 public sealed record CreateCommentCommand(
     Guid AutorId,
-    string AutorNome,
+    string AuthorName,
     string? AutorAvatarUrl,
     Guid ListingId,
     Guid? ParentId,
-    string Conteudo) : IRequest<Result<string>>;
+    string Content) : IRequest<Result<string>>;
 
 public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand, Result<string>>
 {
@@ -36,11 +36,11 @@ public class CreateCommentCommandHandler : IRequestHandler<CreateCommentCommand,
                     return Result<string>.Fail("Comentário pai não encontrado neste anúncio.");
                 }
 
-                comment = Comment.CreateReply(parent, request.AutorId, request.AutorNome, request.AutorAvatarUrl, request.Conteudo);
+                comment = Comment.CreateReply(parent, request.AutorId, request.AuthorName, request.AutorAvatarUrl, request.Content);
             }
             else
             {
-                comment = Comment.CreateRoot(request.ListingId, request.AutorId, request.AutorNome, request.AutorAvatarUrl, request.Conteudo);
+                comment = Comment.CreateRoot(request.ListingId, request.AutorId, request.AuthorName, request.AutorAvatarUrl, request.Content);
             }
         }
         catch (DomainException ex)

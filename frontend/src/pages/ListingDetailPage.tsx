@@ -38,8 +38,8 @@ export function ListingDetailPage() {
           setListing(d);
           setActiveImg(0);
           // Comparativo: busca a referencia de preco da categoria do anuncio.
-          if (d.CategoriaId) {
-            api.pricingByCategory(d.CategoriaId)
+          if (d.CategoryId) {
+            api.pricingByCategory(d.CategoryId)
               .then((ref) => { if (active) setPriceRef(ref); })
               .catch(() => { if (active) setPriceRef(null); });
           }
@@ -89,9 +89,9 @@ export function ListingDetailPage() {
       </div>
     );
 
-  const gratis = listing.PrecoRvm === 0;
-  const isDonationMode = listing.Modo === "Doar" || listing.Modo === "Voluntariar";
-  const brl = !gratis ? brlEstimate(listing.PrecoRvm, rate ?? 0) : null;
+  const gratis = listing.PriceRvm === 0;
+  const isDonationMode = listing.Mode === "Donate" || listing.Mode === "Volunteer";
+  const brl = !gratis ? brlEstimate(listing.PriceRvm, rate ?? 0) : null;
   const images = listing.Imagens?.length ? listing.Imagens : [];
 
   return (
@@ -107,7 +107,7 @@ export function ListingDetailPage() {
             {images[activeImg] ? (
               <img
                 src={images[activeImg]}
-                alt={listing.Titulo}
+                alt={listing.Title}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -135,7 +135,7 @@ export function ListingDetailPage() {
         {/* Info */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Badge modo={listing.Modo} size="md" />
+            <Badge modo={listing.Mode} size="md" />
             <span className="text-sm text-silver">{KIND_LABELS[listing.Kind]}</span>
             {listing.NftTokenId && (
               <span className="text-xs text-silver/50">
@@ -144,14 +144,14 @@ export function ListingDetailPage() {
             )}
           </div>
 
-          <h1 className="text-3xl font-bold text-cream">{listing.Titulo}</h1>
+          <h1 className="text-3xl font-bold text-cream">{listing.Title}</h1>
           <div className="mt-3">
             <div className="text-2xl">
               {gratis ? (
                 <span className="rms text-lima">Grátis</span>
               ) : (
                 <span className="rms text-cream">
-                  RM$ {listing.PrecoRvm.toLocaleString("pt-BR")}
+                  RM$ {listing.PriceRvm.toLocaleString("pt-BR")}
                 </span>
               )}
             </div>
@@ -169,7 +169,7 @@ export function ListingDetailPage() {
             )}
           </div>
 
-          <p className="mt-4 text-cream/90 whitespace-pre-wrap">{listing.Descricao}</p>
+          <p className="mt-4 text-cream/90 whitespace-pre-wrap">{listing.Description}</p>
 
           {!gratis && rate != null && (
             <p className="mt-3 text-xs text-silver/80 leading-relaxed border-l-2 border-smoke pl-3">
@@ -199,7 +199,7 @@ export function ListingDetailPage() {
                 {priceRef.LastIpcRate != null ? ` · IPCA ${priceRef.LastIpcRate}%` : ""}
               </p>
               {(() => {
-                const diff = listing.PrecoRvm - priceRef.RvmMedian;
+                const diff = listing.PriceRvm - priceRef.RvmMedian;
                 if (diff < -2) return <p className="text-xs text-lima mt-1">Abaixo da mediana — ótima oferta!</p>;
                 if (diff > 2) return <p className="text-xs text-rosa mt-1">Acima da mediana.</p>;
                 return <p className="text-xs text-sky mt-1">Na faixa da mediana.</p>;
@@ -241,11 +241,11 @@ export function ListingDetailPage() {
                 )}
               </>
             )}
-            {(listing.Cidade || listing.Bairro) && (
+            {(listing.City || listing.Neighborhood) && (
               <div className="flex gap-2">
                 <dt className="text-silver w-28">Local:</dt>
                 <dd className="text-cream">
-                  {[listing.Bairro, listing.Cidade].filter(Boolean).join(", ")}
+                  {[listing.Neighborhood, listing.City].filter(Boolean).join(", ")}
                 </dd>
               </div>
             )}
@@ -254,20 +254,20 @@ export function ListingDetailPage() {
           {/* Vendedor */}
           <div className="mt-6 flex items-center gap-3 bg-smoke rounded-xl p-3">
             <Avatar
-              name={listing.VendedorNome}
-              src={listing.VendedorAvatarUrl}
+              name={listing.SellerName}
+              src={listing.SellerAvatarUrl}
               size={40}
             />
             <div>
-              <div className="text-cream font-medium">{listing.VendedorNome}</div>
+              <div className="text-cream font-medium">{listing.SellerName}</div>
               <div className="text-xs text-silver">
-                {MODO_META[listing.Modo].emoji} {MODO_META[listing.Modo].label}
+                {MODO_META[listing.Mode].emoji} {MODO_META[listing.Mode].label}
               </div>
             </div>
           </div>
 
           {/* Avaliações do vendedor (recebidas em trocas concluídas — UF-23) */}
-          <SellerReviews vendedorId={listing.VendedorId} />
+          <SellerReviews vendedorId={listing.SellerId} />
 
           {/* CTA */}
           <div className="mt-6">
@@ -401,7 +401,7 @@ function SellerReviews({ vendedorId }: { vendedorId: string }) {
         {reviews.map((r) => (
           <li key={r.Id} className="text-sm">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-cream font-medium">{r.ReviewerNome}</span>
+              <span className="text-cream font-medium">{r.ReviewerName}</span>
               <Stars n={r.Rating} />
               <span className="text-xs text-silver ml-auto">{timeAgo(r.CreatedAt)}</span>
             </div>
@@ -416,8 +416,8 @@ function SellerReviews({ vendedorId }: { vendedorId: string }) {
 }
 
 function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | null }) {
-  const isOwner = !!user && user.userId === listing.VendedorId;
-  const isDonation = listing.Modo === "Doar" || listing.Modo === "Voluntariar";
+  const isOwner = !!user && user.userId === listing.SellerId;
+  const isDonation = listing.Mode === "Donate" || listing.Mode === "Volunteer";
   const isService = listing.Kind === "Service";
   const buyLabel = isService ? "Contratar" : "Comprar/Trocar";
 
@@ -493,7 +493,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
     setQueueOk(null);
     try {
       await api.selectRecipient(req.Id);
-      setQueueOk(`Receptor escolhido: ${req.AuthorNome}`);
+      setQueueOk(`Receptor escolhido: ${req.AuthorName}`);
       setQueue(await api.helpQueue(listing.Id));
     } catch (e) {
       setQueueErr(
@@ -532,19 +532,19 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
                   <li key={req.Id} className="bg-smoke rounded-lg p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Avatar
-                        name={req.AuthorNome}
+                        name={req.AuthorName}
                         src={req.AuthorAvatarUrl}
                         size={28}
                       />
                       <span className="text-cream text-sm font-medium">
-                        {req.AuthorNome}
+                        {req.AuthorName}
                       </span>
                       <span className="text-silver text-xs ml-auto">
                         {timeAgo(req.CreatedAt)}
                       </span>
                     </div>
                     <p className="text-cream/90 text-sm whitespace-pre-wrap">
-                      {req.Mensagem}
+                      {req.Message}
                     </p>
                     {req.SelectedTradeId ? (
                       <span className="inline-block mt-2 text-xs text-esmeralda">
@@ -559,7 +559,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
                       >
                         {selecting === req.Id
                           ? "Selecionando…"
-                          : `Selecionar ${req.AuthorNome.split(" ")[0]}`}
+                          : `Selecionar ${req.AuthorName.split(" ")[0]}`}
                       </button>
                     )}
                   </li>

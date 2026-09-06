@@ -41,7 +41,7 @@ public class DonationCompletedEventHandler : INotificationHandler<DonationComple
     {
         try
         {
-            var isVolunteer = string.Equals(notification.Modo, "Voluntariar", StringComparison.OrdinalIgnoreCase);
+            var isVolunteer = string.Equals(notification.Mode, "Volunteer", StringComparison.OrdinalIgnoreCase);
 
             // Parâmetros runtime com fallback para os defaults do IOptions. GetAsync<T> (T sem
             // constraint) colapsa T? para o próprio tipo em value types -> valor sempre concreto.

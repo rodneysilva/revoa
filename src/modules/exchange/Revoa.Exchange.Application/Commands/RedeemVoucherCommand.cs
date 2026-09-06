@@ -41,7 +41,7 @@ public class RedeemVoucherCommandHandler : IRequestHandler<RedeemVoucherCommand,
             return Result.Fail("Redeem aplica apenas a serviços.");
         }
 
-        if (trade.State != TradeState.Financiada)
+        if (trade.State != TradeState.Funded)
         {
             return Result.Fail("Apenas troca financiada permite redeem.");
         }

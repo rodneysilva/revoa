@@ -24,28 +24,28 @@ export const KIND_LABELS = {
 // Cores por modo (docs/VISUAL_IDENTITY.md §6):
 // Trocar=esmeralda · Repassar=rosa · Doar=terracota · Voluntariar=lima.
 export const MODO_META = {
-  Trocar: {
+  Trade: {
     emoji: "🔄",
     label: "Trocar",
     desc: "Troca direta de produto ou serviço entre vizinhos.",
     text: "text-esmeralda",
     bg: "bg-esmeralda/15",
   },
-  Repassar: {
+  Resell: {
     emoji: "💜",
     label: "Repassar",
     desc: "Repassa algo que você intermediou para a comunidade.",
     text: "text-rosa",
     bg: "bg-rosa/15",
   },
-  Doar: {
+  Donate: {
     emoji: "🎁",
     label: "Doar",
     desc: "Dá de graça a quem precisa (produto).",
     text: "text-terracota",
     bg: "bg-terracota/15",
   },
-  Voluntariar: {
+  Volunteer: {
     emoji: "🤝",
     label: "Voluntariar",
     desc: "Ofereça seu tempo e habilidades (serviço).",
@@ -54,14 +54,14 @@ export const MODO_META = {
   },
 } as const;
 
-export const ALL_MODOS = ["Trocar", "Repassar", "Doar", "Voluntariar"] as const;
+export const ALL_MODOS = ["Trade", "Resell", "Donate", "Volunteer"] as const;
 
 // Regras Modo × Kind (docs/BUSINESS_RULES.md):
 // Product: Trocar, Repassar, Doar  ·  Service: Trocar, Voluntariar.
 export function modosForKind(kind: "Product" | "Service") {
   return ALL_MODOS.filter((m) =>
     kind === "Product"
-      ? m === "Trocar" || m === "Repassar" || m === "Doar"
-      : m === "Trocar" || m === "Voluntariar"
+      ? m === "Trade" || m === "Resell" || m === "Donate"
+      : m === "Trade" || m === "Volunteer"
   );
 }

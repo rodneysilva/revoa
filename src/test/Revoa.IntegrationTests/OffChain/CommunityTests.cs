@@ -20,17 +20,17 @@ public class CommunityTests : IntegrationTestBase
 
         var create = await client.PostAsync("/api/communities", JsonBody(new
         {
-            Nome = "Comunidade E2E",
-            Descricao = "Descrição E2E",
-            Tipo = "User",
-            Eixo = "Interesse",
-            Visibilidade = "Open",
+            Name = "Comunidade E2E",
+            Description = "Descrição E2E",
+            Type = "User",
+            Axis = "Interest",
+            Visibility = "Open",
             Password = (string?)null,
             Lat = (double?)null,
             Lng = (double?)null,
-            Bairro = (string?)null,
-            Cidade = (string?)null,
-            Estado = (string?)null,
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            State = (string?)null,
         }));
 
         create.IsSuccessStatusCode.Should().BeTrue(
@@ -49,7 +49,7 @@ public class CommunityTests : IntegrationTestBase
         var postResp = await client.PostAsync($"/api/communities/{communityId}/posts", JsonBody(new
         {
             ParentId = (Guid?)null,
-            Conteudo = "Post raiz E2E",
+            Content = "Post raiz E2E",
         }));
         postResp.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -57,7 +57,7 @@ public class CommunityTests : IntegrationTestBase
         var posts = await client.GetAsync($"/api/communities/{communityId}/posts");
         posts.StatusCode.Should().Be(HttpStatusCode.OK);
         var postsArr = await posts.Content.ReadFromJsonAsync<JsonArray>();
-        postsArr!.Select(p => p!["Conteudo"]!.GetValue<string>())
+        postsArr!.Select(p => p!["Content"]!.GetValue<string>())
             .Should().Contain("Post raiz E2E");
 
         // GET /api/communities/{id}/members → criador está como membro.
@@ -77,17 +77,17 @@ public class CommunityTests : IntegrationTestBase
 
         var create = await client.PostAsync("/api/communities", JsonBody(new
         {
-            Nome = "Comunidade Privada E2E",
-            Descricao = "Só com senha",
-            Tipo = "User",
-            Eixo = "Interesse",
-            Visibilidade = "Private",
+            Name = "Comunidade Privada E2E",
+            Description = "Só com senha",
+            Type = "User",
+            Axis = "Interest",
+            Visibility = "Private",
             Password = "senha-secreta-e2e",
             Lat = (double?)null,
             Lng = (double?)null,
-            Bairro = (string?)null,
-            Cidade = (string?)null,
-            Estado = (string?)null,
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            State = (string?)null,
         }));
         create.IsSuccessStatusCode.Should().BeTrue(
             $"esperado 2xx ao criar comunidade privada: {await create.Content.ReadAsStringAsync()}");

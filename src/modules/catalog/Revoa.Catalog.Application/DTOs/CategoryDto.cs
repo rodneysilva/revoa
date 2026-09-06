@@ -2,10 +2,10 @@ using Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
 
 namespace Revoa.Catalog.Application.DTOs;
 
-public sealed record CategoryDto(Guid Id, string Nome, string Slug, string? Descricao);
+public sealed record CategoryDto(Guid Id, string Name, string Slug, string? Description);
 
 public static class CategoryDtoMapper
 {
     public static CategoryDto From(Category c) =>
-        new(c.Id, c.Nome, c.Slug, c.Descricao);
+        new(c.Id, c.Name, c.Slug, c.Description);
 }

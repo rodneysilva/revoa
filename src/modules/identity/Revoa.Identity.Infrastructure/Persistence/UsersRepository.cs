@@ -19,7 +19,7 @@ public class UsersRepository : MongoRepositoryBase<User>, IUserRepository, IMong
 
     public async Task<User?> GetByPhoneAsync(string phone, CancellationToken ct)
     {
-        return await Collection.Find(u => u.Telefone == phone).FirstOrDefaultAsync(ct);
+        return await Collection.Find(u => u.Phone == phone).FirstOrDefaultAsync(ct);
     }
 
     // Traduz violação de índice único (Email/Telefone) em exceção de domínio — mantém o
@@ -43,7 +43,7 @@ public class UsersRepository : MongoRepositoryBase<User>, IUserRepository, IMong
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
         var emailKeys = Builders<User>.IndexKeys.Ascending(u => u.Email);
-        var phoneKeys = Builders<User>.IndexKeys.Ascending(u => u.Telefone);
+        var phoneKeys = Builders<User>.IndexKeys.Ascending(u => u.Phone);
 
         await Collection.Indexes.CreateManyAsync(new[]
         {

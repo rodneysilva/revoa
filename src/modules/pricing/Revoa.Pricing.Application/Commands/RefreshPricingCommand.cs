@@ -71,20 +71,20 @@ public class RefreshPricingCommandHandler : IRequestHandler<RefreshPricingComman
         }
 
         var byCategory = samples
-            .GroupBy(s => s.CategoriaId)
+            .GroupBy(s => s.CategoryId)
             .ToList();
 
         var updated = 0;
         foreach (var group in byCategory)
         {
-            var prices = group.Select(s => s.PrecoRvm).Where(p => p > 0).ToArray();
+            var prices = group.Select(s => s.PriceRvm).Where(p => p > 0).ToArray();
             if (prices.Length == 0)
             {
                 continue; // skip categoria sem amostras válidas.
             }
 
             var categoriaId = group.Key;
-            var slug = group.Select(s => s.CategoriaSlug).FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+            var slug = group.Select(s => s.CategorySlug).FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
             var median = Median(prices);
 
             // BRL: rate global efetiva; referência absoluta por slug (se houver seed).

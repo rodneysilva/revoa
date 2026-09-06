@@ -27,19 +27,19 @@ public class TradeTests : IntegrationTestBase
         var create = await sellerClient.PostAsync("/api/listings", JsonBody(new
         {
             Kind = "Product",
-            Modo = "Trocar",
-            Titulo = "Produto Troca E2E",
-            Descricao = "descrição",
+            Mode = "Trade",
+            Title = "Produto Troca E2E",
+            Description = "descrição",
             Imagens = Array.Empty<string>(),
-            PrecoRvm = 5L,
+            PriceRvm = 5L,
             Lat = (double?)null,
             Lng = (double?)null,
-            Bairro = (string?)null,
-            Cidade = (string?)null,
-            Cep = (string?)null,
-            CategoriaId = categoriaId,
-            ComunidadeId = (Guid?)null,
-            Visibilidade = "Global",
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            PostalCode = (string?)null,
+            CategoryId = categoriaId,
+            CommunityId = (Guid?)null,
+            Visibility = "Global",
             Condition = "Usado",
             Stock = 1,
             UnitType = (string?)null,
@@ -56,13 +56,13 @@ public class TradeTests : IntegrationTestBase
         purchase.StatusCode.Should().Be(HttpStatusCode.Created);
         var tradeId = await purchase.Content.ReadFromJsonAsync<Guid>();
 
-        await AssertStateAsync(tradeId, "Financiada");
+        await AssertStateAsync(tradeId, "Funded");
 
         // A libera → State Liberada (atomic swap finalizado).
         var release = await sellerClient.PostAsync($"/api/trades/{tradeId}/release", content: null);
         release.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        await AssertStateAsync(tradeId, "Liberada");
+        await AssertStateAsync(tradeId, "Released");
     }
 
     private async Task AssertStateAsync(Guid tradeId, string expected)

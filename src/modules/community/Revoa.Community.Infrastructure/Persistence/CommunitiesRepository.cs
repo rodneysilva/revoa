@@ -17,19 +17,19 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
 
         // Ativas E (Default OU (User e Open)).
         var query = fb.Eq(c => c.Status, CommunityStatus.Active)
-                    & (fb.Eq(c => c.Tipo, CommunityTipo.Default)
+                    & (fb.Eq(c => c.Type, CommunityType.Default)
                        | fb.And(
-                           fb.Eq(c => c.Tipo, CommunityTipo.User),
-                           fb.Eq(c => c.Visibilidade, CommunityVisibilidade.Open)));
+                           fb.Eq(c => c.Type, CommunityType.User),
+                           fb.Eq(c => c.Visibility, CommunityVisibility.Open)));
 
-        if (filter.Eixo is not null)
+        if (filter.Axis is not null)
         {
-            query &= fb.Eq(c => c.Eixo, filter.Eixo);
+            query &= fb.Eq(c => c.Axis, filter.Axis);
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.Cidade))
+        if (!string.IsNullOrWhiteSpace(filter.City))
         {
-            query &= fb.Eq(c => c.Cidade, filter.Cidade);
+            query &= fb.Eq(c => c.City, filter.City);
         }
 
         var limit = filter.Limit > 0 ? filter.Limit : 100;
@@ -48,8 +48,8 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
         }
 
         var fb = Builders<CommunityGroup>.Filter;
-        var query = fb.Eq(c => c.Tipo, CommunityTipo.Default)
-                    & fb.Eq(c => c.Cidade, cidade)
+        var query = fb.Eq(c => c.Type, CommunityType.Default)
+                    & fb.Eq(c => c.City, cidade)
                     & fb.Eq(c => c.Status, CommunityStatus.Active);
 
         return await Collection.Find(query).FirstOrDefaultAsync(ct);
@@ -64,11 +64,11 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
         {
             new CreateIndexModel<CommunityGroup>(
                 Builders<CommunityGroup>.IndexKeys
-                    .Ascending(c => c.Tipo)
-                    .Ascending(c => c.Cidade),
+                    .Ascending(c => c.Type)
+                    .Ascending(c => c.City),
                 new CreateIndexOptions { Name = "ix_Tipo_Cidade", Sparse = true }),
             new CreateIndexModel<CommunityGroup>(
-                Builders<CommunityGroup>.IndexKeys.Ascending(c => c.CriadorId),
+                Builders<CommunityGroup>.IndexKeys.Ascending(c => c.CreatorId),
                 new CreateIndexOptions { Name = "ix_CriadorId" }),
             new CreateIndexModel<CommunityGroup>(
                 Builders<CommunityGroup>.IndexKeys
@@ -76,7 +76,7 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
                     .Ascending(c => c.Lng),
                 new CreateIndexOptions { Name = "ix_Localizacao_Lat_Lng", Sparse = true }),
             new CreateIndexModel<CommunityGroup>(
-                Builders<CommunityGroup>.IndexKeys.Ascending(c => c.Visibilidade),
+                Builders<CommunityGroup>.IndexKeys.Ascending(c => c.Visibility),
                 new CreateIndexOptions { Name = "ix_Visibilidade" })
         }, ct);
     }
