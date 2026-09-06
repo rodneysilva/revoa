@@ -17,15 +17,15 @@ public enum NotificationType
 }
 
 // Notificação pessoal de um usuário (OOUX objeto 21). Payload = JSON p/ deep link (ex.: tradeId).
-// Leitura/marcar-leitura exige ownership (claim sub). Lida=false ao criar.
+// Leitura/marcar-leitura exige ownership (claim sub). Read=false ao criar.
 public class Notification : AggregateRoot
 {
     public Guid UserId { get; private set; }
     public NotificationType Type { get; private set; }
     public string Title { get; private set; } = string.Empty;
-    public string Corpo { get; private set; } = string.Empty;
+    public string Body { get; private set; } = string.Empty;
     public string? Payload { get; private set; }
-    public bool Lida { get; private set; }
+    public bool Read { get; private set; }
     public DateTime? ReadAt { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
@@ -35,7 +35,7 @@ public class Notification : AggregateRoot
         Guid userId,
         NotificationType type,
         string titulo,
-        string corpo,
+        string body,
         string? payload)
     {
         ValidateInvariants(userId, titulo);
@@ -46,9 +46,9 @@ public class Notification : AggregateRoot
             UserId = userId,
             Type = type,
             Title = titulo.Trim(),
-            Corpo = corpo,
+            Body = body,
             Payload = payload,
-            Lida = false,
+            Read = false,
             CreatedAt = DateTime.UtcNow,
             Version = 1
         };
@@ -56,12 +56,12 @@ public class Notification : AggregateRoot
 
     public void MarkRead()
     {
-        if (Lida)
+        if (Read)
         {
-            throw new DomainException("Notificação já foi marcada como lida.");
+            throw new DomainException("Notificação já foi marcada como read.");
         }
 
-        Lida = true;
+        Read = true;
         ReadAt = DateTime.UtcNow;
     }
 

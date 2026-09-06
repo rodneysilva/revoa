@@ -10,7 +10,7 @@ namespace Revoa.IntegrationTests.OffChain;
 // Notificações pessoais (off-chain, sempre verde). Dados pessoais → nada de leitura anônima;
 // tudo exige Verified e o UserId vem sempre do token. A única via HTTP de criar notificação é a
 // doação concluída (on-chain), então os testes seedam notificações direto no Mongo (OffChainSeed)
-// para exercitar listar/marcar-lida/contador — ownership é o ponto crítico aqui.
+// para exercitar listar/marcar-read/contador — ownership é o ponto crítico aqui.
 public class NotificationsTests : IntegrationTestBase
 {
     public NotificationsTests(ApiFactory factory) : base(factory) { }
@@ -56,12 +56,12 @@ public class NotificationsTests : IntegrationTestBase
         arr!.Select(n => n!["Id"]!.GetValue<Guid>())
             .Should().BeEquivalentTo(seeded.Select(n => n.Id));
 
-        // Shape PascalCase do DTO (Corpo/Lida são os campos legados do aggregate).
+        // Shape PascalCase do DTO (Body/Read são os campos legados do aggregate).
         var item = arr.First(i => i!["Id"]!.GetValue<Guid>() == seeded[0].Id)!;
         item["Type"]!.GetValue<string>().Should().Be("System");
         item["Title"]!.GetValue<string>().Should().StartWith("Notificação seed");
-        item["Corpo"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
-        item["Lida"]!.GetValue<bool>().Should().BeFalse();
+        item["Body"]!.GetValue<string>().Should().NotBeNullOrWhiteSpace();
+        item["Read"]!.GetValue<bool>().Should().BeFalse();
         item["ReadAt"].Should().BeNull();
         item["CreatedAt"].Should().NotBeNull();
     }
@@ -76,7 +76,7 @@ public class NotificationsTests : IntegrationTestBase
         var countBefore = await client.GetFromJsonAsync<int>("/api/notifications/unread-count");
         countBefore.Should().Be(2);
 
-        // Marca a primeira como lida → 204 sem corpo.
+        // Marca a primeira como read → 204 sem body.
         var mark = await client.PostAsync($"/api/notifications/{seeded[0].Id}/read", content: null);
         mark.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -94,7 +94,7 @@ public class NotificationsTests : IntegrationTestBase
         var remark = await client.PostAsync($"/api/notifications/{seeded[0].Id}/read", content: null);
         remark.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var remarkJson = await remark.Content.ReadFromJsonAsync<JsonNode>();
-        remarkJson!["Error"]!.GetValue<string>().Should().Contain("lida");
+        remarkJson!["Error"]!.GetValue<string>().Should().Contain("read");
     }
 
     [Fact]

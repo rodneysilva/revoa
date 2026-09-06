@@ -89,6 +89,8 @@ const RENAMES = {
   },
   Notifications: {
     Titulo: "Title",
+    Corpo: "Body",
+    Lida: "Read",
   },
   PriceReferences: {
     CategoriaId: "CategoryId",

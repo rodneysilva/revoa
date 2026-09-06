@@ -6,9 +6,9 @@ public sealed record NotificationDto(
     Guid Id,
     string Type,
     string Title,
-    string Corpo,
+    string Body,
     string? Payload,
-    bool Lida,
+    bool Read,
     DateTime? ReadAt,
     DateTime CreatedAt);
 
@@ -18,9 +18,9 @@ public static class NotificationDtoMapper
         n.Id,
         n.Type.ToString(),
         n.Title,
-        n.Corpo,
+        n.Body,
         n.Payload,
-        n.Lida,
+        n.Read,
         n.ReadAt,
         n.CreatedAt);
 }

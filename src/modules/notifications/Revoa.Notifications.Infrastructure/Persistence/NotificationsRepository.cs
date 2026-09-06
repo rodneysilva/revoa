@@ -18,7 +18,7 @@ public class NotificationsRepository : MongoRepositoryBase<Notification>, INotif
         var filter = fb.Eq(n => n.UserId, userId);
         if (unreadOnly)
         {
-            filter &= fb.Eq(n => n.Lida, false);
+            filter &= fb.Eq(n => n.Read, false);
         }
 
         return await Collection.Find(filter)
@@ -31,7 +31,7 @@ public class NotificationsRepository : MongoRepositoryBase<Notification>, INotif
     public async Task<int> GetUnreadCountAsync(Guid userId, CancellationToken ct)
     {
         var fb = Builders<Notification>.Filter;
-        var filter = fb.Eq(n => n.UserId, userId) & fb.Eq(n => n.Lida, false);
+        var filter = fb.Eq(n => n.UserId, userId) & fb.Eq(n => n.Read, false);
         return (int)await Collection.CountDocumentsAsync(filter, cancellationToken: ct);
     }
 
@@ -47,8 +47,8 @@ public class NotificationsRepository : MongoRepositoryBase<Notification>, INotif
             new CreateIndexModel<Notification>(
                 Builders<Notification>.IndexKeys
                     .Ascending(n => n.UserId)
-                    .Ascending(n => n.Lida),
-                new CreateIndexOptions { Name = "ix_UserId_Lida" })
+                    .Ascending(n => n.Read),
+                new CreateIndexOptions { Name = "ix_UserId_Read" })
         }, ct);
     }
 }
