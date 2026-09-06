@@ -7,6 +7,7 @@ using Revoa.Account.Domain.Repositories;
 using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Account.Infrastructure.Services;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.IntegrationContracts.Accounts;
 using Revoa.IntegrationContracts.UserWallets;
 
@@ -40,6 +41,9 @@ public static class DependencyInjection
 
         // Porta IWalletAddressReader: lista endereços (Demurrage) sem acessar a coleção Accounts.
         services.AddScoped<IWalletAddressReader, WalletAddressReader>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IAccountRepository>());
 
         // CQRS — registra o handler de UserRegisteredEvent no MediatR (compartilha o barramento).
         services.AddRevoaCQRS(typeof(UserRegisteredEventHandler).Assembly);

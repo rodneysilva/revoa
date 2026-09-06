@@ -5,6 +5,7 @@
     <ProjectReference Include="..\Revoa.Reputation.Application\Revoa.Reputation.Application.csproj" />
     <ProjectReference Include="..\..\..\shared\Revoa.IntegrationContracts\Revoa.IntegrationContracts.csproj" />
     <ProjectReference Include="..\..\..\shared\Revoa.Application\Revoa.Application.csproj" />
+    <ProjectReference Include="..\..\..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

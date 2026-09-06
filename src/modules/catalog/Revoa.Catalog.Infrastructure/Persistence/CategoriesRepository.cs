@@ -2,40 +2,34 @@ using MongoDB.Driver;
 using Revoa.Abstractions;
 using Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
 using Revoa.Catalog.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Catalog.Infrastructure.Persistence;
 
-public class CategoriesRepository : ICategoryRepository
+public class CategoriesRepository : MongoRepositoryBase<Category>, ICategoryRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Category> _categories;
-
-    public CategoriesRepository(IMongoDatabase database)
+    public CategoriesRepository(IMongoDatabase database) : base(database, "Categories")
     {
-        _categories = database.GetCollection<Category>("Categories");
-    }
-
-    public async Task<Category?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _categories.Find(c => c.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<Category?> GetBySlugAsync(string slug, CancellationToken ct)
     {
-        return await _categories.Find(c => c.Slug == slug).FirstOrDefaultAsync(ct);
+        return await Collection.Find(c => c.Slug == slug).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Category>> ListActiveAsync(CancellationToken ct)
     {
-        return await _categories.Find(c => c.Status == CategoryStatus.Active)
+        return await Collection.Find(c => c.Status == CategoryStatus.Active)
             .SortBy(c => c.Nome)
             .ToListAsync(ct);
     }
 
-    public async Task AddAsync(Category category, CancellationToken ct)
+    // Traduz violação de índice único (Slug) em exceção de domínio.
+    public override async Task AddAsync(Category category, CancellationToken ct = default)
     {
         try
         {
-            await _categories.InsertOneAsync(category, cancellationToken: ct);
+            await Collection.InsertOneAsync(category, cancellationToken: ct);
         }
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
@@ -49,7 +43,7 @@ public class CategoriesRepository : ICategoryRepository
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
         var keys = Builders<Category>.IndexKeys.Ascending(c => c.Slug);
-        await _categories.Indexes.CreateOneAsync(
+        await Collection.Indexes.CreateOneAsync(
             new CreateIndexModel<Category>(keys, new CreateIndexOptions { Name = "ux_Slug", Unique = true }),
             cancellationToken: ct);
     }
@@ -59,7 +53,7 @@ public class CategoriesRepository : ICategoryRepository
     /// </summary>
     public async Task EnsureSeedAsync(CancellationToken ct = default)
     {
-        if (await _categories.EstimatedDocumentCountAsync(cancellationToken: ct) > 0)
+        if (await Collection.EstimatedDocumentCountAsync(cancellationToken: ct) > 0)
         {
             return;
         }
@@ -81,7 +75,7 @@ public class CategoriesRepository : ICategoryRepository
         {
             try
             {
-                await _categories.InsertOneAsync(Category.Create(nome, slug), cancellationToken: ct);
+                await Collection.InsertOneAsync(Category.Create(nome, slug), cancellationToken: ct);
             }
             catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
             {

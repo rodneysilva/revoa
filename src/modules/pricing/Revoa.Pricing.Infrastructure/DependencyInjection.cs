@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Pricing.Application.Commands;
 using Revoa.Pricing.Application.Options;
 using Revoa.Pricing.Domain.Repositories;
@@ -28,6 +29,9 @@ public static class DependencyInjection
 
         // Parâmetros admin-configuráveis (BrlRate, BrlReferences, Ollama, IBGE).
         services.Configure<PricingOptions>(configuration.GetSection(PricingOptions.SectionName));
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IPriceReferenceRepository>());
 
         // CQRS — MediatR (assembly da Application).
         services.AddRevoaCQRS(typeof(RefreshPricingCommandHandler).Assembly);

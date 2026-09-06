@@ -8,6 +8,7 @@ using Revoa.Catalog.Application.Services;
 using Revoa.Catalog.Domain.Repositories;
 using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Catalog.Infrastructure.Services;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Catalog.Infrastructure;
 
@@ -49,6 +50,11 @@ public static class DependencyInjection
         // Chain (ProductNFT mint-to-escrow). Scoped: isola nonce por request.
         services.Configure<CatalogChainOptions>(configuration.GetSection(CatalogChainOptions.SectionName));
         services.AddScoped<IProductNftService, NethereumProductNftService>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IListingRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICategoryRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICommentRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateListingCommandHandler).Assembly);

@@ -4,6 +4,7 @@
     <ProjectReference Include="..\Revoa.Admin.Domain\Revoa.Admin.Domain.csproj" />
     <ProjectReference Include="..\Revoa.Admin.Application\Revoa.Admin.Application.csproj" />
     <ProjectReference Include="..\..\..\shared\Revoa.Application\Revoa.Application.csproj" />
+    <ProjectReference Include="..\..\..\shared\Revoa.Infrastructure\Revoa.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

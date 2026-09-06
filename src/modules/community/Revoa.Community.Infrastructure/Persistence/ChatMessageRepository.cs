@@ -1,21 +1,14 @@
 using MongoDB.Driver;
 using Revoa.Community.Domain.Aggregates.ChatMessageAggregate;
 using Revoa.Community.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Community.Infrastructure.Persistence;
 
-public class ChatMessageRepository : IChatMessageRepository
+public class ChatMessageRepository : MongoRepositoryBase<ChatMessage>, IChatMessageRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<ChatMessage> _messages;
-
-    public ChatMessageRepository(IMongoDatabase database)
+    public ChatMessageRepository(IMongoDatabase database) : base(database, "ChatMessages")
     {
-        _messages = database.GetCollection<ChatMessage>("ChatMessages");
-    }
-
-    public async Task AddAsync(ChatMessage message, CancellationToken ct)
-    {
-        await _messages.InsertOneAsync(message, cancellationToken: ct);
     }
 
     public async Task<IReadOnlyList<ChatMessage>> GetRecentAsync(Guid comunidadeId, int limit, CancellationToken ct)
@@ -25,7 +18,7 @@ public class ChatMessageRepository : IChatMessageRepository
 
         var safeLimit = limit > 0 ? limit : 50;
 
-        return await _messages.Find(query)
+        return await Collection.Find(query)
             .SortByDescending(m => m.CreatedAt)
             .Limit(safeLimit)
             .ToListAsync(ct);
@@ -36,7 +29,7 @@ public class ChatMessageRepository : IChatMessageRepository
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _messages.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<ChatMessage>(
                 Builders<ChatMessage>.IndexKeys

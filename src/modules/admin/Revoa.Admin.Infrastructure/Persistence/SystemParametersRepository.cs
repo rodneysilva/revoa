@@ -1,13 +1,14 @@
 using MongoDB.Driver;
 using Revoa.Admin.Domain.Aggregates.SystemParameterAggregate;
 using Revoa.Admin.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Admin.Infrastructure.Persistence;
 
 // Repositório do SystemParameter (coleção própria: SystemParameters). Upsert por Key
 // (IsUpsert=true): cria se não existe, substitui se existe. Bump de Version é aqui
 // (repositório), nunca no aggregate — a unicidade de Key é o controle deste aggregate.
-public class SystemParametersRepository : ISystemParameterRepository
+public class SystemParametersRepository : ISystemParameterRepository, IMongoIndexEnsurer
 {
     private readonly IMongoCollection<SystemParameter> _parameters;
 

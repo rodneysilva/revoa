@@ -1,24 +1,16 @@
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Revoa.Abstractions;
 using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
 using Revoa.Catalog.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Catalog.Infrastructure.Persistence;
 
-public class ListingsRepository : IListingRepository
+public class ListingsRepository : MongoRepositoryBase<Listing>, IListingRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Listing> _listings;
-
-    public ListingsRepository(IMongoDatabase database)
+    public ListingsRepository(IMongoDatabase database) : base(database, "Listings")
     {
-        _listings = database.GetCollection<Listing>("Listings");
-    }
-
-    public async Task<Listing?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _listings.Find(l => l.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Listing>> GetFeedAsync(FeedFilter filter, CancellationToken ct)
@@ -92,7 +84,7 @@ public class ListingsRepository : IListingRepository
             _ => Builders<Listing>.Sort.Descending(l => l.CreatedAt)
         };
 
-        var find = _listings.Find(query).Sort(sort);
+        var find = Collection.Find(query).Sort(sort);
 
         if (filter.RadiusMode)
         {
@@ -109,35 +101,12 @@ public class ListingsRepository : IListingRepository
             .ToListAsync(ct);
     }
 
-    public async Task AddAsync(Listing listing, CancellationToken ct)
-    {
-        await _listings.InsertOneAsync(listing, cancellationToken: ct);
-    }
-
     // Todos os anúncios ativos (sem paginação/geo). Usado pelo adapter de Pricing (mediana comunitária).
     public async Task<IReadOnlyList<Listing>> GetActiveAsync(CancellationToken ct)
     {
-        return await _listings
+        return await Collection
             .Find(l => l.Status == ListingStatus.Ativo)
             .ToListAsync(ct);
-    }
-
-    public async Task UpdateAsync(Listing listing, CancellationToken ct)
-    {
-        var expectedVersion = listing.Version;
-
-        // Optimistic locking: _id + (Version == esperada OU doc legado sem Version).
-        var filter = Builders<Listing>.Filter.Eq(l => l.Id, listing.Id)
-                     & (Builders<Listing>.Filter.Eq(l => l.Version, expectedVersion)
-                        | Builders<Listing>.Filter.Exists(l => l.Version, false));
-
-        listing.IncrementVersion();
-
-        var result = await _listings.ReplaceOneAsync(filter, listing, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(listing.Id.ToString(), expectedVersion);
-        }
     }
 
     /// <summary>
@@ -145,7 +114,7 @@ public class ListingsRepository : IListingRepository
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _listings.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<Listing>(
                 Builders<Listing>.IndexKeys

@@ -1,24 +1,16 @@
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using Revoa.Abstractions;
 using Revoa.Community.Domain.Aggregates.PostAggregate;
 using Revoa.Community.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Community.Infrastructure.Persistence;
 
-public class PostsRepository : IPostRepository
+public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Post> _posts;
-
-    public PostsRepository(IMongoDatabase database)
+    public PostsRepository(IMongoDatabase database) : base(database, "Posts")
     {
-        _posts = database.GetCollection<Post>("Posts");
-    }
-
-    public async Task<Post?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _posts.Find(p => p.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Post>> GetByComunidadeAsync(Guid comunidadeId, Guid? parentId, CancellationToken ct)
@@ -31,7 +23,7 @@ public class PostsRepository : IPostRepository
             ? fb.Eq(p => p.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull
             : fb.Eq(p => p.ParentId, parentId);
 
-        return await _posts.Find(query)
+        return await Collection.Find(query)
             .SortBy(p => p.CreatedAt)
             .ToListAsync(ct);
     }
@@ -44,7 +36,7 @@ public class PostsRepository : IPostRepository
 
         var safeLimit = limit > 0 ? limit : 50;
 
-        return await _posts.Find(query)
+        return await Collection.Find(query)
             .SortByDescending(p => p.CreatedAt)
             .Limit(safeLimit)
             .ToListAsync(ct);
@@ -63,7 +55,7 @@ public class PostsRepository : IPostRepository
         var query = fb.In(p => p.ParentId, parentIds.Select(id => (Guid?)id))
                     & fb.Eq(p => p.Status, PostStatus.Visivel);
 
-        var grouped = await _posts.Aggregate()
+        var grouped = await Collection.Aggregate()
             .Match(query)
             .Group(new BsonDocument
             {
@@ -78,11 +70,6 @@ public class PostsRepository : IPostRepository
         }
 
         return dict;
-    }
-
-    public async Task AddAsync(Post post, CancellationToken ct)
-    {
-        await _posts.InsertOneAsync(post, cancellationToken: ct);
     }
 
     // Oculta o post e descendentes cujo Path inicia com `path` (prefix regex).
@@ -101,24 +88,7 @@ public class PostsRepository : IPostRepository
             .Set(p => p.Status, PostStatus.Oculto)
             .Set(p => p.OcultadoPor, ocultadoPor);
 
-        await _posts.UpdateManyAsync(filter, update, cancellationToken: ct);
-    }
-
-    public async Task UpdateAsync(Post post, CancellationToken ct)
-    {
-        var expectedVersion = post.Version;
-
-        var filter = Builders<Post>.Filter.Eq(p => p.Id, post.Id)
-                     & (Builders<Post>.Filter.Eq(p => p.Version, expectedVersion)
-                        | Builders<Post>.Filter.Exists(p => p.Version, false));
-
-        post.IncrementVersion();
-
-        var result = await _posts.ReplaceOneAsync(filter, post, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(post.Id.ToString(), expectedVersion);
-        }
+        await Collection.UpdateManyAsync(filter, update, cancellationToken: ct);
     }
 
     /// <summary>
@@ -126,7 +96,7 @@ public class PostsRepository : IPostRepository
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _posts.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<Post>(
                 Builders<Post>.IndexKeys

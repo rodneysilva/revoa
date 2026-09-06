@@ -1,22 +1,14 @@
 using MongoDB.Driver;
-using Revoa.Abstractions;
 using Revoa.Community.Domain.Aggregates.CommunityAggregate;
 using Revoa.Community.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Community.Infrastructure.Persistence;
 
-public class CommunitiesRepository : ICommunityRepository
+public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommunityRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<CommunityGroup> _communities;
-
-    public CommunitiesRepository(IMongoDatabase database)
+    public CommunitiesRepository(IMongoDatabase database) : base(database, "Communities")
     {
-        _communities = database.GetCollection<CommunityGroup>("Communities");
-    }
-
-    public async Task<CommunityGroup?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _communities.Find(c => c.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<CommunityGroup>> GetPublicAsync(PublicFilter filter, CancellationToken ct)
@@ -42,7 +34,7 @@ public class CommunitiesRepository : ICommunityRepository
 
         var limit = filter.Limit > 0 ? filter.Limit : 100;
 
-        return await _communities.Find(query)
+        return await Collection.Find(query)
             .SortByDescending(c => c.Version)
             .Limit(limit)
             .ToListAsync(ct);
@@ -60,30 +52,7 @@ public class CommunitiesRepository : ICommunityRepository
                     & fb.Eq(c => c.Cidade, cidade)
                     & fb.Eq(c => c.Status, CommunityStatus.Active);
 
-        return await _communities.Find(query).FirstOrDefaultAsync(ct);
-    }
-
-    public async Task AddAsync(CommunityGroup community, CancellationToken ct)
-    {
-        await _communities.InsertOneAsync(community, cancellationToken: ct);
-    }
-
-    public async Task UpdateAsync(CommunityGroup community, CancellationToken ct)
-    {
-        var expectedVersion = community.Version;
-
-        // Optimistic locking: _id + (Version == esperada OU doc legado sem Version).
-        var filter = Builders<CommunityGroup>.Filter.Eq(c => c.Id, community.Id)
-                     & (Builders<CommunityGroup>.Filter.Eq(c => c.Version, expectedVersion)
-                        | Builders<CommunityGroup>.Filter.Exists(c => c.Version, false));
-
-        community.IncrementVersion();
-
-        var result = await _communities.ReplaceOneAsync(filter, community, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(community.Id.ToString(), expectedVersion);
-        }
+        return await Collection.Find(query).FirstOrDefaultAsync(ct);
     }
 
     /// <summary>
@@ -91,7 +60,7 @@ public class CommunitiesRepository : ICommunityRepository
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _communities.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<CommunityGroup>(
                 Builders<CommunityGroup>.IndexKeys

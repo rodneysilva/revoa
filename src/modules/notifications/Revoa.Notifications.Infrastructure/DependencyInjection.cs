@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.IntegrationContracts.Notifications;
 using Revoa.Notifications.Application.Commands;
 using Revoa.Notifications.Application.Services;
@@ -41,6 +42,10 @@ public static class DependencyInjection
         // Portas: INotifier (p/ outros módulos, anti-corruption) + IWebPushSender (p/ Notifier).
         services.AddScoped<INotifier, Notifier>();
         services.AddScoped<IWebPushSender, WebPushService>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<INotificationRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IPushSubscriptionRepository>());
 
         // CQRS — MediatR (assembly da Application, onde vivem command/query handlers e event handlers)
         // + pipeline de validação. Isso registra DonationCompletedEventHandler (INotificationHandler<>).

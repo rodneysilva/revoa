@@ -1,10 +1,11 @@
 using MongoDB.Driver;
 using Revoa.Notifications.Domain.Aggregates.PushSubscriptionAggregate;
 using Revoa.Notifications.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Notifications.Infrastructure.Persistence;
 
-public class PushSubscriptionsRepository : IPushSubscriptionRepository
+public class PushSubscriptionsRepository : IPushSubscriptionRepository, IMongoIndexEnsurer
 {
     private readonly IMongoCollection<PushSubscription> _subscriptions;
 

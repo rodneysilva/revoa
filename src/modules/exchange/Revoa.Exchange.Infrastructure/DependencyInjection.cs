@@ -7,6 +7,7 @@ using Revoa.Exchange.Application.Commands;
 using Revoa.Exchange.Application.Services;
 using Revoa.Exchange.Domain.Repositories;
 using Revoa.Exchange.Infrastructure.Persistence;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Exchange.Infrastructure.Services;
 
 namespace Revoa.Exchange.Infrastructure;
@@ -42,6 +43,10 @@ public static class DependencyInjection
         // Chain (EscrowVault + ServiceVoucher + RVM approve). Orquestração on-chain do escrow.
         services.Configure<ExchangeChainOptions>(configuration.GetSection(ExchangeChainOptions.SectionName));
         services.AddScoped<IExchangeEscrowService, NethereumExchangeEscrowService>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ITradeRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IHelpRequestRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(PurchaseCommandHandler).Assembly);

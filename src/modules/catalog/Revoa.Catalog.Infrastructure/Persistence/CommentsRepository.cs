@@ -1,20 +1,15 @@
 using MongoDB.Driver;
 using Revoa.Catalog.Domain.Aggregates.CommentAggregate;
 using Revoa.Catalog.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Catalog.Infrastructure.Persistence;
 
-public class CommentsRepository : ICommentRepository
+public class CommentsRepository : MongoRepositoryBase<Comment>, ICommentRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Comment> _comments;
-
-    public CommentsRepository(IMongoDatabase database)
+    public CommentsRepository(IMongoDatabase database) : base(database, "Comments")
     {
-        _comments = database.GetCollection<Comment>("Comments");
     }
-
-    public Task<Comment?> GetByIdAsync(Guid id, CancellationToken ct) =>
-        _comments.Find(c => c.Id == id).FirstOrDefaultAsync(ct)!;
 
     public async Task<IReadOnlyList<Comment>> GetByListingAsync(Guid listingId, Guid? parentId, CancellationToken ct)
     {
@@ -26,20 +21,15 @@ public class CommentsRepository : ICommentRepository
             ? fb.Eq(c => c.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull
             : fb.Eq(c => c.ParentId, parentId);
 
-        return await _comments.Find(query)
+        return await Collection.Find(query)
             .SortBy(c => c.CreatedAt)
             .ToListAsync(ct);
-    }
-
-    public async Task AddAsync(Comment comment, CancellationToken ct)
-    {
-        await _comments.InsertOneAsync(comment, cancellationToken: ct);
     }
 
     /// <summary>Índices (listing+data, parentId, path). Idempotente.</summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _comments.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<Comment>(
                 Builders<Comment>.IndexKeys.Ascending(c => c.ListingId).Ascending(c => c.CreatedAt),

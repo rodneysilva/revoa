@@ -1,22 +1,14 @@
 using MongoDB.Driver;
-using Revoa.Abstractions;
 using Revoa.Notifications.Domain.Aggregates.NotificationAggregate;
 using Revoa.Notifications.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Notifications.Infrastructure.Persistence;
 
-public class NotificationsRepository : INotificationRepository
+public class NotificationsRepository : MongoRepositoryBase<Notification>, INotificationRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Notification> _notifications;
-
-    public NotificationsRepository(IMongoDatabase database)
+    public NotificationsRepository(IMongoDatabase database) : base(database, "Notifications")
     {
-        _notifications = database.GetCollection<Notification>("Notifications");
-    }
-
-    public async Task<Notification?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _notifications.Find(n => n.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Notification>> GetByUserAsync(
@@ -29,7 +21,7 @@ public class NotificationsRepository : INotificationRepository
             filter &= fb.Eq(n => n.Lida, false);
         }
 
-        return await _notifications.Find(filter)
+        return await Collection.Find(filter)
             .SortByDescending(n => n.CreatedAt)
             .Skip(skip)
             .Limit(limit)
@@ -40,35 +32,12 @@ public class NotificationsRepository : INotificationRepository
     {
         var fb = Builders<Notification>.Filter;
         var filter = fb.Eq(n => n.UserId, userId) & fb.Eq(n => n.Lida, false);
-        return (int)await _notifications.CountDocumentsAsync(filter, cancellationToken: ct);
-    }
-
-    public async Task AddAsync(Notification notification, CancellationToken ct)
-    {
-        await _notifications.InsertOneAsync(notification, cancellationToken: ct);
-    }
-
-    // Optimistic locking: _id + (Version == esperada | Version ausente p/ legados).
-    public async Task UpdateAsync(Notification notification, CancellationToken ct)
-    {
-        var expectedVersion = notification.Version;
-
-        var filter = Builders<Notification>.Filter.Eq(n => n.Id, notification.Id)
-                     & (Builders<Notification>.Filter.Eq(n => n.Version, expectedVersion)
-                        | Builders<Notification>.Filter.Exists(n => n.Version, false));
-
-        notification.IncrementVersion();
-
-        var result = await _notifications.ReplaceOneAsync(filter, notification, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(notification.Id.ToString(), expectedVersion);
-        }
+        return (int)await Collection.CountDocumentsAsync(filter, cancellationToken: ct);
     }
 
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _notifications.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<Notification>(
                 Builders<Notification>.IndexKeys

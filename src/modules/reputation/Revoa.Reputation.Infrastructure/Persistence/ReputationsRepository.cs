@@ -1,10 +1,11 @@
 using MongoDB.Driver;
 using Revoa.Reputation.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 using ReputationAggregate = Revoa.Reputation.Domain.Aggregates.ReputationAggregate;
 
 namespace Revoa.Reputation.Infrastructure.Persistence;
 
-public class ReputationsRepository : IReputationRepository
+public class ReputationsRepository : IReputationRepository, IMongoIndexEnsurer
 {
     private readonly IMongoCollection<ReputationAggregate.Reputation> _reputations;
 

@@ -1,27 +1,19 @@
 using MongoDB.Driver;
-using Revoa.Abstractions;
 using Revoa.Exchange.Domain.Aggregates.TradeAggregate;
 using Revoa.Exchange.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Exchange.Infrastructure.Persistence;
 
-public class TradesRepository : ITradeRepository
+public class TradesRepository : MongoRepositoryBase<Trade>, ITradeRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<Trade> _trades;
-
-    public TradesRepository(IMongoDatabase database)
+    public TradesRepository(IMongoDatabase database) : base(database, "Trades")
     {
-        _trades = database.GetCollection<Trade>("Trades");
-    }
-
-    public async Task<Trade?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _trades.Find(t => t.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<IReadOnlyList<Trade>> GetByListingAsync(Guid listingId, CancellationToken ct)
     {
-        return await _trades.Find(t => t.ListingId == listingId)
+        return await Collection.Find(t => t.ListingId == listingId)
             .SortByDescending(t => t.Version)
             .ToListAsync(ct);
     }
@@ -29,7 +21,7 @@ public class TradesRepository : ITradeRepository
     public async Task<IReadOnlyList<Trade>> GetByBuyerAsync(Guid buyerId, int limit, CancellationToken ct)
     {
         var cap = limit > 0 ? limit : 50;
-        return await _trades.Find(t => t.BuyerId == buyerId)
+        return await Collection.Find(t => t.BuyerId == buyerId)
             .SortByDescending(t => t.Version)
             .Limit(cap)
             .ToListAsync(ct);
@@ -38,7 +30,7 @@ public class TradesRepository : ITradeRepository
     public async Task<IReadOnlyList<Trade>> GetBySellerAsync(Guid sellerId, int limit, CancellationToken ct)
     {
         var cap = limit > 0 ? limit : 50;
-        return await _trades.Find(t => t.SellerId == sellerId)
+        return await Collection.Find(t => t.SellerId == sellerId)
             .SortByDescending(t => t.Version)
             .Limit(cap)
             .ToListAsync(ct);
@@ -63,34 +55,11 @@ public class TradesRepository : ITradeRepository
         var safePage = page <= 0 ? 1 : page;
         var safeSize = pageSize > 0 ? pageSize : 20;
 
-        return await _trades.Find(query)
+        return await Collection.Find(query)
             .SortByDescending(t => t.Version)
             .Skip((safePage - 1) * safeSize)
             .Limit(safeSize)
             .ToListAsync(ct);
-    }
-
-    public async Task AddAsync(Trade trade, CancellationToken ct)
-    {
-        await _trades.InsertOneAsync(trade, cancellationToken: ct);
-    }
-
-    public async Task UpdateAsync(Trade trade, CancellationToken ct)
-    {
-        var expectedVersion = trade.Version;
-
-        // Optimistic locking: _id + (Version == esperada OU doc legado sem Version).
-        var filter = Builders<Trade>.Filter.Eq(t => t.Id, trade.Id)
-                     & (Builders<Trade>.Filter.Eq(t => t.Version, expectedVersion)
-                        | Builders<Trade>.Filter.Exists(t => t.Version, false));
-
-        trade.IncrementVersion();
-
-        var result = await _trades.ReplaceOneAsync(filter, trade, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(trade.Id.ToString(), expectedVersion);
-        }
     }
 
     /// <summary>
@@ -98,7 +67,7 @@ public class TradesRepository : ITradeRepository
     /// </summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {
-        await _trades.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<Trade>(
                 Builders<Trade>.IndexKeys.Ascending(t => t.ListingId),

@@ -8,6 +8,7 @@ using Revoa.Identity.Application.Services;
 using Revoa.Identity.Domain.Repositories;
 using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure.Services;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Identity.Infrastructure;
 
@@ -44,6 +45,9 @@ public static class DependencyInjection
         services.Configure<ZenviaOptions>(configuration.GetSection(ZenviaOptions.SectionName));
         services.AddHttpClient<ZenviaSmsSender>();
         services.AddScoped<ISmsSender>(sp => sp.GetRequiredService<ZenviaSmsSender>());
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IUserRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação (roda os validators)
         services.AddRevoaCQRS(typeof(RegisterUserCommandHandler).Assembly);

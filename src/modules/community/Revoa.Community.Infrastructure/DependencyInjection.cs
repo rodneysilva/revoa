@@ -6,6 +6,7 @@ using Revoa.Application;
 using Revoa.Community.Application.Commands;
 using Revoa.Community.Domain.Repositories;
 using Revoa.Community.Infrastructure.Persistence;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Community.Infrastructure;
 
@@ -34,6 +35,12 @@ public static class DependencyInjection
         services.AddScoped<IMembershipRepository, MembershipsRepository>();
         services.AddScoped<IPostRepository, PostsRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICommunityRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IMembershipRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IPostRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IChatMessageRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateCommunityCommandHandler).Assembly);

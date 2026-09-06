@@ -2,62 +2,37 @@ using MongoDB.Driver;
 using Revoa.Abstractions;
 using Revoa.Identity.Domain.Aggregates.UserAggregate;
 using Revoa.Identity.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Identity.Infrastructure.Persistence;
 
-public class UsersRepository : IUserRepository
+public class UsersRepository : MongoRepositoryBase<User>, IUserRepository, IMongoIndexEnsurer
 {
-    private readonly IMongoCollection<User> _users;
-
-    public UsersRepository(IMongoDatabase database)
+    public UsersRepository(IMongoDatabase database) : base(database, "Users")
     {
-        _users = database.GetCollection<User>("Users");
-    }
-
-    public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
-    {
-        return await _users.Find(u => u.Id == id).FirstOrDefaultAsync(ct);
     }
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken ct)
     {
-        return await _users.Find(u => u.Email == email).FirstOrDefaultAsync(ct);
+        return await Collection.Find(u => u.Email == email).FirstOrDefaultAsync(ct);
     }
 
     public async Task<User?> GetByPhoneAsync(string phone, CancellationToken ct)
     {
-        return await _users.Find(u => u.Telefone == phone).FirstOrDefaultAsync(ct);
+        return await Collection.Find(u => u.Telefone == phone).FirstOrDefaultAsync(ct);
     }
 
-    public async Task AddAsync(User user, CancellationToken ct)
+    // Traduz violação de índice único (Email/Telefone) em exceção de domínio — mantém o
+    // módulo Application livre de dependência do MongoDB (anti-sybil em nível de banco).
+    public override async Task AddAsync(User user, CancellationToken ct = default)
     {
         try
         {
-            await _users.InsertOneAsync(user, cancellationToken: ct);
+            await Collection.InsertOneAsync(user, cancellationToken: ct);
         }
         catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
-            // Traduz violação de índice único (Email/Telefone) em exceção de domínio — mantém o
-            // módulo Application livre de dependência do MongoDB (anti-sybil em nível de banco).
             throw new DuplicateKeyException("Já existe um usuário com esse e-mail ou telefone.");
-        }
-    }
-
-    public async Task UpdateAsync(User user, CancellationToken ct)
-    {
-        var expectedVersion = user.Version;
-
-        // Optimistic locking: _id + (Version == esperada OU doc legado sem Version)
-        var filter = Builders<User>.Filter.Eq(u => u.Id, user.Id)
-                     & (Builders<User>.Filter.Eq(u => u.Version, expectedVersion)
-                        | Builders<User>.Filter.Exists(u => u.Version, false));
-
-        user.IncrementVersion();
-
-        var result = await _users.ReplaceOneAsync(filter, user, cancellationToken: ct);
-        if (result.MatchedCount == 0)
-        {
-            throw new ConcurrencyException(user.Id.ToString(), expectedVersion);
         }
     }
 
@@ -70,7 +45,7 @@ public class UsersRepository : IUserRepository
         var emailKeys = Builders<User>.IndexKeys.Ascending(u => u.Email);
         var phoneKeys = Builders<User>.IndexKeys.Ascending(u => u.Telefone);
 
-        await _users.Indexes.CreateManyAsync(new[]
+        await Collection.Indexes.CreateManyAsync(new[]
         {
             new CreateIndexModel<User>(emailKeys,
                 new CreateIndexOptions { Name = "ux_Email", Unique = true }),

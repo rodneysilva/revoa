@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Coupon.Application.Commands;
 using Revoa.Coupon.Application.Services;
 using Revoa.Coupon.Domain.Repositories;
@@ -30,6 +31,9 @@ public static class DependencyInjection
         // Chain (CouponRedeemer). Orquestração on-chain de criar/revogar/resgatar cupom.
         services.Configure<CouponChainOptions>(configuration.GetSection(CouponChainOptions.SectionName));
         services.AddScoped<ICouponChainService, NethereumCouponChainService>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICouponRepository>());
 
         // CQRS — MediatR (assembly da Application, onde vivem os handlers de command/query).
         services.AddRevoaCQRS(typeof(CreateCouponCommandHandler).Assembly);

@@ -6,6 +6,7 @@ using Revoa.Admin.Application.Queries;
 using Revoa.Admin.Domain.Repositories;
 using Revoa.Admin.Infrastructure.Persistence;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.IntegrationContracts.Admin;
 
 namespace Revoa.Admin.Infrastructure;
@@ -32,6 +33,9 @@ public static class DependencyInjection
 
         // Porta de parâmetros runtime — consumida pelos demais módulos via IParameterStore.
         services.AddScoped<IParameterStore, ParameterStore>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ISystemParameterRepository>());
 
         // CQRS — MediatR (assembly da Application).
         services.AddRevoaCQRS(typeof(GetAllParametersQueryHandler).Assembly);

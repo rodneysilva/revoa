@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Reputation.Application.EventHandlers;
 using Revoa.Reputation.Application.Options;
 using Revoa.Reputation.Domain.Repositories;
@@ -29,6 +30,10 @@ public static class DependencyInjection
 
         // Parâmetros admin-configuráveis da recompensa de doação.
         services.Configure<DonationRewardOptions>(configuration.GetSection(DonationRewardOptions.SectionName));
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IReputationRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IReviewRepository>());
 
         // CQRS — MediatR (assembly da Application, onde vive DonationCompletedEventHandler).
         services.AddRevoaCQRS(typeof(DonationCompletedEventHandler).Assembly);

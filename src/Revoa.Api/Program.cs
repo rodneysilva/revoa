@@ -4,32 +4,22 @@ using Microsoft.AspNetCore.Http.Timeouts;
 using Microsoft.IdentityModel.Tokens;
 using Revoa.Abstractions;
 using Revoa.Account.Infrastructure;
-using Revoa.Account.Infrastructure.Persistence;
 using Revoa.Admin.Infrastructure;
-using Revoa.Admin.Infrastructure.Persistence;
 using Revoa.Api.Hubs;
 using Revoa.Catalog.Infrastructure;
 using Revoa.Catalog.Infrastructure.Persistence;
 using Revoa.Community.Infrastructure;
-using Revoa.Community.Infrastructure.Persistence;
 using Revoa.Coupon.Infrastructure;
-using Revoa.Coupon.Infrastructure.Persistence;
 using Revoa.Demurrage.Infrastructure;
-using Revoa.Demurrage.Infrastructure.Persistence;
 using Revoa.Exchange.Infrastructure;
-using Revoa.Exchange.Infrastructure.Persistence;
 using Revoa.Identity.Infrastructure;
-using Revoa.Identity.Infrastructure.Persistence;
 using Revoa.Infrastructure;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Moderation.Infrastructure;
-using Revoa.Moderation.Infrastructure.Persistence;
 using Revoa.Notifications.Infrastructure;
 using Revoa.Notifications.Infrastructure.Hubs;
-using Revoa.Notifications.Infrastructure.Persistence;
 using Revoa.Pricing.Infrastructure;
-using Revoa.Pricing.Infrastructure.Persistence;
 using Revoa.Reputation.Infrastructure;
-using Revoa.Reputation.Infrastructure.Persistence;
 using Revoa.Token.Infrastructure;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -365,145 +355,36 @@ static IMongoClient CreateMongoClient(string connectionString)
 
 static async Task EnsureIndexesAsync(WebApplication app)
 {
-    try
+    using var scope = app.Services.CreateScope();
+
+    // Índices por coleção via IMongoIndexEnsurer — cada módulo registra seus repositórios
+    // assim no DI. Falha em um ensurer não aborta os demais nem o startup (Mongo
+    // indisponível em dev → só loga).
+    foreach (var ensurer in scope.ServiceProvider.GetServices<IMongoIndexEnsurer>())
     {
-        using var scope = app.Services.CreateScope();
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Identity.Domain.Repositories.IUserRepository>()
-            is UsersRepository usersRepo)
+        try
         {
-            await usersRepo.EnsureIndexesAsync();
+            await ensurer.EnsureIndexesAsync();
         }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Account.Domain.Repositories.IAccountRepository>()
-            is AccountsRepository accountsRepo)
+        catch (Exception ex)
         {
-            await accountsRepo.EnsureIndexesAsync();
-        }
-
-        // Catalog: índices do feed (Listings) + slug único (Categories).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.IListingRepository>()
-            is ListingsRepository listingsRepo)
-        {
-            await listingsRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.ICategoryRepository>()
-            is CategoriesRepository categoriesRepo)
-        {
-            await categoriesRepo.EnsureIndexesAsync();
-            await categoriesRepo.EnsureSeedAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.ICommentRepository>()
-            is CommentsRepository commentsRepo)
-        {
-            await commentsRepo.EnsureIndexesAsync();
-        }
-
-        // Community: índices de Communities/Memberships (único Usuario+Comunidade)/Posts/ChatMessages (TTL 90d).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.ICommunityRepository>()
-            is CommunitiesRepository communitiesRepo)
-        {
-            await communitiesRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IMembershipRepository>()
-            is MembershipsRepository membershipsRepo)
-        {
-            await membershipsRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IPostRepository>()
-            is PostsRepository postsRepo)
-        {
-            await postsRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Community.Domain.Repositories.IChatMessageRepository>()
-            is ChatMessageRepository chatRepo)
-        {
-            await chatRepo.EnsureIndexesAsync();
-        }
-
-        // Exchange: índices de Trades (ListingId/BuyerId/SellerId/State) e HelpRequests (ListingId+State/AuthorId).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Exchange.Domain.Repositories.ITradeRepository>()
-            is TradesRepository tradesRepo)
-        {
-            await tradesRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Exchange.Domain.Repositories.IHelpRequestRepository>()
-            is HelpRequestsRepository helpRepo)
-        {
-            await helpRepo.EnsureIndexesAsync();
-        }
-
-        // Notifications: índices de Notifications (UserId+CreatedAt / UserId+Lida) e PushSubscriptions (único Endpoint).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Notifications.Domain.Repositories.INotificationRepository>()
-            is NotificationsRepository notificationsRepo)
-        {
-            await notificationsRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Notifications.Domain.Repositories.IPushSubscriptionRepository>()
-            is PushSubscriptionsRepository pushRepo)
-        {
-            await pushRepo.EnsureIndexesAsync();
-        }
-
-        // Reputation: índice único por UserId (um score por usuário) + índices de Reviews (UF-23).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Reputation.Domain.Repositories.IReputationRepository>()
-            is ReputationsRepository reputationsRepo)
-        {
-            await reputationsRepo.EnsureIndexesAsync();
-        }
-
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Reputation.Domain.Repositories.IReviewRepository>()
-            is ReviewsRepository reviewsRepo)
-        {
-            await reviewsRepo.EnsureIndexesAsync();
-        }
-
-        // Moderation: índices de Reports (status+createdAt p/ painel admin, reporterId, target).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Moderation.Domain.Repositories.IReportRepository>()
-            is ReportsRepository reportsRepo)
-        {
-            await reportsRepo.EnsureIndexesAsync();
-        }
-
-        // Coupon: índices de Coupons (code p/ correlação on/off-chain; status+createdAt p/ painel admin).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Coupon.Domain.Repositories.ICouponRepository>()
-            is CouponsRepository couponsRepo)
-        {
-            await couponsRepo.EnsureIndexesAsync();
-        }
-
-        // Pricing: índice único por CategoriaId (uma referência de preço por categoria).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Pricing.Domain.Repositories.IPriceReferenceRepository>()
-            is PriceReferencesRepository priceRefsRepo)
-        {
-            await priceRefsRepo.EnsureIndexesAsync();
-        }
-
-        // Demurrage: índice por RunAt desc (histórico de execuções de queima).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Demurrage.Domain.Repositories.IDemurrageRunRepository>()
-            is DemurrageRunsRepository demurrageRunsRepo)
-        {
-            await demurrageRunsRepo.EnsureIndexesAsync();
-        }
-
-        // Admin: índice único por Key dos parâmetros de sistema (runtime, UF-30).
-        if (scope.ServiceProvider.GetRequiredService<Revoa.Admin.Domain.Repositories.ISystemParameterRepository>()
-            is SystemParametersRepository systemParametersRepo)
-        {
-            await systemParametersRepo.EnsureIndexesAsync();
+            app.Logger.LogWarning(ex, "Falha ao criar índices de {Ensurer} (Mongo indisponível?).",
+                ensurer.GetType().Name);
         }
     }
-    catch (Exception ex)
+
+    // Seed de categorias padrão (idempotente) após os índices — dev/onboarding.
+    if (scope.ServiceProvider.GetRequiredService<Revoa.Catalog.Domain.Repositories.ICategoryRepository>()
+        is CategoriesRepository categoriesRepo)
     {
-        // Não derrubar o startup se o Mongo estiver indisponível em dev; loga e segue.
-        app.Logger.LogWarning(ex, "Não foi possível criar índices no MongoDB (Mongo indisponível?).");
+        try
+        {
+            await categoriesRepo.EnsureSeedAsync();
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Não foi possível semear as categorias padrão.");
+        }
     }
 }
 

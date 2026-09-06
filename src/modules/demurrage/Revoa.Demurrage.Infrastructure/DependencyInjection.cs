@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Demurrage.Application.Commands;
 using Revoa.Demurrage.Application.Options;
 using Revoa.Demurrage.Domain.Repositories;
@@ -31,6 +32,9 @@ public static class DependencyInjection
 
         // CQRS — MediatR (assembly da Application). IRvmService e IWalletAddressReader são
         // resolvidos dos módulos Token/Account (portas); não há registro duplicado aqui.
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IDemurrageRunRepository>());
+
         services.AddRevoaCQRS(typeof(RunDemurrageCommandHandler).Assembly);
 
         return services;

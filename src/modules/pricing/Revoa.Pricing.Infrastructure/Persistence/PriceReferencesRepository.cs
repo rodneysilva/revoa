@@ -1,10 +1,11 @@
 using MongoDB.Driver;
 using Revoa.Pricing.Domain.Aggregates.PriceReferenceAggregate;
 using Revoa.Pricing.Domain.Repositories;
+using Revoa.Infrastructure.Persistence;
 
 namespace Revoa.Pricing.Infrastructure.Persistence;
 
-public class PriceReferencesRepository : IPriceReferenceRepository
+public class PriceReferencesRepository : IPriceReferenceRepository, IMongoIndexEnsurer
 {
     private readonly IMongoCollection<PriceReference> _priceReferences;
 

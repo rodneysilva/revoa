@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MongoDB.Driver;
 using Revoa.Application;
+using Revoa.Infrastructure.Persistence;
 using Revoa.Moderation.Application.Commands;
 using Revoa.Moderation.Domain.Repositories;
 using Revoa.Moderation.Infrastructure.Persistence;
@@ -24,6 +25,9 @@ public static class DependencyInjection
 
         // Repositório (coleção própria Reports, isolada dos demais módulos).
         services.AddScoped<IReportRepository, ReportsRepository>();
+
+        // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IReportRepository>());
 
         // CQRS — MediatR (assembly da Application, onde vivem os handlers de command/query).
         services.AddRevoaCQRS(typeof(CreateReportCommandHandler).Assembly);
