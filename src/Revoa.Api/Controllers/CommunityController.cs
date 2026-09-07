@@ -123,7 +123,8 @@ public class CommunityController : ControllerBase
         var command = new CreateCommunityCommand(
             user.UserId, user.Name, user.AvatarUrl,
             request.Name, request.Description, tipo, axis, visibilidade, request.Password,
-            request.Lat, request.Lng, request.Neighborhood, request.City, request.State);
+            request.Lat, request.Lng, request.Neighborhood, request.City, request.State,
+            request.CoverImageUrl);
 
         var result = await _mediator.Send(command, ct);
         if (result.IsFailure)
@@ -175,7 +176,10 @@ public class CommunityController : ControllerBase
         [FromQuery] int page = 1,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new GetCommunityPostsQuery(id, parentId, page), ct);
+        // AllowAnonymous, mas com JWT presente popula IsLiked/IsSaved do viewer.
+        var viewer = User.GetRevoaUser()?.UserId;
+
+        var result = await _mediator.Send(new GetCommunityPostsQuery(id, parentId, page, viewer), ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
 
@@ -217,6 +221,25 @@ public class CommunityController : ControllerBase
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 
+    // Define/remove a capa da comunidade (upload via /api/media?folder=communities).
+    // Gate Verified; papel Criador/Moderador validado no handler.
+    [HttpPost("{id:guid}/cover")]
+    [Authorize(Policy = "Verified")]
+    public async Task<ActionResult> SetCover(
+        Guid id, [FromBody] SetCommunityCoverRequest request, CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(
+            new SetCommunityCoverCommand(id, user.UserId, request.CoverImageUrl), ct);
+
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
+    }
+
     // Membros de uma comunidade (anônimo vê).
     [HttpGet("{id:guid}/members")]
     [AllowAnonymous]
@@ -241,7 +264,10 @@ public sealed record CreateCommunityRequest(
     double? Lng,
     string? Neighborhood,
     string? City,
-    string? State);
+    string? State,
+    string? CoverImageUrl = null);
+
+public sealed record SetCommunityCoverRequest(string? CoverImageUrl);
 
 public sealed record CreatePostRequest(Guid? ParentId, string Content);
 

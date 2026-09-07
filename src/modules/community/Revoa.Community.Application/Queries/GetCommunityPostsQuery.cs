@@ -6,17 +6,24 @@ using Revoa.Community.Domain.Repositories;
 namespace Revoa.Community.Application.Queries;
 
 // Posts de uma comunidade (anônimo vê — UF-19). ParentId → filhos diretos; senão raízes. Só Visivel.
-public sealed record GetCommunityPostsQuery(Guid CommunityId, Guid? ParentId, int Page) : IRequest<Result<IReadOnlyList<PostDto>>>;
+// ViewerId opcional popula IsLiked/IsSaved quando há JWT (endpoint AllowAnonymous).
+public sealed record GetCommunityPostsQuery(Guid CommunityId, Guid? ParentId, int Page, Guid? ViewerId = null)
+    : IRequest<Result<IReadOnlyList<PostDto>>>;
 
 public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQuery, Result<IReadOnlyList<PostDto>>>
 {
     private const int PageSize = 50;
 
     private readonly IPostRepository _posts;
+    private readonly IPostLikeRepository _likes;
+    private readonly ISavedPostRepository _saved;
 
-    public GetCommunityPostsQueryHandler(IPostRepository posts)
+    public GetCommunityPostsQueryHandler(
+        IPostRepository posts, IPostLikeRepository likes, ISavedPostRepository saved)
     {
         _posts = posts;
+        _likes = likes;
+        _saved = saved;
     }
 
     public async Task<Result<IReadOnlyList<PostDto>>> Handle(GetCommunityPostsQuery request, CancellationToken ct)
@@ -29,14 +36,7 @@ public class GetCommunityPostsQueryHandler : IRequestHandler<GetCommunityPostsQu
             .Take(PageSize)
             .ToList();
 
-        var counts = paged.Count > 0
-            ? await _posts.GetChildrenCountsAsync(paged.Select(p => p.Id).ToList(), ct)
-            : new Dictionary<Guid, int>();
-
-        IReadOnlyList<PostDto> result = paged
-            .Select(p => PostDtoMapper.From(p, counts.TryGetValue(p.Id, out var c) ? c : 0))
-            .ToList();
-
+        var result = await PostDtoEnricher.ToDtosAsync(paged, _posts, _likes, _saved, request.ViewerId, ct);
         return Result<IReadOnlyList<PostDto>>.Ok(result);
     }
 }

@@ -32,17 +32,22 @@ public static class DependencyInjection
         services.TryAddSingleton<IMongoClient>(_ => new MongoClient(conn));
         services.TryAddScoped<IMongoDatabase>(sp => sp.GetRequiredService<IMongoClient>().GetDatabase(dbName));
 
-        // Repositórios (coleções próprias: Communities, Memberships, Posts, ChatMessages).
+        // Repositórios (coleções próprias: Communities, Memberships, Posts, ChatMessages,
+        // PostLikes, SavedPosts).
         services.AddScoped<ICommunityRepository, CommunitiesRepository>();
         services.AddScoped<IMembershipRepository, MembershipsRepository>();
         services.AddScoped<IPostRepository, PostsRepository>();
         services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+        services.AddScoped<IPostLikeRepository, PostLikesRepository>();
+        services.AddScoped<ISavedPostRepository, SavedPostsRepository>();
 
         // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICommunityRepository>());
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IMembershipRepository>());
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IPostRepository>());
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IChatMessageRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IPostLikeRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ISavedPostRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateCommunityCommandHandler).Assembly);

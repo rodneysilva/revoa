@@ -15,11 +15,19 @@ public sealed record PostDto(
     PostStatus Status,
     string? OcultadoPor,
     DateTime CreatedAt,
-    int ChildrenCount);
+    int ChildrenCount,
+    int LikeCount = 0,
+    bool IsLiked = false,
+    bool IsSaved = false);
 
 public static class PostDtoMapper
 {
-    public static PostDto From(Post p, int childrenCount = 0) => new(
+    public static PostDto From(
+        Post p,
+        int childrenCount = 0,
+        int likeCount = 0,
+        bool isLiked = false,
+        bool isSaved = false) => new(
         p.Id,
         p.CommunityId,
         p.AutorId,
@@ -32,5 +40,8 @@ public static class PostDtoMapper
         p.Status,
         p.OcultadoPor,
         p.CreatedAt,
-        childrenCount);
+        childrenCount,
+        likeCount,
+        isLiked,
+        isSaved);
 }

@@ -29,15 +29,21 @@ public class GetSocialFeedQueryHandler
     private readonly IMembershipRepository _memberships;
     private readonly ICommunityRepository _communities;
     private readonly IPostRepository _posts;
+    private readonly IPostLikeRepository _likes;
+    private readonly ISavedPostRepository _saved;
 
     public GetSocialFeedQueryHandler(
         IMembershipRepository memberships,
         ICommunityRepository communities,
-        IPostRepository posts)
+        IPostRepository posts,
+        IPostLikeRepository likes,
+        ISavedPostRepository saved)
     {
         _memberships = memberships;
         _communities = communities;
         _posts = posts;
+        _likes = likes;
+        _saved = saved;
     }
 
     public async Task<Result<IReadOnlyList<SocialFeedItemDto>>> Handle(
@@ -75,18 +81,19 @@ public class GetSocialFeedQueryHandler
             items.AddRange(recentes.Select(p => (p, dto)));
         }
 
-        // Children counts em batch (anti-N+1, como GetCommunityPostsQuery).
         var maisRecentes = items
             .OrderByDescending(i => i.Post.CreatedAt)
             .Take(limit)
             .ToList();
-        var children = await _posts.GetChildrenCountsAsync(
-            maisRecentes.Select(i => i.Post.Id).ToList(), ct);
+
+        // Enriquecimento batch (children + likes + saved do viewer, anti-N+1).
+        var dtos = await PostDtoEnricher.ToDtosAsync(
+            maisRecentes.Select(i => i.Post).ToList(),
+            _posts, _likes, _saved, request.UserId, ct);
+        var dtoById = dtos.ToDictionary(d => d.Id);
 
         IReadOnlyList<SocialFeedItemDto> result = maisRecentes
-            .Select(i => new SocialFeedItemDto(
-                PostDtoMapper.From(i.Post, children.GetValueOrDefault(i.Post.Id)),
-                i.Community))
+            .Select(i => new SocialFeedItemDto(dtoById[i.Post.Id], i.Community))
             .ToList();
 
         return Result<IReadOnlyList<SocialFeedItemDto>>.Ok(result);

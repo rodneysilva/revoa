@@ -13,6 +13,18 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
     {
     }
 
+    public async Task<IReadOnlyList<Post>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Post>();
+        }
+
+        var fb = Builders<Post>.Filter;
+        return await Collection.Find(fb.In(p => p.Id, ids)).ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Post>> GetByCommunityAsync(Guid communityId, Guid? parentId, CancellationToken ct)
     {
         var fb = Builders<Post>.Filter;
@@ -53,6 +65,21 @@ public class PostsRepository : MongoRepositoryBase<Post>, IPostRepository, IMong
         return await Collection.Find(query)
             .SortByDescending(p => p.CreatedAt)
             .Limit(safeLimit)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Post>> GetRecentRootsAsync(int skip, int take, CancellationToken ct)
+    {
+        var fb = Builders<Post>.Filter;
+        var query = fb.Eq(p => p.ParentId, (Guid?)null) // null OU ausente — Exists(false) não casa BsonNull
+                    & fb.Eq(p => p.Status, PostStatus.Visible);
+
+        var safeTake = take > 0 ? take : 20;
+
+        return await Collection.Find(query)
+            .SortByDescending(p => p.CreatedAt)
+            .Skip(Math.Max(0, skip))
+            .Limit(safeTake)
             .ToListAsync(ct);
     }
 
