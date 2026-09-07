@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { ReportButton } from "./ReportButton";
+import { ShareButton } from "./ShareButton";
 import { timeAgo } from "../lib/time";
+import { api } from "../api/client";
 import type { Post, ReportTarget } from "../api/types";
 
 const MAX_DEPTH = 6;
@@ -14,6 +17,11 @@ interface ThreadHandlers {
   loadingId?: string;
   // O que esta thread denuncia: "Post" (comunidade) ou "Comment" (anúncio).
   reportTarget?: ReportTarget;
+  // Action bar (comunidade/feed): viewerId logado habilita curtir/salvar
+  // otimistas. Ausente = thread só leitura (ex.: comentários de anúncio).
+  viewerId?: string;
+  // URL alvo do compartilhar; ausente = página atual.
+  shareUrl?: string;
 }
 
 interface PostThreadProps extends ThreadHandlers {
@@ -43,12 +51,20 @@ function PostItem({
   currentUserId,
   loadingId,
   reportTarget,
+  viewerId,
+  shareUrl,
 }: ItemProps) {
   const [showReply, setShowReply] = useState(false);
   const [text, setText] = useState("");
   const [open, setOpen] = useState(false);
   const [children, setChildren] = useState<Post[] | null>(null);
   const [loadingKids, setLoadingKids] = useState(false);
+
+  // Action bar: estado otimista com rollback (mesmo padrão do PostCard).
+  const [liked, setLiked] = useState(post.IsLiked ?? false);
+  const [likeCount, setLikeCount] = useState(post.LikeCount ?? 0);
+  const [saved, setSaved] = useState(post.IsSaved ?? false);
+  const [busy, setBusy] = useState<"like" | "save" | null>(null);
 
   const canReply = canPost && post.Depth < MAX_DEPTH;
   const submitting = loadingId === post.Id;
@@ -60,6 +76,41 @@ function PostItem({
     childCount > 0
       ? `💬 ${childCount} resposta${childCount === 1 ? "" : "s"}`
       : "Ver respostas";
+
+  async function toggleLike() {
+    if (!viewerId || busy) return;
+    setBusy("like");
+    const next = !liked;
+    setLiked(next);
+    setLikeCount((c) => c + (next ? 1 : -1));
+    try {
+      const on = await api.likePost(post.Id);
+      if (on !== next) {
+        setLiked(on);
+        setLikeCount((c) => c + (on ? 1 : -1));
+      }
+    } catch {
+      setLiked(!next);
+      setLikeCount((c) => c + (next ? -1 : 1));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function toggleSave() {
+    if (!viewerId || busy) return;
+    setBusy("save");
+    const next = !saved;
+    setSaved(next);
+    try {
+      const on = await api.savePost(post.Id);
+      if (on !== next) setSaved(on);
+    } catch {
+      setSaved(!next);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function toggleChildren() {
     if (open) {
@@ -128,6 +179,41 @@ function PostItem({
                 {open ? "Ocultar respostas" : repliesLabel}
               </button>
             )}
+
+            {viewerId ? (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleLike}
+                  className={`hover:text-rosa transition ${
+                    liked ? "text-rosa" : "text-silver"
+                  }`}
+                >
+                  {liked ? "❤️" : "🤍"} {likeCount > 0 ? likeCount : "Curtir"}
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleSave}
+                  className={`hover:text-amber transition ${
+                    saved ? "text-amber" : "text-silver"
+                  }`}
+                >
+                  {saved ? "🔖 Salvo" : "🔖 Salvar"}
+                </button>
+                <ShareButton
+                  url={shareUrl}
+                  label=""
+                  className="text-silver hover:text-esmeralda"
+                />
+              </>
+            ) : (
+              likeCount > 0 && (
+                <Link to="/login" className="text-silver hover:text-rosa">
+                  ❤️ {likeCount}
+                </Link>
+              )
+            )}
+
             <ReportButton
               targetType={reportTarget ?? "Post"}
               targetId={post.Id}
@@ -179,6 +265,8 @@ function PostItem({
                     currentUserId={currentUserId}
                     loadingId={loadingId}
                     reportTarget={reportTarget}
+                    viewerId={viewerId}
+                    shareUrl={shareUrl}
                   />
                 ))
               ) : (

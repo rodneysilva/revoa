@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { CommunityCard } from "../components/CommunityCard";
@@ -228,8 +228,26 @@ function CreateCommunityModal({
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
+  const [capa, setCapa] = useState<string | undefined>(undefined);
+  const [uploadingCapa, setUploadingCapa] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Upload da capa (folder communities) — mesmo fluxo de imagem do anúncio.
+  async function onCapaFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite reenviar o mesmo arquivo
+    if (!file) return;
+    setUploadingCapa(true);
+    setError(null);
+    try {
+      setCapa(await api.uploadImage(file, "communities"));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Falha ao enviar a capa.");
+    } finally {
+      setUploadingCapa(false);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -248,6 +266,7 @@ function CreateCommunityModal({
       Neighborhood: bairro.trim() || undefined,
       City: cidade.trim() || undefined,
       State: estado.trim() || undefined,
+      CoverImageUrl: capa,
     };
 
     setLoading(true);
@@ -301,6 +320,43 @@ function CreateCommunityModal({
               placeholder="Do que se trata esta comunidade?"
             />
           </label>
+
+          <div>
+            <span className={labelTxtCls}>Capa (opcional)</span>
+            <div className="mt-1 flex items-center gap-3">
+              {capa ? (
+                <img
+                  src={capa}
+                  alt="Capa da comunidade"
+                  className="w-28 h-16 rounded-lg object-cover border border-smoke"
+                />
+              ) : (
+                <div className="w-28 h-16 rounded-lg bg-community border border-smoke" />
+              )}
+              <label className="cursor-pointer text-sm text-esmeralda hover:underline">
+                {uploadingCapa ? "Enviando…" : capa ? "Trocar imagem" : "📷 Escolher imagem"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={onCapaFile}
+                  disabled={uploadingCapa}
+                />
+              </label>
+              {capa && (
+                <button
+                  type="button"
+                  onClick={() => setCapa(undefined)}
+                  className="text-sm text-silver hover:text-rosa"
+                >
+                  Remover
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-silver/70">
+              Sem capa, a comunidade usa o gradiente padrão. JPEG/PNG/WebP/GIF até 5 MB.
+            </p>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <label className={labelCls}>

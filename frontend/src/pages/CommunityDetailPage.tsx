@@ -1,44 +1,53 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { LiveChat } from "../components/LiveChat";
+import { PostComposer } from "../components/PostComposer";
 import { PostThread } from "../components/PostThread";
-import { timeAgo } from "../lib/time";
 import {
   EIXO_EMOJI,
   PAPEL_META,
   VISIBILIDADE_LABEL,
 } from "../lib/community";
-import type { Community, FeedItem, Membership, MembershipRole, Post } from "../api/types";
+import type { Community, FeedItem, Membership, Post } from "../api/types";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Navegação por objetos (OOUX — objects-first).
-   A Comunidade é o objeto central; cada aba é a "casa" de um objeto
-   relacionado, com seus atributos e CTAs. Deep-link via #hash.
-   Objetos: Conversas (Post) · Ao vivo (Chat) · Anúncios (Anúncio) · Membros (Membership).
+   Página única da comunidade (v2): filtros à esquerda, conversas no centro
+   com composer no topo, features à direita (chat ao vivo, membros, regras),
+   anúncios em grade full width abaixo. Hashes antigos das abas
+   (#conversas #aovivo #ofertas #membros) viram âncoras — nada quebra.
    ═══════════════════════════════════════════════════════════════════════ */
-type ObjectTab = "conversas" | "aovivo" | "ofertas" | "membros";
 
-const TABS: { id: ObjectTab; icon: string; label: string }[] = [
-  { id: "conversas", icon: "💬", label: "Conversas" },
-  { id: "aovivo", icon: "⚡", label: "Ao vivo" },
-  { id: "ofertas", icon: "🛍️", label: "Anúncios" },
-  { id: "membros", icon: "👥", label: "Membros" },
+// Hash legado "ofertas" ancora na seção nova "anuncios".
+const ANCHOR_MAP: Record<string, string> = {
+  conversas: "conversas",
+  aovivo: "aovivo",
+  ofertas: "anuncios",
+  anuncios: "anuncios",
+  membros: "membros",
+};
+
+const FILTRO_LABEL: Record<FiltroConversa, string> = {
+  recentes: "🕘 Recentes",
+  curtidas: "❤️ Mais curtidas",
+  minhas: "✍️ Minhas",
+};
+
+type FiltroConversa = "recentes" | "curtidas" | "minhas";
+
+const REGRAS = [
+  "Respeite os membros — sem ofensas, spam ou discurso de ódio.",
+  "Anúncios vão na seção de anúncios, não nas conversas.",
+  "Denuncie conteúdo inadequado; moderadores cuidam do resto.",
 ];
-
-function parseTab(hash: string): ObjectTab {
-  const h = hash.replace(/^#/, "");
-  return TABS.some((t) => t.id === h) ? (h as ObjectTab) : "conversas";
-}
 
 export function CommunityDetailPage() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [community, setCommunity] = useState<Community | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -50,21 +59,21 @@ export function CommunityDetailPage() {
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [joinPassword, setJoinPassword] = useState("");
-  const [newPost, setNewPost] = useState("");
-  const [posting, setPosting] = useState(false);
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [memberListings, setMemberListings] = useState<FeedItem[] | null>(null);
   const [listingsError, setListingsError] = useState(false);
-  const [tab, setTab] = useState<ObjectTab>(() => parseTab(location.hash));
+  const [filtro, setFiltro] = useState<FiltroConversa>("recentes");
+  const [coverUploading, setCoverUploading] = useState(false);
 
+  // Âncoras legadas (#hash) → scroll suave até a seção correspondente.
   useEffect(() => {
-    setTab(parseTab(location.hash));
-  }, [location.hash]);
-
-  function selectTab(next: ObjectTab) {
-    setTab(next);
-    navigate({ hash: next }, { replace: true });
-  }
+    const target = ANCHOR_MAP[location.hash.replace(/^#/, "")];
+    if (!target || loading) return;
+    const t = requestAnimationFrame(() => {
+      document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(t);
+  }, [location.hash, loading]);
 
   useEffect(() => {
     if (!id) return;
@@ -97,7 +106,13 @@ export function CommunityDetailPage() {
     () => members.filter((m) => m.Status === "Active"),
     [members]
   );
-  const isMember = !!(user && activeMembers.some((m) => m.UserId === user.userId));
+  const myMembership = useMemo(
+    () => (user ? activeMembers.find((m) => m.UserId === user.userId) : undefined),
+    [activeMembers, user]
+  );
+  const isMember = !!myMembership;
+  const canManageCover =
+    myMembership?.Role === "Creator" || myMembership?.Role === "Moderator";
   const isPrivate = community?.Visibility === "Private";
 
   useEffect(() => {
@@ -163,33 +178,32 @@ export function CommunityDetailPage() {
     }
   }
 
-  async function submitRoot(e: FormEvent) {
-    e.preventDefault();
+  // Composer no topo das conversas — o espaço de escrever vem antes da lista.
+  async function submitRoot(conteudo: string) {
     if (!id || !user) return;
-    const c = newPost.trim();
-    if (!c) return;
-    setPosting(true);
     setActionError(null);
     try {
-      const createdId = await api.createPost(id, undefined, c);
+      const createdId = await api.createPost(id, undefined, conteudo);
       const optimistic: Post = {
         Id: String(createdId),
         CommunityId: id,
         AutorId: user.userId,
         AuthorName: user.nome,
         AutorAvatarUrl: undefined,
-        Content: c,
+        Content: conteudo,
         Path: String(createdId),
         Depth: 0,
         Status: "Visible",
         CreatedAt: new Date().toISOString(),
+        LikeCount: 0,
+        IsLiked: false,
+        IsSaved: false,
       };
       setPosts((prev) => [optimistic, ...prev]);
-      setNewPost("");
+      setFiltro("recentes");
     } catch (e) {
       setActionError(e instanceof ApiError ? e.message : "Falha ao publicar.");
-    } finally {
-      setPosting(false);
+      throw e; // o composer mantém o texto para retentar
     }
   }
 
@@ -221,6 +235,31 @@ export function CommunityDetailPage() {
     [id]
   );
 
+  // Capa real: upload (folder communities) → setCommunityCover → refresh.
+  async function onCoverFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite reenviar o mesmo arquivo
+    if (!file || !id) return;
+    setCoverUploading(true);
+    setActionError(null);
+    try {
+      const url = await api.uploadImage(file, "communities");
+      await api.setCommunityCover(id, url);
+      setCommunity(await api.community(id));
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : "Falha ao enviar a capa.");
+    } finally {
+      setCoverUploading(false);
+    }
+  }
+
+  const visiblePosts = useMemo(() => {
+    if (filtro === "minhas") return posts.filter((p) => p.AutorId === user?.userId);
+    if (filtro === "curtidas")
+      return [...posts].sort((a, b) => (b.LikeCount ?? 0) - (a.LikeCount ?? 0));
+    return posts;
+  }, [posts, filtro, user]);
+
   if (loading) return <div className="app-container text-silver">Carregando comunidade…</div>;
 
   if (error || !community)
@@ -236,14 +275,15 @@ export function CommunityDetailPage() {
   const local = [community.Neighborhood, community.City, community.State]
     .filter(Boolean)
     .join(", ");
+  const shareUrl = `${window.location.origin}/community/${community.Id}#conversas`;
 
-  // Contadores apenas de objetos com dado real — "Ao vivo" não tem contador
-  // (não há sinal de presença; dot pulsante seria fantasma).
-  const counts: Partial<Record<ObjectTab, number>> = {
-    conversas: posts.length,
-    ofertas: memberListings?.length ?? 0,
-    membros: activeMembers.length,
-  };
+  const composerHint = !user
+    ? undefined
+    : !user.verified
+      ? "Verifique sua conta (e-mail e telefone) para publicar."
+      : !isMember
+        ? "Entre na comunidade para publicar e responder."
+        : undefined;
 
   return (
     <div className="app-container">
@@ -254,11 +294,18 @@ export function CommunityDetailPage() {
         ← Comunidades
       </Link>
 
-      {/* ══ HERO do objeto Comunidade — compacto, 1 linha: nome + chips +
-             membros + CTA. O conteúdo (aba ativa) fica acima da dobra. ══ */}
+      {/* ══ HERO compacto — capa real (upload) com fallback gradiente ══ */}
       <header className="relative rounded-2xl overflow-hidden border border-smoke">
-        <div className="bg-community absolute inset-0" aria-hidden />
-        <div className="absolute inset-0 bg-black/30" aria-hidden />
+        {community.CoverImageUrl ? (
+          <img
+            src={community.CoverImageUrl}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="bg-community absolute inset-0" aria-hidden />
+        )}
+        <div className="absolute inset-0 bg-black/35" aria-hidden />
         <div className="relative p-4 sm:p-5 text-white">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold drop-shadow">
@@ -276,13 +323,12 @@ export function CommunityDetailPage() {
                 : VISIBILIDADE_LABEL[community.Visibility]}
             </span>
 
-            <button
-              type="button"
-              onClick={() => selectTab("membros")}
+            <a
+              href="#membros"
               className="text-sm text-white/90 hover:text-white ml-auto whitespace-nowrap"
             >
               👥 {community.MembersCount}
-            </button>
+            </a>
 
             {!user ? (
               <Link
@@ -348,361 +394,225 @@ export function CommunityDetailPage() {
           )}
 
           {actionError && <p className="mt-2 text-sm text-rosa drop-shadow">{actionError}</p>}
+
+          {canManageCover && (
+            <label className="absolute bottom-3 right-3 cursor-pointer bg-black/45 backdrop-blur-sm border border-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-black/65 transition">
+              {coverUploading ? "Enviando…" : "📷 Capa"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={onCoverFile}
+                disabled={coverUploading}
+              />
+            </label>
+          )}
         </div>
       </header>
 
-      {/* ══ NAVEGAÇÃO POR OBJETOS (sticky) ══ */}
-      <nav className="sticky top-16 z-30 mt-4 -mx-1 px-1 bg-ink/85 backdrop-blur border-b border-smoke">
-        <div className="flex gap-1 overflow-x-auto">
-          {TABS.map((t) => {
-            const active = tab === t.id;
-            const count = counts[t.id] ?? 0;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => selectTab(t.id)}
-                className={`relative whitespace-nowrap px-4 py-3 text-sm font-medium transition ${
-                  active ? "text-esmeralda" : "text-silver hover:text-cream"
-                }`}
-              >
-                <span aria-hidden className="mr-1.5">
-                  {t.icon}
-                </span>
-                {t.label}
-                {count > 0 && (
-                  <span
-                    className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                      active ? "bg-esmeralda/15 text-esmeralda" : "bg-smoke text-silver"
-                    }`}
-                  >
-                    {count}
-                  </span>
-                )}
-                {active && (
-                  <span className="absolute left-2 right-2 -bottom-px h-0.5 bg-esmeralda rounded-full" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+      {/* ══ PÁGINA ÚNICA: filtros | conversas | features — full width ══ */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_20rem] items-start">
+        {/* ── Esquerda: Sobre + filtros de conversas + atalhos ── */}
+        <aside className="space-y-4">
+          <section className="bg-charcoal rounded-xl border border-smoke p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
+              Sobre
+            </h2>
+            <p className="text-sm text-cream/90 whitespace-pre-wrap line-clamp-6">
+              {community.Description || "Sem descrição."}
+            </p>
+            {local && <p className="mt-2 text-xs text-silver">📍 {local}</p>}
+            <p className="mt-1 text-xs text-silver">
+              Criada por <span className="text-cream">{community.CreatorName}</span>
+            </p>
+          </section>
 
-      {/* ══ PAINEL DO OBJETO ATIVO — mesma largura de leitura em todas as
-             abas (trocar de aba não muda a largura do conteúdo) ══ */}
-      <div className="mt-4 max-w-4xl">
-        {tab === "conversas" && (
-          <ConversasPanel
-            isMember={isMember}
-            canPost={!!user?.verified && isMember}
-            posts={posts}
-            rootsLoading={rootsLoading}
-            newPost={newPost}
-            setNewPost={setNewPost}
-            posting={posting}
-            submitRoot={submitRoot}
-            onReply={handleReply}
-            loadChildren={loadChildren}
-            currentUserId={user?.userId}
-            replyingId={replyingId ?? undefined}
-          />
-        )}
-
-        {tab === "aovivo" && (
-          <AoVivoPanel community={community} isMember={isMember} verified={!!user?.verified} />
-        )}
-
-        {tab === "ofertas" && (
-          <OfertasPanel
-            loading={memberListings === null}
-            error={listingsError}
-            items={memberListings ?? []}
-            isMember={isMember}
-            canPost={!!user?.verified}
-          />
-        )}
-
-        {tab === "membros" && (
-          <MembrosPanel members={activeMembers} currentUserId={user?.userId} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Objeto: Conversas (Post — discussão assíncrona recursiva, UF-20)
-   ═══════════════════════════════════════════════════════════════════════ */
-function ConversasPanel({
-  isMember,
-  canPost,
-  posts,
-  rootsLoading,
-  newPost,
-  setNewPost,
-  posting,
-  submitRoot,
-  onReply,
-  loadChildren,
-  currentUserId,
-  replyingId,
-}: {
-  isMember: boolean;
-  canPost: boolean;
-  posts: Post[];
-  rootsLoading: boolean;
-  newPost: string;
-  setNewPost: (v: string) => void;
-  posting: boolean;
-  submitRoot: (e: FormEvent) => void;
-  onReply: (parentId: string, conteudo: string) => Promise<void>;
-  loadChildren: (parentId: string) => Promise<Post[]>;
-  currentUserId?: string;
-  replyingId?: string;
-}) {
-  return (
-    <div className="space-y-4">
-      {canPost && (
-        <form onSubmit={submitRoot} className="bg-charcoal border border-smoke rounded-xl p-4">
-          <textarea
-            value={newPost}
-            onChange={(e) => setNewPost(e.target.value)}
-            rows={3}
-            placeholder="Compartilhe algo com a comunidade…"
-            className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm"
-          />
-          <div className="mt-2 flex items-center gap-2">
-            <button
-              type="submit"
-              disabled={posting || !newPost.trim()}
-              className="bg-brand text-ink font-semibold px-4 py-1.5 rounded-lg text-sm disabled:opacity-60"
-            >
-              {posting ? "Publicando…" : "Publicar"}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {!isMember && (
-        <div className="bg-smoke/50 border border-smoke rounded-xl p-4 text-sm text-silver">
-          💬 As conversas ficam visíveis para todos, mas só membros publicam e respondem.
-        </div>
-      )}
-
-      {rootsLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 bg-smoke rounded-lg animate-pulse" />
-          ))}
-        </div>
-      ) : posts.length === 0 ? (
-        <EmptyState
-          icon="💬"
-          title={
-            canPost
-              ? "Ainda não há conversas. Que tal começar a falar com a comunidade?"
-              : "Ainda não há conversas por aqui."
-          }
-        />
-      ) : (
-        <PostThread
-          posts={posts}
-          onReply={onReply}
-          loadChildren={loadChildren}
-          canPost={isMember}
-          currentUserId={currentUserId}
-          loadingId={replyingId}
-        />
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Objeto: Ao vivo (Chat — conversa em tempo real, UF-21)
-   Atributo do objeto: mensagens expiram em 90 dias.
-   ═══════════════════════════════════════════════════════════════════════ */
-function AoVivoPanel({
-  community,
-  isMember,
-  verified,
-}: {
-  community: Community;
-  isMember: boolean;
-  verified: boolean;
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-        <p className="text-sm text-silver">
-          ⚡ Conversa em tempo real com quem está online agora.
-        </p>
-        <span className="text-xs text-silver/70">As mensagens expiram em 90 dias</span>
-      </div>
-      <LiveChat communityId={community.Id} isMember={isMember} />
-      {!isMember && (
-        <p className="mt-3 text-sm text-silver text-center">
-          Entre na comunidade para participar da conversa ao vivo. 🤝
-        </p>
-      )}
-      {isMember && !verified && (
-        <p className="mt-3 text-sm text-silver text-center">
-          Confirme e-mail e telefone para conversar.
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Objeto: Anúncios (Listing — economia circular dos membros, UF-07..11)
-   ═══════════════════════════════════════════════════════════════════════ */
-function OfertasPanel({
-  loading,
-  error,
-  items,
-  isMember,
-  canPost,
-}: {
-  loading: boolean;
-  error: boolean;
-  items: FeedItem[];
-  isMember: boolean;
-  canPost: boolean;
-}) {
-  return (
-    <div>
-      {error ? (
-        <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
-          Não foi possível carregar os anúncios agora. Tente novamente mais tarde.
-        </div>
-      ) : loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <ListingCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon="🛍️"
-          title="Nenhum anúncio dos membros por aqui ainda."
-          action={
-            canPost ? (
-              <Link
-                to="/listings/new"
-                className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-              >
-                + Anunciar algo
-              </Link>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {items.map((item) => (
-            <ListingCard key={item.Id} item={item} />
-          ))}
-        </div>
-      )}
-
-      {items.length > 0 && (
-        <div className="mt-5 text-center">
-          <Link to="/feed" className="text-sm text-esmeralda hover:underline">
-            Ver todos os anúncios no feed →
-          </Link>
-        </div>
-      )}
-      {isMember && items.length > 0 && canPost && (
-        <p className="mt-2 text-xs text-silver text-center">
-          Quer compartilhar algo?{" "}
-          <Link to="/listings/new" className="text-esmeralda hover:underline">
-            Criar anúncio
-          </Link>
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════════
-   Objeto: Membros (Membership — pessoas e papéis, UF-19)
-   ═══════════════════════════════════════════════════════════════════════ */
-function MembrosPanel({
-  members,
-  currentUserId,
-}: {
-  members: Membership[];
-  currentUserId?: string;
-}) {
-  const [filtro, setFiltro] = useState<MembershipRole | "Todos">("Todos");
-
-  const papeis: (MembershipRole | "Todos")[] = ["Todos", "Creator", "Moderator", "Member"];
-  const visiveis =
-    filtro === "Todos" ? members : members.filter((m) => m.Role === filtro);
-
-  return (
-    <div>
-      <div className="flex gap-2 flex-wrap mb-4">
-        {papeis.map((p) => {
-          const n = p === "Todos" ? members.length : members.filter((m) => m.Role === p).length;
-          const active = filtro === p;
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setFiltro(p)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
-                active
-                  ? "bg-esmeralda text-ink border-transparent"
-                  : "border-smoke text-silver hover:text-cream"
-              }`}
-            >
-              {p === "Todos" ? "Todos" : PAPEL_META[p].label}
-              {n > 0 && <span className="ml-1.5 opacity-70">{n}</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {visiveis.length === 0 ? (
-        <EmptyState
-          icon="👥"
-          title={
-            filtro === "Todos"
-              ? "Ninguém por aqui ainda."
-              : `Nenhum ${PAPEL_META[filtro as MembershipRole].label.toLowerCase()} ainda.`
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {visiveis.map((m) => {
-            const papel = PAPEL_META[m.Role];
-            const voce = currentUserId && m.UserId === currentUserId;
-            return (
-              <div
-                key={m.Id}
-                className="flex items-center gap-3 bg-charcoal border border-smoke rounded-xl p-3"
-              >
-                <Avatar name={m.UserName} src={m.UserAvatarUrl} size={44} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-semibold text-cream truncate">
-                      {m.UserName}
-                    </span>
-                    {voce && <span className="text-xs text-esmeralda">você</span>}
-                  </div>
-                  <div className="text-xs text-silver">entrou {timeAgo(m.JoinedAt)}</div>
-                </div>
-                <span
-                  className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${papel.cls}`}
+          <section className="bg-charcoal rounded-xl border border-smoke p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
+              Conversas
+            </h2>
+            <div className="flex lg:flex-col gap-1.5 overflow-x-auto">
+              {(Object.keys(FILTRO_LABEL) as FiltroConversa[]).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFiltro(f)}
+                  className={`whitespace-nowrap text-left px-3 py-1.5 rounded-lg text-sm transition ${
+                    filtro === f
+                      ? "bg-esmeralda/15 text-esmeralda font-medium"
+                      : "text-silver hover:text-cream"
+                  }`}
                 >
-                  {papel.label}
-                </span>
-              </div>
-            );
-          })}
+                  {FILTRO_LABEL[f]}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="bg-charcoal rounded-xl border border-smoke p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
+              Atalhos
+            </h2>
+            <nav className="flex lg:flex-col gap-1.5 text-sm">
+              <a href="#anuncios" className="text-silver hover:text-cream px-3 py-1.5">
+                🛍️ Anúncios dos membros
+              </a>
+              <Link to="/saved" className="text-silver hover:text-cream px-3 py-1.5">
+                🔖 Meus salvos
+              </Link>
+              <Link to="/feed" className="text-silver hover:text-cream px-3 py-1.5">
+                📰 Feed da rede
+              </Link>
+            </nav>
+          </section>
+        </aside>
+
+        {/* ── Centro: composer + conversas (a página principal) ── */}
+        <main id="conversas" className="space-y-4 min-w-0">
+          <PostComposer
+            authorName={user?.nome ?? "Você"}
+            onSubmit={submitRoot}
+            disabled={!user?.verified || !isMember}
+            disabledHint={composerHint ?? "Entre para participar das conversas."}
+          />
+
+          {!isMember && (
+            <div className="bg-smoke/50 border border-smoke rounded-xl p-4 text-sm text-silver">
+              💬 As conversas ficam visíveis para todos, mas só membros publicam e respondem.
+            </div>
+          )}
+
+          {rootsLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-24 bg-smoke rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : visiblePosts.length === 0 ? (
+            <EmptyState
+              icon="💬"
+              title={
+                filtro === "minhas"
+                  ? "Você ainda não publicou aqui."
+                  : user?.verified && isMember
+                    ? "Ainda não há conversas. Que tal começar a falar com a comunidade?"
+                    : "Ainda não há conversas por aqui."
+              }
+            />
+          ) : (
+            <PostThread
+              posts={visiblePosts}
+              onReply={handleReply}
+              loadChildren={loadChildren}
+              canPost={isMember}
+              currentUserId={user?.userId}
+              loadingId={replyingId ?? undefined}
+              viewerId={user?.userId}
+              shareUrl={shareUrl}
+            />
+          )}
+        </main>
+
+        {/* ── Direita: chat ao vivo + membros + regras ── */}
+        <aside className="space-y-4">
+          <section id="aovivo" className="bg-charcoal rounded-xl border border-smoke p-4">
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-silver">
+                ⚡ Ao vivo
+              </h2>
+              <span className="text-[10px] text-silver/70">expira em 90 dias</span>
+            </div>
+            <LiveChat communityId={community.Id} isMember={isMember} />
+          </section>
+
+          <section id="membros" className="bg-charcoal rounded-xl border border-smoke p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
+              👥 Membros ({activeMembers.length})
+            </h2>
+            <div className="max-h-96 overflow-y-auto pr-1 space-y-1.5">
+              {activeMembers.map((m) => {
+                const papel = PAPEL_META[m.Role];
+                const voce = user && m.UserId === user.userId;
+                return (
+                  <div key={m.Id} className="flex items-center gap-2.5">
+                    <Avatar name={m.UserName} src={m.UserAvatarUrl} size={28} />
+                    <span className="text-sm text-cream truncate flex-1">
+                      {m.UserName}
+                      {voce && <span className="text-xs text-esmeralda ml-1">você</span>}
+                    </span>
+                    {m.Role !== "Member" && (
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${papel.cls}`}
+                      >
+                        {papel.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="bg-charcoal rounded-xl border border-smoke p-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
+              📜 Regras
+            </h2>
+            <ul className="space-y-1.5 text-sm text-silver">
+              {REGRAS.map((r) => (
+                <li key={r} className="flex gap-2">
+                  <span aria-hidden>·</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+      {/* ══ ANÚNCIOS — grade full width (2→6 colunas) ══ */}
+      <section id="anuncios" className="mt-8 scroll-mt-20">
+        <div className="flex items-baseline justify-between gap-3 mb-3">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-silver">
+            🛍️ Anúncios dos membros
+          </h2>
+          <Link to="/feed" className="text-sm text-esmeralda hover:underline">
+            ver tudo no feed →
+          </Link>
         </div>
-      )}
+
+        {listingsError ? (
+          <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
+            Não foi possível carregar os anúncios agora. Tente novamente mais tarde.
+          </div>
+        ) : memberListings === null ? (
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <ListingCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : memberListings.length === 0 ? (
+          <EmptyState
+            icon="🛍️"
+            title="Nenhum anúncio dos membros por aqui ainda."
+            action={
+              user?.verified && isMember ? (
+                <Link
+                  to="/listings/new"
+                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                >
+                  + Anunciar algo
+                </Link>
+              ) : undefined
+            }
+          />
+        ) : (
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            {memberListings.map((item) => (
+              <ListingCard key={item.Id} item={item} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

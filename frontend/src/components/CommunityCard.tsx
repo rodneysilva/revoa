@@ -11,11 +11,19 @@ export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole
       to={`/community/${c.Id}`}
       className="group block bg-charcoal rounded-2xl border border-smoke overflow-hidden hover:border-amber/60 hover:shadow-lg transition"
     >
-      <div className="bg-community relative h-16 flex items-center px-4">
-        <span className="text-2xl drop-shadow" aria-hidden>
+      <div className="bg-community relative h-16 flex items-center px-4 overflow-hidden">
+        {c.CoverImageUrl && (
+          <img
+            src={c.CoverImageUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        <span className="relative text-2xl drop-shadow" aria-hidden>
           {EIXO_EMOJI[c.Axis]}
         </span>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="relative ml-auto flex items-center gap-1.5">
           {c.Type === "Default" && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/25 backdrop-blur-sm text-white">
               Oficial

@@ -227,6 +227,7 @@ export interface Community {
   CreatorName: string;
   CreatorAvatarUrl?: string;
   MembersCount: number;
+  CoverImageUrl?: string;
 }
 
 export interface Post {
@@ -243,6 +244,10 @@ export interface Post {
   OcultadoPor?: string;
   CreatedAt: string;
   ChildrenCount?: number;
+  // Enriquecimento de leitura: contador público + estado do viewer (JWT).
+  LikeCount?: number;
+  IsLiked?: boolean;
+  IsSaved?: boolean;
 }
 
 // Comentário de anúncio = mesmo shape do Post (+ ListingId). Reaproveita o <PostThread> no detalhe.
@@ -273,6 +278,12 @@ export interface MyCommunity {
 export interface SocialFeedItem {
   Post: Post;
   Community: Community;
+}
+
+// GET /api/posts — feed público de posts (raízes de comunidades ativas).
+export interface PublicPostItem {
+  Post: Post;
+  CommunityName: string;
 }
 
 // GET /api/users/{id} — perfil público. Só nome e "membro desde";
@@ -312,6 +323,7 @@ export interface CreateCommunityBody {
   Neighborhood?: string;
   City?: string;
   State?: string;
+  CoverImageUrl?: string;
 }
 
 export interface CommunityFeedParams {

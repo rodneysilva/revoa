@@ -27,6 +27,7 @@ import type {
   Post,
   PriceReference,
   PublicProfile,
+  PublicPostItem,
   RegisterBody,
   RegisterResult,
   Reputation,
@@ -220,12 +221,16 @@ export const api = {
   categories: (): Promise<Category[]> => apiGet<Category[]>(`/api/categories`),
   createListing: (body: CreateListingBody): Promise<string> =>
     apiPost<{ Id: string }>(`/api/listings`, body).then((r) => r.Id),
-  // Upload de imagem do anúncio (multipart /api/media) → URL relativa pronta
-  // para <img src> (a API serve o objeto por stream; o bucket fica privado).
-  uploadImage: (file: File): Promise<string> => {
+  // Upload de imagem (multipart /api/media) → URL relativa pronta para <img
+  // src> (a API serve o objeto por stream; o bucket fica privado). folder
+  // "communities" = capa de comunidade; ausente = anúncio (retrocompatível).
+  uploadImage: (file: File, folder?: "listings" | "communities"): Promise<string> => {
     const form = new FormData();
     form.append("file", file);
-    return postForm<{ Url: string }>("/api/media", form).then((r) => r.Url);
+    return postForm<{ Url: string }>(
+      `/api/media${qs({ folder: folder === "communities" ? folder : undefined })}`,
+      form
+    ).then((r) => r.Url);
   },
   tradeHistory: (p: TradesParams): Promise<Trade[]> =>
     apiGet<Trade[]>(
@@ -347,6 +352,29 @@ export const api = {
     apiGet<ChatMessage[]>(
       `/api/communities/${encodeURIComponent(id)}/chat${qs({ limit })}`
     ),
+  // Capa da comunidade (gate Criador/Moderador no backend). CoverImageUrl
+  // null remove a capa (o hero volta ao gradiente).
+  setCommunityCover: (id: string, coverImageUrl: string | null): Promise<void> =>
+    apiPost<void>(
+      `/api/communities/${encodeURIComponent(id)}/cover`,
+      { CoverImageUrl: coverImageUrl }
+    ),
+
+  // Curtir/salvar posts + listagens pessoais. Toggle idempotente por usuário.
+  likePost: (id: string): Promise<boolean> =>
+    apiPost<{ Liked: boolean }>(`/api/posts/${encodeURIComponent(id)}/like`).then(
+      (r) => r.Liked
+    ),
+  likedPostIds: (): Promise<string[]> => apiGet<string[]>("/api/posts/liked/ids"),
+  savePost: (id: string): Promise<boolean> =>
+    apiPost<{ Saved: boolean }>(`/api/posts/${encodeURIComponent(id)}/save`).then(
+      (r) => r.Saved
+    ),
+  savedPosts: (): Promise<Post[]> => apiGet<Post[]>("/api/posts/saved"),
+  savedPostIds: (): Promise<string[]> => apiGet<string[]>("/api/posts/saved/ids"),
+  // Feed público de posts: raízes de comunidades ativas, 20 por página.
+  publicPosts: (page = 1): Promise<PublicPostItem[]> =>
+    apiGet<PublicPostItem[]>(`/api/posts${qs({ page })}`),
 
   // Carteira do usuário logado (VISUAL_IDENTITY §8 — chip RM$ no header).
   walletBalance: (): Promise<WalletBalance> =>
