@@ -1,20 +1,42 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
-import { PublicationCard } from "../components/PublicationCard";
+import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
+import { OnboardingChecklist } from "../components/OnboardingChecklist";
 import { ApiError, api } from "../api/client";
-import type { Category, FeedItem, Mode } from "../api/types";
+import type { Category, Community, FeedItem, Kind, Mode, Post } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
+import { timeAgo } from "../lib/time";
 import { MODO_META } from "../lib/config";
 
 const PAGE_SIZE = 24;
 
+type KindFilter = "Todos" | Kind;
 type ModeFilter = "Todos" | Mode;
 
 const MODE_FILTERS: ModeFilter[] = ["Todos", "Trade", "Resell", "Donate", "Volunteer"];
+const KIND_FILTERS: KindFilter[] = ["Todos", "Product", "Service"];
+const KIND_LABEL: Record<KindFilter, string> = {
+  Todos: "Todos",
+  Product: "Produtos",
+  Service: "Serviços",
+};
 
-/* Feed de publicações: coluna única de anúncios (card de publicação) com
-   pílulas de categoria — modo é o filtro semântico do revoa (§4/§6). */
+const GRID_CLASS =
+  "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6";
+
+// Ritmo temporal do feed: quebras visíveis entre novo e antigo (diretriz de
+// infinite scroll — marcar onde começa o "mais velho" orienta o scroll).
+function bucketOf(iso: string): string {
+  const ageDays = (Date.now() - new Date(iso).getTime()) / 86_400_000;
+  if (Number.isFinite(ageDays) && ageDays < 1) return "Novo hoje";
+  if (Number.isFinite(ageDays) && ageDays < 7) return "Esta semana";
+  return "Mais antigas";
+}
+
+type RailPost = { post: Post; community: Community };
+
 export function FeedPage() {
   const { user } = useAuth();
   // Busca vinda do header (?q=) — a GlobalSearch navega para cá com o termo.
@@ -26,9 +48,14 @@ export function FeedPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modeFilter, setModeFilter] = useState<ModeFilter>("Todos");
+  const [kindFilter, setKindFilter] = useState<KindFilter>("Todos");
   const [categoriaId, setCategoriaId] = useState<string>("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+
+  // Rails (carregam 1×; falham em silêncio — rail que não tem dado some).
+  const [freeRail, setFreeRail] = useState<FeedItem[] | null>(null);
+  const [postsRail, setPostsRail] = useState<RailPost[] | null>(null);
 
   useEffect(() => {
     api
@@ -41,12 +68,53 @@ export function FeedPage() {
 
   useEffect(() => {
     let active = true;
+    setFreeRail(null);
+    api
+      .feed({ donationOnly: true, page: 1 })
+      .then((data) => {
+        if (active) setFreeRail(data.slice(0, 8));
+      })
+      .catch(() => {
+        if (active) setFreeRail([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // "Da sua comunidade": batimento social das comunidades do usuário, resolvido
+  // no servidor (mine/posts) — raízes e respostas recentes em uma chamada.
+  useEffect(() => {
+    if (!user) {
+      setPostsRail(null);
+      return;
+    }
+    let active = true;
+    api
+      .socialFeed()
+      .then((items) => {
+        if (active)
+          setPostsRail(
+            items.slice(0, 4).map((i) => ({ post: i.Post, community: i.Community }))
+          );
+      })
+      .catch(() => {
+        if (active) setPostsRail([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
     setLoading(true);
     setError(null);
     api
       .feed({
         page: 1,
         mode: modeFilter === "Todos" ? undefined : modeFilter,
+        kind: kindFilter === "Todos" ? undefined : kindFilter,
         categoryId: categoriaId || undefined,
         q: q || undefined,
       })
@@ -66,7 +134,7 @@ export function FeedPage() {
     return () => {
       active = false;
     };
-  }, [modeFilter, categoriaId, q]);
+  }, [modeFilter, kindFilter, categoriaId, q]);
 
   async function loadMore() {
     if (loadingMore || !hasMore || loading) return;
@@ -76,6 +144,7 @@ export function FeedPage() {
       const data = await api.feed({
         page: next,
         mode: modeFilter === "Todos" ? undefined : modeFilter,
+        kind: kindFilter === "Todos" ? undefined : kindFilter,
         categoryId: categoriaId || undefined,
         q: q || undefined,
       });
@@ -108,179 +177,256 @@ export function FeedPage() {
     return () => obs.disconnect();
   }, [hasMore]);
 
-  const categoryById = useMemo(
-    () => new Map(categories.map((c) => [c.Id, c.Name])),
-    [categories]
-  );
+  const semFiltro =
+    modeFilter === "Todos" && kindFilter === "Todos" && !categoriaId && !q;
+
+  // Seções temporais: o feed chega CreatedAt desc — muda o rótulo, muda a seção.
+  const sections: { label: string; items: FeedItem[] }[] = [];
+  for (const it of items) {
+    if (!it.CreatedAt) continue;
+    const label = bucketOf(it.CreatedAt);
+    const last = sections[sections.length - 1];
+    if (last && last.label === label) last.items.push(it);
+    else sections.push({ label, items: [it] });
+  }
 
   return (
     <div className="app-container">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-cream sm:text-3xl">Feed</h1>
-          <p className="text-sm text-silver">Publicações da sua rede</p>
-        </div>
-        {user?.verified && (
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-cream">Feed</h1>
+            <p className="text-sm text-silver">O que está acontecendo na sua rede</p>
+          </div>
           <Link
-            to="/listings/new"
-            className="rounded-full bg-brand px-5 py-2 text-center text-sm font-semibold text-ink transition-opacity hover:opacity-90 sm:ml-auto"
+            to="/explore"
+            className="text-sm text-esmeralda hover:underline sm:ml-2 sm:mt-1"
           >
-            + Anunciar
+            Buscar com filtros →
           </Link>
-        )}
-      </div>
-
-      {/* Busca ativa (?q= do header) — chip removível */}
-      {q && (
-        <div className="mb-4 flex items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-smoke bg-smoke px-3 py-1.5 text-sm text-cream">
-            🔎 {q}
-            <button
-              type="button"
-              onClick={() => setSearchParams({}, { replace: true })}
-              aria-label="Limpar busca"
-              className="leading-none text-silver hover:text-rosa"
+          {user?.verified && (
+            <Link
+              to="/listings/new"
+              className="sm:ml-auto bg-brand text-ink font-semibold px-4 py-2 rounded-lg text-sm text-center"
             >
-              ✕
-            </button>
-          </span>
+              + Anunciar
+            </Link>
+          )}
         </div>
-      )}
 
-      {/* Modo — o diferencial semântico do revoa, cor por papel (§4/§6) */}
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {MODE_FILTERS.map((m) => {
-          const active = modeFilter === m;
-          const meta = m === "Todos" ? null : MODO_META[m];
-          return (
-            <button
-              key={m}
-              onClick={() => setModeFilter(m)}
-              className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
-                active
-                  ? meta
-                    ? `${meta.bg} ${meta.text} border-transparent`
-                    : "border-transparent bg-brand text-ink"
-                  : "border-smoke text-silver hover:text-cream"
-              }`}
-            >
-              {meta ? `${meta.emoji} ${meta.label}` : "Tudo"}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Categorias — pílulas do feed */}
-      {categories.length > 0 && (
-        <nav aria-label="Categorias" className="-mx-4 mt-3 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-          <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
-            <li>
+        {/* Busca ativa (?q= do header) — chip removível */}
+        {q && (
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-2 bg-smoke border border-smoke text-cream text-sm px-3 py-1.5 rounded-full">
+              🔎 {q}
               <button
                 type="button"
-                aria-pressed={categoriaId === ""}
-                onClick={() => setCategoriaId("")}
-                className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                  categoriaId === ""
-                    ? "border-transparent bg-brand text-ink"
-                    : "border-smoke text-silver hover:bg-smoke/60 hover:text-cream"
+                onClick={() => setSearchParams({}, { replace: true })}
+                aria-label="Limpar busca"
+                className="text-silver hover:text-rosa leading-none"
+              >
+                ✕
+              </button>
+            </span>
+          </div>
+        )}
+
+        {/* Modo — o diferencial semântico do revoa, cor por papel (§4/§6) */}
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {MODE_FILTERS.map((m) => {
+            const active = modeFilter === m;
+            const meta = m === "Todos" ? null : MODO_META[m];
+            return (
+              <button
+                key={m}
+                onClick={() => setModeFilter(m)}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium border whitespace-nowrap transition ${
+                  active
+                    ? meta
+                      ? `${meta.bg} ${meta.text} border-transparent`
+                      : "bg-brand text-ink border-transparent"
+                    : "border-smoke text-silver hover:text-cream"
                 }`}
               >
-                Tudo
+                {meta ? `${meta.emoji} ${meta.label}` : "Tudo"}
               </button>
-            </li>
-            {categories.map((c) => (
-              <li key={c.Id}>
-                <button
-                  type="button"
-                  aria-pressed={categoriaId === c.Id}
-                  onClick={() => setCategoriaId(categoriaId === c.Id ? "" : c.Id)}
-                  className={`whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    categoriaId === c.Id
-                      ? "border-transparent bg-brand text-ink"
-                      : "border-smoke text-silver hover:bg-smoke/60 hover:text-cream"
-                  }`}
-                >
-                  {c.Name}
-                </button>
-              </li>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div
+            role="group"
+            aria-label="Filtrar por tipo"
+            className="flex gap-1 bg-charcoal rounded-lg border border-smoke p-1 w-full sm:w-auto"
+          >
+            {KIND_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setKindFilter(f)}
+                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-sm font-medium transition ${
+                  kindFilter === f ? "bg-brand text-ink" : "text-silver hover:text-cream"
+                }`}
+              >
+                {KIND_LABEL[f]}
+              </button>
             ))}
-          </ul>
-        </nav>
-      )}
+          </div>
+
+          <div className="flex-1 sm:max-w-xs">
+            <label className="block">
+              <span className="sr-only">Filtrar por categoria</span>
+              <select
+                value={categoriaId}
+                onChange={(e) => setCategoriaId(e.target.value)}
+                className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-4 py-2.5 outline-none"
+              >
+                <option value="">Todas as categorias</option>
+                {categories.map((c) => (
+                  <option key={c.Id} value={c.Id}>
+                    {c.Name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Conta nova — checklist das primeiras ações (some ao completar) */}
+      <OnboardingChecklist />
 
       {error && (
-        <div className="mb-6 mt-4 rounded-2xl border border-smoke bg-smoke/50 p-4 text-sm text-silver">
+        <div className="bg-smoke border border-smoke text-silver rounded-xl p-4 text-sm mb-6">
           {error}
         </div>
       )}
 
-      <div className="mx-auto mt-5 max-w-2xl">
-        {loading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-52 animate-pulse rounded-2xl border border-smoke bg-smoke/50"
-              />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          q ? (
-            <EmptyState
-              icon="🔎"
-              title={`Nenhum anúncio encontrado para “${q}”.`}
-              action={
-                <button
-                  type="button"
-                  onClick={() => setSearchParams({}, { replace: true })}
-                  className="inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
-                >
-                  Limpar busca
-                </button>
-              }
-            />
-          ) : (
-            <EmptyState
-              icon="♻️"
-              title="Nenhuma publicação por aqui ainda."
-              action={
-                user?.verified ? (
-                  <Link
-                    to="/listings/new"
-                    className="inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-ink"
-                  >
-                    Criar o primeiro anúncio
-                  </Link>
-                ) : undefined
-              }
-            />
-          )
+      {loading ? (
+        <div className={GRID_CLASS}>
+          {Array.from({ length: 10 }).map((_, i) => (
+            <ListingCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        q ? (
+          <EmptyState
+            icon="🔎"
+            title={`Nenhum anúncio encontrado para “${q}”.`}
+            action={
+              <button
+                type="button"
+                onClick={() => setSearchParams({}, { replace: true })}
+                className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+              >
+                Limpar busca
+              </button>
+            }
+          />
         ) : (
-          <>
-            <div className="space-y-4">
-              {items.map((it) => (
-                <PublicationCard
-                  key={it.Id}
-                  item={it}
-                  categoryName={categoryById.get(it.CategoryId)}
-                />
-              ))}
-            </div>
-
-            {hasMore && (
-              <div ref={sentinelRef} className="mt-8 text-center">
-                <button
-                  onClick={loadMore}
-                  disabled={loadingMore}
-                  className="rounded-full border border-smoke px-6 py-2.5 font-semibold text-cream hover:border-esmeralda disabled:opacity-60"
+          <EmptyState
+            icon="♻️"
+            title="Nenhum anúncio por aqui ainda."
+            action={
+              user?.verified ? (
+                <Link
+                  to="/listings/new"
+                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
                 >
-                  {loadingMore ? "Carregando…" : "Carregar mais"}
-                </button>
+                  Criar o primeiro anúncio
+                </Link>
+              ) : undefined
+            }
+          />
+        )
+      ) : (
+        <>
+          {/* Rails só sem filtro ativo — com filtro eles duplicariam o resultado */}
+          {semFiltro && postsRail && postsRail.length > 0 && (
+            <Rail title="Da sua comunidade" seeAllTo="/community">
+              {postsRail.map((r) => (
+                <PostRailCard key={r.post.Id} post={r.post} community={r.community} />
+              ))}
+            </Rail>
+          )}
+
+          {semFiltro && freeRail && freeRail.length > 0 && (
+            <Rail title="Grátis hoje" seeAllTo="/explore">
+              {freeRail.map((it) => (
+                <div key={it.Id} className="w-56 shrink-0 snap-start">
+                  <ListingCard item={it} />
+                </div>
+              ))}
+            </Rail>
+          )}
+
+          {sections.map((s) => (
+            <section key={s.label} className="mb-8">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-3">
+                {s.label}
+              </h2>
+              <div className={GRID_CLASS}>
+                {s.items.map((it) => (
+                  <ListingCard key={it.Id} item={it} />
+                ))}
               </div>
-            )}
-          </>
+            </section>
+          ))}
+
+          {hasMore && (
+            <div ref={sentinelRef} className="text-center mt-8">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="border border-smoke text-cream font-semibold px-6 py-2.5 rounded-xl hover:border-esmeralda disabled:opacity-60"
+              >
+                {loadingMore ? "Carregando…" : "Carregar mais"}
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function Rail({
+  title,
+  seeAllTo,
+  children,
+}: {
+  title: string;
+  seeAllTo?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="mb-8">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-silver">{title}</h2>
+        {seeAllTo && (
+          <Link to={seeAllTo} className="text-sm text-esmeralda hover:underline">
+            ver tudo →
+          </Link>
         )}
       </div>
-    </div>
+      <div className="flex gap-4 overflow-x-auto pb-2 snap-x">{children}</div>
+    </section>
+  );
+}
+
+function PostRailCard({ post, community }: RailPost) {
+  return (
+    <Link
+      to={`/community/${community.Id}#conversas`}
+      className="w-72 shrink-0 snap-start bg-charcoal border border-smoke rounded-xl p-4 hover:border-amber/60 transition"
+    >
+      <div className="flex items-center gap-2 text-xs text-silver mb-2">
+        <Avatar name={post.AuthorName} src={post.AutorAvatarUrl} size={22} />
+        <span className="truncate font-medium text-cream">{post.AuthorName}</span>
+        <span className="ml-auto whitespace-nowrap">{timeAgo(post.CreatedAt)}</span>
+      </div>
+      <p className="text-sm text-cream/90 line-clamp-3 whitespace-pre-wrap">{post.Content}</p>
+      <p className="mt-2 text-xs text-amber">💬 {community.Name}</p>
+    </Link>
   );
 }
