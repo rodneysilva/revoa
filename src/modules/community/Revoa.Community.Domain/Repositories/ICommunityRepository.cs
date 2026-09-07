@@ -11,6 +11,9 @@ public interface ICommunityRepository
 
     Task<IReadOnlyList<CommunityGroup>> GetPublicAsync(PublicFilter filter, CancellationToken ct);
 
+    // Painel admin: TODAS (inclui arquivadas), mais recentes primeiro, cap 500.
+    Task<IReadOnlyList<CommunityGroup>> GetAllAsync(int limit, CancellationToken ct);
+
     // Comunidade Default de uma cidade (auto-vínculo no onboarding). Null se não existir.
     Task<CommunityGroup?> GetByCidadeETipoDefaultAsync(string cidade, CancellationToken ct);
 

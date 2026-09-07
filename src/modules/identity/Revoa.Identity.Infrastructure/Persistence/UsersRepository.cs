@@ -22,6 +22,14 @@ public class UsersRepository : MongoRepositoryBase<User>, IUserRepository, IMong
         return await Collection.Find(u => u.Phone == phone).FirstOrDefaultAsync(ct);
     }
 
+    public async Task<IReadOnlyList<User>> GetAllAsync(int limit, CancellationToken ct)
+    {
+        return await Collection.Find(_ => true)
+            .SortByDescending(u => u.CreatedAt)
+            .Limit(limit)
+            .ToListAsync(ct);
+    }
+
     // Traduz violação de índice único (Email/Telefone) em exceção de domínio — mantém o
     // módulo Application livre de dependência do MongoDB (anti-sybil em nível de banco).
     public override async Task AddAsync(User user, CancellationToken ct = default)

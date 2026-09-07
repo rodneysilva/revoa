@@ -30,6 +30,8 @@ import type {
   RegisterBody,
   RegisterResult,
   Reputation,
+  AdminCommunity,
+  AdminUser,
   Report,
   ReportReason,
   ReportStatus,
@@ -376,6 +378,20 @@ export const api = {
       Action: action,
       Note: note,
     }),
+
+  // Painel admin — usuários e comunidades (policy Admin no backend)
+  adminUsers: (): Promise<AdminUser[]> =>
+    apiGet<AdminUser[]>("/api/admin/users"),
+  adminBanUser: (id: string): Promise<void> =>
+    apiPost<void>(`/api/admin/users/${encodeURIComponent(id)}/ban`),
+  adminUnbanUser: (id: string): Promise<void> =>
+    apiPost<void>(`/api/admin/users/${encodeURIComponent(id)}/unban`),
+  adminCommunities: (): Promise<AdminCommunity[]> =>
+    apiGet<AdminCommunity[]>("/api/admin/communities"),
+  adminArchiveCommunity: (id: string): Promise<void> =>
+    apiPost<void>(`/api/admin/communities/${encodeURIComponent(id)}/archive`),
+  adminReactivateCommunity: (id: string): Promise<void> =>
+    apiPost<void>(`/api/admin/communities/${encodeURIComponent(id)}/reactivate`),
 
   // Notificações pessoais (UF-32; ownership pelo token do usuário logado)
   notifications: (p?: {

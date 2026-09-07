@@ -345,6 +345,32 @@ export interface Report {
   CreatedAt: string;
 }
 
+// Painel admin — gestão de usuários e comunidades.
+
+export interface AdminUser {
+  Id: string;
+  Name: string;
+  Email: string;
+  Phone: string;
+  Status: "PendingVerification" | "Active" | "Banned" | "Inactive";
+  EmailVerified: boolean;
+  PhoneVerified: boolean;
+  MemberSince?: string;
+}
+
+export interface AdminCommunity {
+  Id: string;
+  Name: string;
+  Description: string;
+  Type: "Default" | "User";
+  Axis: "Geo" | "Interest" | "Cause";
+  City?: string;
+  State?: string;
+  CreatorName: string;
+  Status: "Active" | "Archived";
+  MembersCount: number;
+}
+
 // Cupom on-chain (UF-29).
 
 export type CouponStatus = "Active" | "Revoked";

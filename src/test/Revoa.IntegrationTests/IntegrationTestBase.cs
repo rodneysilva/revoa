@@ -148,4 +148,26 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         arr.Should().NotBeNullOrEmpty("deveria haver categorias via seed");
         return arr![0]!["Id"]!.GetValue<Guid>();
     }
+
+    // Cria comunidade User/Open (para testes de feed/moderação admin) e devolve o Id.
+    protected async Task<Guid> CreateCommunityAsync(TestUser creator)
+    {
+        var resp = await AuthedClient(creator).PostAsync("/api/communities", JsonBody(new
+        {
+            Name = $"Comunidade E2E {Guid.NewGuid():N}",
+            Description = "Descrição E2E",
+            Type = "User",
+            Axis = "Interest",
+            Visibility = "Open",
+            Password = (string?)null,
+            Lat = (double?)null,
+            Lng = (double?)null,
+            Neighborhood = (string?)null,
+            City = (string?)null,
+            State = (string?)null,
+        }));
+        resp.IsSuccessStatusCode.Should().BeTrue(
+            $"esperado 2xx ao criar comunidade: {await resp.Content.ReadAsStringAsync()}");
+        return await ReadIdAsync(resp);
+    }
 }

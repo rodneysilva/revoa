@@ -157,25 +157,4 @@ public class CommunityModerationTests : IntegrationTestBase
         var arr = await posts.Content.ReadFromJsonAsync<JsonArray>();
         arr!.Select(p => p!["Id"]!.GetValue<Guid>()).Should().NotContain(postId);
     }
-
-    private async Task<Guid> CreateCommunityAsync(TestUser creator)
-    {
-        var resp = await AuthedClient(creator).PostAsync("/api/communities", JsonBody(new
-        {
-            Name = $"Comunidade E2E {Guid.NewGuid():N}".Substring(0, 30),
-            Description = "Descrição E2E",
-            Type = "User",
-            Axis = "Interest",
-            Visibility = "Open",
-            Password = (string?)null,
-            Lat = (double?)null,
-            Lng = (double?)null,
-            Neighborhood = (string?)null,
-            City = (string?)null,
-            State = (string?)null,
-        }));
-        resp.IsSuccessStatusCode.Should().BeTrue(
-            $"esperado 2xx ao criar comunidade: {await resp.Content.ReadAsStringAsync()}");
-        return await ReadIdAsync(resp);
-    }
 }

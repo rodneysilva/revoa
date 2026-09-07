@@ -6,7 +6,10 @@ using Revoa.Abstractions;
 using Revoa.Admin.Application.Commands;
 using Revoa.Admin.Application.DTOs;
 using Revoa.Admin.Application.Queries;
+using Revoa.Community.Application.Commands;
+using Revoa.Community.Application.Queries;
 using Revoa.Identity.Application.Commands;
+using Revoa.Identity.Application.Queries;
 using Revoa.Identity.Domain.Aggregates.UserAggregate;
 
 namespace Revoa.Api.Controllers;
@@ -68,6 +71,80 @@ public class AdminController : ControllerBase
                         ?? "admin";
 
         var result = await _mediator.Send(new SetUserRoleCommand(id, body.Role, updatedBy), ct);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
+    }
+
+    // ── Gestão de usuários ────────────────────────────────────────────────
+
+    // Lista todos os usuários (todos os status) para o painel admin.
+    [HttpGet("users")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult<IReadOnlyList<AdminUserDto>>> GetUsers(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetAdminUsersQuery(), ct);
+        return result.IsFailure
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(result.Value);
+    }
+
+    // Banir (Banned bloqueia login e ações). O próprio admin não pode se banir.
+    [HttpPost("users/{id:guid}/ban")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult> BanUser(Guid id, CancellationToken ct)
+    {
+        var admin = User.GetRevoaUser();
+        if (admin is null)
+        {
+            return Unauthorized(new ApiError("Token sem usuário."));
+        }
+
+        var result = await _mediator.Send(new SetUserBannedCommand(admin.UserId, id, Banned: true), ct);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
+    }
+
+    // Reabilitar usuário banido (Banned → Active).
+    [HttpPost("users/{id:guid}/unban")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult> UnbanUser(Guid id, CancellationToken ct)
+    {
+        var admin = User.GetRevoaUser();
+        if (admin is null)
+        {
+            return Unauthorized(new ApiError("Token sem usuário."));
+        }
+
+        var result = await _mediator.Send(new SetUserBannedCommand(admin.UserId, id, Banned: false), ct);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
+    }
+
+    // ── Gestão de comunidades ─────────────────────────────────────────────
+
+    // Lista TODAS as comunidades (inclui arquivadas) com contagem de membros.
+    [HttpGet("communities")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult<IReadOnlyList<AdminCommunityDto>>> GetCommunities(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetAdminCommunitiesQuery(), ct);
+        return result.IsFailure
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(result.Value);
+    }
+
+    // Arquivar comunidade (some dos feeds e do onboarding).
+    [HttpPost("communities/{id:guid}/archive")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult> ArchiveCommunity(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SetCommunityArchivedCommand(id, Archived: true), ct);
+        return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
+    }
+
+    // Reativar comunidade arquivada (Archived → Active).
+    [HttpPost("communities/{id:guid}/reactivate")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult> ReactivateCommunity(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new SetCommunityArchivedCommand(id, Archived: false), ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : NoContent();
     }
 }

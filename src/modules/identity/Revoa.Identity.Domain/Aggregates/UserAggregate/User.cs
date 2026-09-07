@@ -163,6 +163,17 @@ public class User : AggregateRoot
 
     public void Ban() => Status = UserStatus.Banned;
 
+    // Reativação por admin (painel): Banned → Active. Contatos verificados ficam como estão.
+    public void Unban()
+    {
+        if (Status != UserStatus.Banned)
+        {
+            throw new DomainException("Usuário não está banido.");
+        }
+
+        Status = UserStatus.Active;
+    }
+
     // Role atribuída apenas por admin (PUT /api/admin/users/{id}/role). Não muda Status.
     public void SetRole(UserRole role) => Role = role;
 

@@ -118,6 +118,17 @@ public class CommunityGroup : AggregateRoot
         Status = CommunityStatus.Archived;
     }
 
+    // Reativação por admin (painel): Archived → Active. Volta a aparecer nos feeds.
+    public void Reactivate()
+    {
+        if (Status != CommunityStatus.Archived)
+        {
+            throw new DomainException("Comunidade não está arquivada.");
+        }
+
+        Status = CommunityStatus.Active;
+    }
+
     private static void ValidateInvariants(
         string name,
         CommunityType type,

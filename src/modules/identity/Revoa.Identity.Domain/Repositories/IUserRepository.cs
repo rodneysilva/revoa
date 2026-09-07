@@ -10,6 +10,9 @@ public interface IUserRepository
 
     Task<User?> GetByPhoneAsync(string phone, CancellationToken ct);
 
+    // Painel admin: todos os usuários, mais recentes primeiro, cap 500.
+    Task<IReadOnlyList<User>> GetAllAsync(int limit, CancellationToken ct);
+
     Task AddAsync(User user, CancellationToken ct);
 
     Task UpdateAsync(User user, CancellationToken ct);

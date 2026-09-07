@@ -249,6 +249,24 @@ export function AdminDashboardPage() {
           </Link>
         </Card>
 
+        <Card title="Usuários">
+          <p className="text-silver text-sm mb-3">
+            Ver contas, banir e reabilitar usuários.
+          </p>
+          <Link to="/admin/users" className="text-esmeralda text-sm hover:underline">
+            Gerenciar usuários →
+          </Link>
+        </Card>
+
+        <Card title="Comunidades">
+          <p className="text-silver text-sm mb-3">
+            Arquivar e reativar comunidades (sai dos feeds quando arquivada).
+          </p>
+          <Link to="/admin/communities" className="text-esmeralda text-sm hover:underline">
+            Gerenciar comunidades →
+          </Link>
+        </Card>
+
         <Card title="Denúncias">
           <p className="text-silver text-sm mb-3">Moderar denúncias (arquivar, avisar, banir).</p>
           <Link to="/admin/reports" className="text-esmeralda text-sm hover:underline">

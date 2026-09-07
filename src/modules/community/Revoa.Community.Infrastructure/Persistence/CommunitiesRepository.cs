@@ -11,6 +11,14 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
     {
     }
 
+    public async Task<IReadOnlyList<CommunityGroup>> GetAllAsync(int limit, CancellationToken ct)
+    {
+        return await Collection.Find(_ => true)
+            .SortByDescending(c => c.Version)
+            .Limit(limit)
+            .ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<CommunityGroup>> GetPublicAsync(PublicFilter filter, CancellationToken ct)
     {
         var fb = Builders<CommunityGroup>.Filter;
