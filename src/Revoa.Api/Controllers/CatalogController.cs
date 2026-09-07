@@ -98,6 +98,7 @@ public class CatalogController : ControllerBase
         [FromQuery] string? sort = null,
         [FromQuery] string? q = null,
         [FromQuery] string? sellerIds = null,
+        [FromQuery] bool onlyCommunity = false,
         CancellationToken ct = default)
     {
             IReadOnlyList<Guid>? vendedorGuids = null;
@@ -117,7 +118,7 @@ public class CatalogController : ControllerBase
 
         var result = await _mediator.Send(
             new GetFeedQuery(radius, lat, lng, kind, categoryId, communityId, page,
-                mode, priceMin, priceMax, donationOnly, sort, q, vendedorGuids),
+                mode, priceMin, priceMax, donationOnly, sort, q, vendedorGuids, onlyCommunity),
             ct);
         return result.IsFailure ? BadRequest(new ApiError(result.Error)) : Ok(result.Value);
     }
@@ -146,6 +147,39 @@ public class CatalogController : ControllerBase
         return result.IsFailure
             ? NotFound(new ApiError(result.Error))
             : Ok(new { Saved = result.Value });
+    }
+
+    // Curtir/descurtir anúncio (toggle idempotente). O card de anúncio na
+    // comunidade se comporta como um post — curtir é interação leve.
+    [HttpPost("{id:guid}/like")]
+    [Authorize(Policy = "Verified")]
+    public async Task<ActionResult> ToggleLike(Guid id, CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var result = await _mediator.Send(new ToggleLikeListingCommand(id, user.UserId), ct);
+        return result.IsFailure
+            ? NotFound(new ApiError(result.Error))
+            : Ok(new { Liked = result.Value });
+    }
+
+    // Ids dos anúncios curtidos (estado inicial do botão curtir no FE). Privado.
+    [HttpGet("liked/ids")]
+    [Authorize]
+    public async Task<ActionResult<IReadOnlyList<Guid>>> LikedIds(CancellationToken ct)
+    {
+        var user = User.GetRevoaUser();
+        if (user is null)
+        {
+            return Unauthorized(new ApiError("Token sem claim 'sub'."));
+        }
+
+        var ids = await _mediator.Send(new GetLikedListingIdsQuery(user.UserId), ct);
+        return Ok(ids);
     }
 
     // Anúncios salvos do usuário do token (cards prontos). Privado.

@@ -37,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoriesRepository>();
         services.AddScoped<ICommentRepository, CommentsRepository>();
         services.AddScoped<ISavedListingRepository, SavedListingsRepository>();
+        services.AddScoped<IListingLikeRepository, ListingLikesRepository>();
 
         // ViaCEP (geolocalização por CEP).
         services.AddHttpClient<ViaCepService>();
@@ -57,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICategoryRepository>());
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ICommentRepository>());
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<ISavedListingRepository>());
+        services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IListingLikeRepository>());
 
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateListingCommandHandler).Assembly);

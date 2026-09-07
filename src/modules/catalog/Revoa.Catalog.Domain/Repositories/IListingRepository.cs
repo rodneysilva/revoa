@@ -18,7 +18,8 @@ public record FeedFilter(
     int PageSize,
     bool RadiusMode,
     int CandidateCap,
-    IReadOnlyList<Guid>? SellerIds);
+    IReadOnlyList<Guid>? SellerIds,
+    bool OnlyCommunity = false);
 
 public interface IListingRepository
 {

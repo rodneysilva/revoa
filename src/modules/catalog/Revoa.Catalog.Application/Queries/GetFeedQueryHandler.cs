@@ -63,7 +63,8 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
             PageSize,
             useRadius,
             CandidateCap,
-            request.SellerIds);
+            request.SellerIds,
+            request.OnlyCommunity);
 
         var candidates = await _listings.GetFeedAsync(filter, ct);
 

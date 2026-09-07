@@ -24,14 +24,23 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
 
         // Visibility: Global/Ambos sempre aparecem. Comunidade só se CommunityId bate.
         // Sem CommunityId no filtro → exclui os escopados a comunidade.
+        // OnlyCommunity inverte: APENAS anúncios escopados à comunidade (o feed
+        // da comunidade mostra os itens dela, não os públicos dos membros).
         if (filter.CommunityId is not null)
         {
-            var comunidadeOuGlobal = fb.And(
-                fb.Ne(l => l.Visibility, ListingVisibility.Community)) // Global/Ambos
-                | fb.And(
-                    fb.Eq(l => l.Visibility, ListingVisibility.Community),
-                    fb.Eq(l => l.CommunityId, filter.CommunityId));
-            query &= comunidadeOuGlobal;
+            if (filter.OnlyCommunity)
+            {
+                query &= fb.Eq(l => l.CommunityId, filter.CommunityId);
+            }
+            else
+            {
+                var comunidadeOuGlobal = fb.And(
+                    fb.Ne(l => l.Visibility, ListingVisibility.Community)) // Global/Ambos
+                    | fb.And(
+                        fb.Eq(l => l.Visibility, ListingVisibility.Community),
+                        fb.Eq(l => l.CommunityId, filter.CommunityId));
+                query &= comunidadeOuGlobal;
+            }
         }
         else
         {

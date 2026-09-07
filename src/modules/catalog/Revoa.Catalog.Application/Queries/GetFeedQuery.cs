@@ -22,4 +22,5 @@ public sealed record GetFeedQuery(
     bool? DonationOnly,
     string? Sort,
     string? Q,
-    IReadOnlyList<Guid>? SellerIds) : IRequest<Result<IReadOnlyList<FeedItemDto>>>;
+    IReadOnlyList<Guid>? SellerIds,
+    bool OnlyCommunity = false) : IRequest<Result<IReadOnlyList<FeedItemDto>>>;

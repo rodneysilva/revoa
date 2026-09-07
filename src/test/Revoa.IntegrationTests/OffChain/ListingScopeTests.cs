@@ -83,4 +83,49 @@ public class ListingScopeTests : IntegrationTestBase
         geralJson!
             .Should().NotContain(l => l!["Title"]!.GetValue<string>() == "Aula de violão na comunidade");
     }
+
+    [Fact]
+    public async Task OnlyCommunity_feed_returns_just_listings_scoped_to_that_community()
+    {
+        var creator = await CreateUserAsync();
+        var client = AuthedClient(creator);
+        var categoryId = await GetFirstCategoryIdAsync();
+
+        var communityId = await CreateCommunityAsync(client, "Escopo Estrito");
+
+        // Escopado à comunidade: aparece no onlyCommunity.
+        var create = await client.PostAsync(
+            "/api/listings", JsonBody(ScopedBody(communityId, categoryId)));
+        create.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Público do mesmo vendedor: NÃO é item da comunidade — só entra no
+        // feed de contexto (default), nunca no onlyCommunity.
+        var publico = await client.PostAsync("/api/listings", JsonBody(new
+        {
+            Kind = "Service",
+            Mode = "Trade",
+            Title = "Aula de violão pra todo mundo",
+            Description = "descrição",
+            Imagens = Array.Empty<string>(),
+            PriceRvm = 8L,
+            CategoryId = categoryId,
+            CommunityId = (Guid?)null,
+            Visibility = "Global",
+            UnitType = "PerService",
+            Duration = 1,
+            VoucherExpiryDays = 30,
+        }));
+        publico.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var estrito = await Http.GetAsync(
+            $"/api/listings/feed?communityId={communityId}&onlyCommunity=true");
+        var estritoJson = await estrito.Content.ReadFromJsonAsync<JsonArray>();
+        estritoJson!
+            .Should().ContainSingle(l => l!["Title"]!.GetValue<string>() == "Aula de violão na comunidade",
+                "onlyCommunity devolve só os itens escopados à comunidade");
+
+        var contexto = await Http.GetAsync($"/api/listings/feed?communityId={communityId}");
+        var contextoJson = await contexto.Content.ReadFromJsonAsync<JsonArray>();
+        contextoJson!.Should().HaveCount(2, "o feed de contexto (default) mantém Global + escopado");
+    }
 }
