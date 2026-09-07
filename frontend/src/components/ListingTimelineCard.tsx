@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, Heart, MapPin, MessageCircle, Package, Wrench } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { Badge } from "./Badge";
 import { PostThread } from "./PostThread";
@@ -122,17 +123,28 @@ export function ListingTimelineCard({
     <button
       type="button"
       onClick={toggleLike}
-      className={`text-xs hover:text-rosa transition ${liked ? "text-rosa" : "text-silver"}`}
+      className={`inline-flex items-center gap-1 text-xs hover:text-rosa transition ${
+        liked ? "text-rosa" : "text-silver"
+      }`}
     >
-      {liked ? "❤️ Curtido" : "🤍 Curtir"}
+      <Heart aria-hidden className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+      {liked ? "Curtido" : "Curtir"}
     </button>
   ) : interactive ? (
-    <span className="text-xs text-silver" title={interactHint}>
-      🤍 Curtir
+    <span
+      className="inline-flex items-center gap-1 text-xs text-silver"
+      title={interactHint}
+    >
+      <Heart aria-hidden className="w-3.5 h-3.5" />
+      Curtir
     </span>
   ) : (
-    <Link to="/login" className="text-xs text-silver hover:text-rosa">
-      🤍 Curtir
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-1 text-xs text-silver hover:text-rosa"
+    >
+      <Heart aria-hidden className="w-3.5 h-3.5" />
+      Curtir
     </Link>
   );
 
@@ -140,17 +152,28 @@ export function ListingTimelineCard({
     <button
       type="button"
       onClick={toggleSave}
-      className={`text-xs hover:text-amber transition ${saved ? "text-amber" : "text-silver"}`}
+      className={`inline-flex items-center gap-1 text-xs hover:text-amber transition ${
+        saved ? "text-amber" : "text-silver"
+      }`}
     >
-      {saved ? "🔖 Salvo" : "🔖 Salvar"}
+      <Bookmark aria-hidden className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
+      {saved ? "Salvo" : "Salvar"}
     </button>
   ) : interactive ? (
-    <span className="text-xs text-silver" title={interactHint}>
-      🔖 Salvar
+    <span
+      className="inline-flex items-center gap-1 text-xs text-silver"
+      title={interactHint}
+    >
+      <Bookmark aria-hidden className="w-3.5 h-3.5" />
+      Salvar
     </span>
   ) : (
-    <Link to="/login" className="text-xs text-silver hover:text-amber">
-      🔖 Salvar
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-1 text-xs text-silver hover:text-amber"
+    >
+      <Bookmark aria-hidden className="w-3.5 h-3.5" />
+      Salvar
     </Link>
   );
 
@@ -164,7 +187,13 @@ export function ListingTimelineCard({
             <span className="font-semibold text-cream truncate">{item.SellerName}</span>
             <span className="text-xs text-silver whitespace-nowrap">
               · {item.CreatedAt ? timeAgo(item.CreatedAt) : ""}
-              {local ? ` · 📍 ${local}` : ""}
+              {local && (
+                <>
+                  {" · "}
+                  <MapPin aria-hidden className="inline w-3 h-3 -mt-0.5" />
+                  {` ${local}`}
+                </>
+              )}
             </span>
             <span className="ml-auto shrink-0">
               <Badge modo={item.Mode} />
@@ -175,7 +204,7 @@ export function ListingTimelineCard({
           <div className="mt-2 flex gap-3">
             <Link
               to={detailUrl}
-              className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 xl:w-32 xl:h-32 rounded-lg overflow-hidden bg-smoke flex items-center justify-center text-3xl border border-smoke"
+              className="shrink-0 w-28 h-36 sm:w-32 sm:h-40 xl:w-36 xl:h-44 rounded-lg overflow-hidden bg-smoke flex items-center justify-center text-3xl border border-smoke"
             >
               {item.PrimeiraImagem ? (
                 <img
@@ -188,15 +217,27 @@ export function ListingTimelineCard({
                   }}
                 />
               ) : (
-                <span aria-hidden>{item.Kind === "Service" ? "🛠️" : "📦"}</span>
+                <span aria-hidden className="text-silver">
+                  {item.Kind === "Service" ? (
+                    <Wrench className="w-8 h-8" />
+                  ) : (
+                    <Package className="w-8 h-8" />
+                  )}
+                </span>
               )}
             </Link>
 
             <div className="flex-1 min-w-0">
               <Link to={detailUrl} className="block group">
-                <h3 className="font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
-                  {item.Kind === "Service" ? "🛠️ " : "📦 "}
-                  {item.Title}
+                <h3 className="flex items-center gap-1.5 font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
+                  <span aria-hidden className="text-silver shrink-0">
+                    {item.Kind === "Service" ? (
+                      <Wrench className="w-4 h-4" />
+                    ) : (
+                      <Package className="w-4 h-4" />
+                    )}
+                  </span>
+                  <span className="truncate">{item.Title}</span>
                 </h3>
               </Link>
 
@@ -226,11 +267,14 @@ export function ListingTimelineCard({
               <button
                 type="button"
                 onClick={openComments}
-                className={`text-xs hover:text-esmeralda transition ${showComments ? "text-esmeralda" : "text-silver"}`}
+                className={`inline-flex items-center gap-1 text-xs hover:text-esmeralda transition ${
+                  showComments ? "text-esmeralda" : "text-silver"
+                }`}
               >
+                <MessageCircle aria-hidden className="w-3.5 h-3.5" />
                 {item.CommentCount && item.CommentCount > 0
-                  ? `💬 ${item.CommentCount} comentário${item.CommentCount === 1 ? "" : "s"}`
-                  : "💬 Comentar"}
+                  ? `${item.CommentCount} comentário${item.CommentCount === 1 ? "" : "s"}`
+                  : "Comentar"}
               </button>
             )}
             {saveButton}

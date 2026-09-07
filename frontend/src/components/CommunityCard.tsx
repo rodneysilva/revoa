@@ -1,17 +1,19 @@
 import { Link } from "react-router-dom";
-import { EIXO_EMOJI, EIXO_LABEL, PAPEL_META } from "../lib/community";
+import { Lock, MapPin, Users } from "lucide-react";
+import { EIXO_ICON, EIXO_LABEL, PAPEL_META } from "../lib/community";
 import type { Community, MembershipRole } from "../api/types";
 
 // Card de comunidade (compartilhado entre a lista pública e "Minhas comunidades").
 // `role` (opcional) marca o vínculo de quem está vendo — Criador/Moderador.
 export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole }) {
   const local = [c.Neighborhood, c.City, c.State].filter(Boolean).join(", ");
+  const AxisIcon = EIXO_ICON[c.Axis];
   return (
     <Link
       to={`/community/${c.Id}`}
       className="group block bg-charcoal rounded-2xl border border-smoke overflow-hidden hover:border-amber/60 hover:shadow-lg transition"
     >
-      <div className="bg-community relative h-16 flex items-center px-4 overflow-hidden">
+      <div className="bg-community relative h-36 sm:h-40 flex items-center px-4 overflow-hidden">
         {c.CoverImageUrl && (
           <img
             src={c.CoverImageUrl}
@@ -20,8 +22,8 @@ export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole
             className="absolute inset-0 w-full h-full object-cover"
           />
         )}
-        <span className="relative text-2xl drop-shadow" aria-hidden>
-          {EIXO_EMOJI[c.Axis]}
+        <span className="relative text-white drop-shadow" aria-hidden>
+          <AxisIcon className="w-7 h-7" />
         </span>
         <div className="relative ml-auto flex items-center gap-1.5">
           {c.Type === "Default" && (
@@ -30,8 +32,8 @@ export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole
             </span>
           )}
           {c.Visibility === "Private" && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white">
-              🔒
+            <span className="text-white/90 px-1.5 py-0.5 rounded-full bg-black/30 backdrop-blur-sm">
+              <Lock aria-hidden className="w-3 h-3" />
             </span>
           )}
         </div>
@@ -54,10 +56,16 @@ export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole
           {c.Description || "Sem descrição."}
         </p>
         <div className="mt-3 flex items-center gap-2 text-xs text-silver">
-          <span>
-            👥 {c.MembersCount} {c.MembersCount === 1 ? "membro" : "membros"}
+          <span className="inline-flex items-center gap-1">
+            <Users aria-hidden className="w-3.5 h-3.5" />
+            {c.MembersCount} {c.MembersCount === 1 ? "membro" : "membros"}
           </span>
-          {local && <span className="truncate">· 📍 {local}</span>}
+          {local && (
+            <span className="inline-flex items-center gap-1 truncate">
+              · <MapPin aria-hidden className="w-3 h-3 shrink-0" />
+              {local}
+            </span>
+          )}
         </div>
       </div>
     </Link>

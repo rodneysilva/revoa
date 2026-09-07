@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Package, Wrench } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { Badge } from "./Badge";
 import { brlEstimate } from "../lib/format";
@@ -14,7 +15,7 @@ import type { FeedItem } from "../api/types";
 export function ListingCardSkeleton() {
   return (
     <div className="bg-charcoal rounded-xl border border-smoke overflow-hidden animate-pulse">
-      <div className="aspect-square bg-smoke" />
+      <div className="aspect-[4/5] bg-smoke" />
       <div className="p-4">
         <div className="h-3.5 w-16 rounded-full bg-smoke mb-2.5" />
         <div className="h-4 w-2/3 rounded bg-smoke mb-2" />
@@ -39,7 +40,7 @@ export function ListingCard({ item }: { item: FeedItem }) {
       to={`/listings/${item.Id}`}
       className="group flex flex-col bg-charcoal rounded-xl border border-smoke overflow-hidden hover:border-esmeralda/60 transition"
     >
-      <div className="aspect-square bg-smoke flex items-center justify-center text-5xl">
+      <div className="aspect-[4/5] bg-smoke flex items-center justify-center">
         {item.PrimeiraImagem ? (
           <img
             src={item.PrimeiraImagem}
@@ -51,7 +52,13 @@ export function ListingCard({ item }: { item: FeedItem }) {
             }}
           />
         ) : (
-          <span aria-hidden>{item.Kind === "Service" ? "🛠️" : "📦"}</span>
+          <span aria-hidden className="text-silver">
+            {item.Kind === "Service" ? (
+              <Wrench className="w-10 h-10" />
+            ) : (
+              <Package className="w-10 h-10" />
+            )}
+          </span>
         )}
       </div>
       <div className="p-4 flex flex-col flex-1">
