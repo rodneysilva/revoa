@@ -9,8 +9,10 @@ import { Avatar } from "./Avatar";
 import type { Community, FeedItem, Reputation, Review, SocialFeedItem } from "../api/types";
 
 // Seções do perfil (anúncios/comunidades/atividade/reputação) — compartilhadas
-// entre o /perfil (dono) e o /users/:id (público). Cada seção carrega sozinha
-// e degrada em silêncio: perfil vazio não é erro.
+// entre o /profile (dono, em abas) e o /users/:id (público, empilhado).
+// `embedded` = sem título/hint (a aba do /profile já dá o contexto), grades
+// estendidas até o 4K (3xl/4xl) e estados vazios compactos.
+// Cada seção carrega sozinha e degrada em silêncio: perfil vazio não é erro.
 
 function Section({
   title,
@@ -30,7 +32,15 @@ function Section({
   );
 }
 
-export function ProfileListings({ userId, self }: { userId: string; self?: boolean }) {
+export function ProfileListings({
+  userId,
+  self,
+  embedded,
+}: {
+  userId: string;
+  self?: boolean;
+  embedded?: boolean;
+}) {
   const [items, setItems] = useState<FeedItem[] | null>(null);
 
   useEffect(() => {
@@ -46,34 +56,39 @@ export function ProfileListings({ userId, self }: { userId: string; self?: boole
 
   if (items === null) return null;
 
-  return (
-    <Section title="Anúncios">
-      {items.length === 0 ? (
-        <EmptyState
-          icon={<Package className="w-8 h-8" />}
-          title={self ? "Você ainda não publicou nada" : "Nenhum anúncio publicado"}
-          hint={self ? "Anuncie um item ou serviço — leva menos de um minuto." : undefined}
-          action={
-            self ? (
-              <Link to="/listings/new" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
-                Anunciar
-              </Link>
-            ) : undefined
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-          {items.map((i) => (
-            <ListingCard key={i.Id} item={i} />
-          ))}
-        </div>
-      )}
-    </Section>
+  const content = items.length === 0 ? (
+    <EmptyState
+      compact={embedded}
+      icon={<Package className={embedded ? "w-5 h-5" : "w-8 h-8"} />}
+      title={self ? "Você ainda não publicou nada" : "Nenhum anúncio publicado"}
+      hint={self ? "Anuncie um item ou serviço — leva menos de um minuto." : undefined}
+      action={
+        self ? (
+          <Link to="/listings/new" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
+            Anunciar
+          </Link>
+        ) : undefined
+      }
+    />
+  ) : (
+    <div
+      className={
+        embedded
+          ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-3"
+          : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3"
+      }
+    >
+      {items.map((i) => (
+        <ListingCard key={i.Id} item={i} />
+      ))}
+    </div>
   );
+
+  return embedded ? content : <Section title="Anúncios">{content}</Section>;
 }
 
 // Anúncios salvos (bookmark privado — só no perfil próprio).
-export function ProfileSaved() {
+export function ProfileSaved({ embedded }: { embedded?: boolean }) {
   const [items, setItems] = useState<FeedItem[] | null>(null);
 
   useEffect(() => {
@@ -89,31 +104,36 @@ export function ProfileSaved() {
 
   if (items === null) return null;
 
-  return (
-    <Section title="Salvos" hint="Anúncios que você guardou para depois">
-      {items.length === 0 ? (
-        <EmptyState
-          icon={<Bookmark className="w-8 h-8" />}
-          title="Nenhum anúncio salvo"
-          hint="Use o botão Salvar em um anúncio para achá-lo aqui."
-          action={
-            <Link to="/feed" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
-              Explorar o feed
-            </Link>
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-          {items.map((i) => (
-            <ListingCard key={i.Id} item={i} />
-          ))}
-        </div>
-      )}
-    </Section>
+  const content = items.length === 0 ? (
+    <EmptyState
+      compact={embedded}
+      icon={<Bookmark className={embedded ? "w-5 h-5" : "w-8 h-8"} />}
+      title="Nenhum anúncio salvo"
+      hint="Use o botão Salvar em um anúncio para achá-lo aqui."
+      action={
+        <Link to="/feed" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
+          Explorar o feed
+        </Link>
+      }
+    />
+  ) : (
+    <div
+      className={
+        embedded
+          ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-3"
+          : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3"
+      }
+    >
+      {items.map((i) => (
+        <ListingCard key={i.Id} item={i} />
+      ))}
+    </div>
   );
+
+  return embedded ? content : <Section title="Salvos" hint="Anúncios que você guardou para depois">{content}</Section>;
 }
 
-export function ProfileCommunities({ userId }: { userId: string }) {
+export function ProfileCommunities({ userId, embedded }: { userId: string; embedded?: boolean }) {
   const [items, setItems] = useState<Community[] | null>(null);
 
   useEffect(() => {
@@ -129,26 +149,38 @@ export function ProfileCommunities({ userId }: { userId: string }) {
 
   if (items === null) return null;
 
-  return (
-    <Section title="Comunidades">
-      {items.length === 0 ? (
-        <EmptyState
-          icon={<House className="w-8 h-8" />}
-          title="Ainda não participa de comunidades"
-          hint="Comunidades são onde a troca hiperlocal acontece."
-        />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {items.map((c) => (
-            <CommunityCard key={c.Id} c={c} />
-          ))}
-        </div>
-      )}
-    </Section>
+  const content = items.length === 0 ? (
+    <EmptyState
+      compact={embedded}
+      icon={<House className={embedded ? "w-5 h-5" : "w-8 h-8"} />}
+      title="Ainda não participa de comunidades"
+      hint="Comunidades são onde a troca hiperlocal acontece."
+      action={
+        embedded ? (
+          <Link to="/community" className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl inline-block">
+            Descobrir comunidades
+          </Link>
+        ) : undefined
+      }
+    />
+  ) : (
+    <div
+      className={
+        embedded
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 4xl:grid-cols-5 gap-3"
+          : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+      }
+    >
+      {items.map((c) => (
+        <CommunityCard key={c.Id} c={c} />
+      ))}
+    </div>
   );
+
+  return embedded ? content : <Section title="Comunidades">{content}</Section>;
 }
 
-export function ProfileActivity({ userId }: { userId: string }) {
+export function ProfileActivity({ userId, embedded }: { userId: string; embedded?: boolean }) {
   const [items, setItems] = useState<SocialFeedItem[] | null>(null);
 
   useEffect(() => {
@@ -164,36 +196,46 @@ export function ProfileActivity({ userId }: { userId: string }) {
 
   if (items === null) return null;
 
-  return (
-    <Section title="Atividade" hint="Posts em comunidades abertas">
-      {items.length === 0 ? (
-        <EmptyState icon={<MessageCircle className="w-8 h-8" />} title="Nenhuma atividade recente" />
-      ) : (
-        <ul className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
-          {items.map(({ Post, Community }) => (
-            <li key={Post.Id}>
-              <Link
-                to={`/community/${Community.Id}`}
-                className="block bg-charcoal rounded-xl border border-smoke p-3 hover:border-esmeralda transition"
-              >
-                <p className="text-cream text-sm line-clamp-3">{Post.Content}</p>
-                <p className="mt-1 text-xs text-silver">
-                  em {Community.Name} ·{" "}
-                  {new Date(Post.CreatedAt).toLocaleDateString("pt-BR", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Section>
+  const content = items.length === 0 ? (
+    <EmptyState
+      compact={embedded}
+      icon={<MessageCircle className={embedded ? "w-5 h-5" : "w-8 h-8"} />}
+      title="Nenhuma atividade recente"
+      hint="Poste em uma comunidade para movimentar seu perfil."
+    />
+  ) : (
+    <ul
+      className={
+        embedded
+          ? "grid gap-2 md:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4"
+          : "grid gap-2 md:grid-cols-2 2xl:grid-cols-3"
+      }
+    >
+      {items.map(({ Post, Community }) => (
+        <li key={Post.Id}>
+          <Link
+            to={`/community/${Community.Id}`}
+            className="block bg-charcoal rounded-xl border border-smoke p-3 hover:border-esmeralda transition"
+          >
+            <p className="text-cream text-sm line-clamp-3">{Post.Content}</p>
+            <p className="mt-1 text-xs text-silver">
+              em {Community.Name} ·{" "}
+              {new Date(Post.CreatedAt).toLocaleDateString("pt-BR", {
+                day: "numeric",
+                month: "short",
+              })}
+            </p>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
+
+  return embedded ? content : <Section title="Atividade" hint="Posts em comunidades abertas">{content}</Section>;
 }
 
-function Stars({ n }: { n: number }) {
+// Estrelas de avaliação — também usadas na faixa de resumo do /profile.
+export function Stars({ n }: { n: number }) {
   const v = Math.max(0, Math.min(5, n));
   return (
     <span className="inline-flex items-center gap-0.5 text-amber" aria-label={`${v} de 5 estrelas`}>

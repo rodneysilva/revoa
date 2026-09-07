@@ -22,6 +22,9 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
   --breakpoint-3xl: 120rem;
+  /* 4K: viewport a partir de onde o .app-container (max 2880px) enche a tela
+     (≈2944px) — última escala das grades full width (perfis, anúncios). */
+  --breakpoint-4xl: 184rem;
 }
 
 /* Light theme (padrão). */
