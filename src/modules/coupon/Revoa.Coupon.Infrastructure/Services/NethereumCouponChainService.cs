@@ -73,7 +73,7 @@ public class NethereumCouponChainService : ICouponChainService
     }
 
     public async Task<(string codeHash, string txHash)> CreateCouponAsync(
-        string code, long amount, int maxUses, long expiryUnix, CancellationToken ct = default)
+        string code, BigInteger amount, int maxUses, long expiryUnix, CancellationToken ct = default)
     {
         var (account, web3) = BuildFaucetWeb3();
         var contract = web3.Eth.GetContract(Abi, _options.Contracts.CouponRedeemer);
@@ -81,10 +81,10 @@ public class NethereumCouponChainService : ICouponChainService
         var fn = contract.GetFunction("createCoupon");
         _logger.LogInformation(
             "createCoupon: admin={Admin} code=*** amount={Amount} maxUses={MaxUses} expiry={Expiry}",
-            account.Address, amount, maxUses, expiryUnix);
+            account.Address, amount.ToString(), maxUses, expiryUnix);
 
         var receipt = await SendAndClassifyAsync(fn, account.Address, ct,
-            code, (BigInteger)amount, (BigInteger)maxUses, (BigInteger)expiryUnix);
+            code, amount, (BigInteger)maxUses, (BigInteger)expiryUnix);
 
         var codeHash = ExtractCodeHashFromCouponCreated(receipt);
 

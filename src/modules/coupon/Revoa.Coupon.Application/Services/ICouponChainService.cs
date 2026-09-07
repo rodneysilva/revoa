@@ -1,3 +1,4 @@
+using System.Numerics;
 using Revoa.IntegrationContracts.UserWallets;
 
 namespace Revoa.Coupon.Application.Services;
@@ -11,10 +12,11 @@ public interface ICouponChainService
     Task EnsureFaucetCouponAdminRoleAsync(CancellationToken ct = default);
 
     // Assinado pela FAUCET (COUPON_ADMIN_ROLE): createCoupon(code, amount, maxUses, expiryUnix).
+    // `amount` já em unidades RAW do RVM (18 decimais) — 10 RVM = 10×10^18 (estoura long).
     // Retorna (codeHash lido do evento CouponCreated, txHash).
     Task<(string codeHash, string txHash)> CreateCouponAsync(
         string code,
-        long amount,
+        BigInteger amount,
         int maxUses,
         long expiryUnix,
         CancellationToken ct = default);

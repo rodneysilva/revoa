@@ -1,3 +1,4 @@
+using System.Numerics;
 using MediatR;
 using Revoa.Abstractions;
 using Revoa.Coupon.Application.DTOs;
@@ -41,8 +42,13 @@ public class CreateCouponCommandHandler : IRequestHandler<CreateCouponCommand, R
         {
             await _chain.EnsureFaucetCouponAdminRoleAsync(ct);
 
+            // RVM tem 18 decimais: o contrato minta unidades RAW. AmountRvm é a
+            // quantidade legível (10 = 10 RVM) — sem essa conversão o mint sai em
+            // poeira (10 wei). Espelha o faucet do Token (RvmConstants).
+            var rawAmount = BigInteger.Multiply(request.AmountRvm, BigInteger.Pow(10, 18));
+
             var (codeHash, _) = await _chain.CreateCouponAsync(
-                code, request.AmountRvm, request.MaxUses, expiryUnix, ct);
+                code, rawAmount, request.MaxUses, expiryUnix, ct);
 
             var coupon = CouponAggregate.Create(
                 code, request.AmountRvm, request.MaxUses, request.Expiry, codeHash, request.CreatedBy);
