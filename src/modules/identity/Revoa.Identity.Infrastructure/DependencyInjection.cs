@@ -37,9 +37,18 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UsersRepository>();
         services.AddScoped<IUnitOfWork, MongoDbUnitOfWork>();
 
-        // E-mail (MailKit -> Postfix) — ADR-0014
+        // E-mail — ADR-0014. API do Brevo quando a chave v3 está configurada;
+        // senão MailKit -> SMTP (Postfix interno ou relay autenticado).
         services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
-        services.AddScoped<IEmailSender, MailKitEmailSender>();
+        if (!string.IsNullOrWhiteSpace(configuration["Email:ApiKey"]))
+        {
+            services.AddHttpClient<BrevoApiEmailSender>();
+            services.AddScoped<IEmailSender>(sp => sp.GetRequiredService<BrevoApiEmailSender>());
+        }
+        else
+        {
+            services.AddScoped<IEmailSender, MailKitEmailSender>();
+        }
 
         // Hash de OTP (login/telefone): HMAC-SHA256 com chave do servidor — SHA256 puro é
         // quebrável offline (900k combinações) com só leitura do banco. Fail-fast sem chave.

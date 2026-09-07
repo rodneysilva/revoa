@@ -14,6 +14,10 @@ public class EmailOptions
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
 
+    // Chave v3 do Brevo (header api-key). Setada = envia pela API REST em vez do
+    // SMTP — a chave v3 não autentica no smtp-relay do Brevo (exige chave SMTP).
+    public string ApiKey { get; set; } = "";
+
     // DEV: loga o token/link de verificação no logger (igual ao LogOtpInDev do Zenvia).
     // Em dev o Postfix local NÃO entrega em caixa real — o token só é obtível via log/endpoint dev.
     public bool LogVerificationTokenInDev { get; set; }
