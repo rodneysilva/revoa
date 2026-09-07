@@ -137,6 +137,14 @@ export function Layout() {
                 >
                   {user.nome || "Perfil"}
                 </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="hidden sm:inline text-sm text-silver hover:text-rosa"
+                  title="Encerrar sessão"
+                >
+                  Sair
+                </button>
               </>
             ) : (
               <>
