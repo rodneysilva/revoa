@@ -12,6 +12,7 @@ import { CreateListingPage } from "./pages/CreateListingPage";
 import { TradeTrackerPage } from "./pages/TradeTrackerPage";
 import { CommunityPage } from "./pages/CommunityPage";
 import { CommunityDetailPage } from "./pages/CommunityDetailPage";
+import { SavedPage } from "./pages/SavedPage";
 import { AdminReportsPage } from "./pages/AdminReportsPage";
 import { AdminCouponsPage } from "./pages/AdminCouponsPage";
 import { AdminCommunitiesPage } from "./pages/AdminCommunitiesPage";
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/trades" element={<TradeTrackerPage />} />
+            <Route path="/saved" element={<SavedPage />} />
           </Route>
           <Route path="/transparency" element={<TransparencyPage />} />
           <Route path="/terms" element={<TermsPage />} />

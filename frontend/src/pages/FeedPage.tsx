@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
-import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
+import { ListingCard } from "../components/ListingCard";
+import { ListingTimelineCard } from "../components/ListingTimelineCard";
 import { OnboardingChecklist } from "../components/OnboardingChecklist";
+import { PostCard } from "../components/PostCard";
 import { ApiError, api } from "../api/client";
-import type { Category, Community, FeedItem, Kind, Mode, Post } from "../api/types";
+import type { Category, FeedItem, Kind, Mode, PublicPostItem } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { timeAgo } from "../lib/time";
 import { MODO_META } from "../lib/config";
 
-const PAGE_SIZE = 24;
+const LISTINGS_PAGE = 24;
+const POSTS_PAGE = 20; // tamanho de página do backend (GetPublicPostsQuery)
 
 type KindFilter = "Todos" | Kind;
 type ModeFilter = "Todos" | Mode;
@@ -23,8 +24,8 @@ const KIND_LABEL: Record<KindFilter, string> = {
   Service: "Serviços",
 };
 
-const GRID_CLASS =
-  "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6";
+const TIMELINE_GRID =
+  "grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start";
 
 // Ritmo temporal do feed: quebras visíveis entre novo e antigo (diretriz de
 // infinite scroll — marcar onde começa o "mais velho" orienta o scroll).
@@ -35,7 +36,11 @@ function bucketOf(iso: string): string {
   return "Mais antigas";
 }
 
-type RailPost = { post: Post; community: Community };
+// Timeline unificada: posts (GET /api/posts) e anúncios (GET /api/listings/feed)
+// mesclados por data — cards parecidos, sem destoar.
+type TimelineEntry =
+  | { tipo: "post"; key: string; at: number; item: PublicPostItem }
+  | { tipo: "listing"; key: string; at: number; item: FeedItem };
 
 export function FeedPage() {
   const { user } = useAuth();
@@ -43,6 +48,7 @@ export function FeedPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q")?.trim() || "";
   const [items, setItems] = useState<FeedItem[]>([]);
+  const [posts, setPosts] = useState<PublicPostItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -52,10 +58,17 @@ export function FeedPage() {
   const [categoriaId, setCategoriaId] = useState<string>("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [postsPage, setPostsPage] = useState(1);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
-  // Rails (carregam 1×; falham em silêncio — rail que não tem dado some).
+  // Filtro de anúncio ativo → a timeline vira só anúncios (posts não têm
+  // modo/kind/categoria/termo — não faz sentido misturá-los filtrados).
+  const listingsOnly =
+    modeFilter !== "Todos" || kindFilter !== "Todos" || !!categoriaId || !!q;
+
+  // Rail "Grátis hoje" (carrega 1×; falha em silêncio — rail sem dado some).
   const [freeRail, setFreeRail] = useState<FeedItem[] | null>(null);
-  const [postsRail, setPostsRail] = useState<RailPost[] | null>(null);
 
   useEffect(() => {
     api
@@ -82,30 +95,27 @@ export function FeedPage() {
     };
   }, []);
 
-  // "Da sua comunidade": batimento social das comunidades do usuário, resolvido
-  // no servidor (mine/posts) — raízes e respostas recentes em uma chamada.
+  // Bootstrap dos anúncios já salvos (marca o 🔖 na timeline sem refetch).
   useEffect(() => {
     if (!user) {
-      setPostsRail(null);
+      setSavedIds(new Set());
       return;
     }
     let active = true;
     api
-      .socialFeed()
-      .then((items) => {
-        if (active)
-          setPostsRail(
-            items.slice(0, 4).map((i) => ({ post: i.Post, community: i.Community }))
-          );
+      .savedListingIds()
+      .then((ids) => {
+        if (active) setSavedIds(new Set(ids));
       })
       .catch(() => {
-        if (active) setPostsRail([]);
+        /* marcador opcional */
       });
     return () => {
       active = false;
     };
   }, [user]);
 
+  // Anúncios — recarrega a página 1 quando os filtros mudam.
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -122,7 +132,7 @@ export function FeedPage() {
         if (!active) return;
         setItems(data);
         setPage(1);
-        setHasMore(data.length >= PAGE_SIZE);
+        setHasMore(data.length >= LISTINGS_PAGE);
       })
       .catch((e) => {
         if (active)
@@ -136,27 +146,67 @@ export function FeedPage() {
     };
   }, [modeFilter, kindFilter, categoriaId, q]);
 
-  async function loadMore() {
-    if (loadingMore || !hasMore || loading) return;
-    setLoadingMore(true);
-    const next = page + 1;
-    try {
-      const data = await api.feed({
-        page: next,
-        mode: modeFilter === "Todos" ? undefined : modeFilter,
-        kind: kindFilter === "Todos" ? undefined : kindFilter,
-        categoryId: categoriaId || undefined,
-        q: q || undefined,
+  // Posts públicos — independentes dos filtros de anúncio (carrega 1×).
+  useEffect(() => {
+    let active = true;
+    api
+      .publicPosts(1)
+      .then((data) => {
+        if (!active) return;
+        setPosts(data);
+        setPostsPage(1);
+        setPostsHasMore(data.length >= POSTS_PAGE);
+      })
+      .catch(() => {
+        /* posts são a metade social — em silêncio mostra só anúncios */
+        if (active) setPosts([]);
       });
-      setItems((prev) => [...prev, ...data]);
-      setPage(next);
-      setHasMore(data.length >= PAGE_SIZE);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function loadMore() {
+    if (loadingMore || loading || !hasMoreTotal) return;
+    setLoadingMore(true);
+    try {
+      // Sem filtro: avança as duas fontes que ainda têm página. Com filtro de
+      // anúncio ativo, só os anúncios (a timeline está listings-only).
+      if (!listingsOnly && hasMore) {
+        const next = page + 1;
+        const data = await api.feed({ page: next, q: q || undefined });
+        setItems((prev) => [...prev, ...data]);
+        setPage(next);
+        setHasMore(data.length >= LISTINGS_PAGE);
+      }
+      if (!listingsOnly && postsHasMore) {
+        const next = postsPage + 1;
+        const data = await api.publicPosts(next);
+        setPosts((prev) => [...prev, ...data]);
+        setPostsPage(next);
+        setPostsHasMore(data.length >= POSTS_PAGE);
+      }
+      if (listingsOnly && hasMore) {
+        const next = page + 1;
+        const data = await api.feed({
+          page: next,
+          mode: modeFilter === "Todos" ? undefined : modeFilter,
+          kind: kindFilter === "Todos" ? undefined : kindFilter,
+          categoryId: categoriaId || undefined,
+          q: q || undefined,
+        });
+        setItems((prev) => [...prev, ...data]);
+        setPage(next);
+        setHasMore(data.length >= LISTINGS_PAGE);
+      }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Erro ao carregar mais.");
     } finally {
       setLoadingMore(false);
     }
   }
+
+  const hasMoreTotal = listingsOnly ? hasMore : hasMore || postsHasMore;
 
   // Infinite scroll: sentinela dispara o load 600px antes do fim; o botão
   // "Carregar mais" continua como fallback.
@@ -175,19 +225,27 @@ export function FeedPage() {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [hasMore]);
+  }, [hasMoreTotal]);
 
-  const semFiltro =
-    modeFilter === "Todos" && kindFilter === "Todos" && !categoriaId && !q;
+  // Mescla por CreatedAt desc; key "tipo-Id" (post e anúncio podem ter o mesmo guid).
+  const timeline: TimelineEntry[] = [
+    ...(listingsOnly ? [] : posts.map((p) => ({ tipo: "post" as const, key: `post-${p.Post.Id}`, at: new Date(p.Post.CreatedAt).getTime(), item: p }))),
+    ...items.map((i) => ({
+      tipo: "listing" as const,
+      key: `listing-${i.Id}`,
+      at: i.CreatedAt ? new Date(i.CreatedAt).getTime() : Number.NaN,
+      item: i,
+    })),
+  ].sort((a, b) => b.at - a.at);
 
-  // Seções temporais: o feed chega CreatedAt desc — muda o rótulo, muda a seção.
-  const sections: { label: string; items: FeedItem[] }[] = [];
-  for (const it of items) {
-    if (!it.CreatedAt) continue;
-    const label = bucketOf(it.CreatedAt);
+  // Seções temporais: quando muda o rótulo, muda a seção.
+  const sections: { label: string; entries: TimelineEntry[] }[] = [];
+  for (const e of timeline) {
+    if (!Number.isFinite(e.at)) continue;
+    const label = bucketOf(new Date(e.at).toISOString());
     const last = sections[sections.length - 1];
-    if (last && last.label === label) last.items.push(it);
-    else sections.push({ label, items: [it] });
+    if (last && last.label === label) last.entries.push(e);
+    else sections.push({ label, entries: [e] });
   }
 
   return (
@@ -196,8 +254,18 @@ export function FeedPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-cream">Feed</h1>
-            <p className="text-sm text-silver">O que está acontecendo na sua rede</p>
+            <p className="text-sm text-silver">
+              Conversas e anúncios da sua rede em uma linha do tempo
+            </p>
           </div>
+          {user && (
+            <Link
+              to="/saved"
+              className="text-sm text-silver hover:text-amber sm:ml-2 sm:mt-1"
+            >
+              🔖 Salvos
+            </Link>
+          )}
           <Link
             to="/explore"
             className="text-sm text-esmeralda hover:underline sm:ml-2 sm:mt-1"
@@ -228,6 +296,9 @@ export function FeedPage() {
                 ✕
               </button>
             </span>
+            {!listingsOnly && (
+              <span className="text-xs text-silver">mostrando só anúncios</span>
+            )}
           </div>
         )}
 
@@ -303,16 +374,16 @@ export function FeedPage() {
       )}
 
       {loading ? (
-        <div className={GRID_CLASS}>
-          {Array.from({ length: 10 }).map((_, i) => (
-            <ListingCardSkeleton key={i} />
+        <div className={TIMELINE_GRID}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-32 bg-smoke rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : items.length === 0 ? (
+      ) : timeline.length === 0 ? (
         q ? (
           <EmptyState
             icon="🔎"
-            title={`Nenhum anúncio encontrado para “${q}”.`}
+            title={`Nada encontrado para “${q}”.`}
             action={
               <button
                 type="button"
@@ -326,7 +397,7 @@ export function FeedPage() {
         ) : (
           <EmptyState
             icon="♻️"
-            title="Nenhum anúncio por aqui ainda."
+            title="Nada por aqui ainda."
             action={
               user?.verified ? (
                 <Link
@@ -341,16 +412,8 @@ export function FeedPage() {
         )
       ) : (
         <>
-          {/* Rails só sem filtro ativo — com filtro eles duplicariam o resultado */}
-          {semFiltro && postsRail && postsRail.length > 0 && (
-            <Rail title="Da sua comunidade" seeAllTo="/community">
-              {postsRail.map((r) => (
-                <PostRailCard key={r.post.Id} post={r.post} community={r.community} />
-              ))}
-            </Rail>
-          )}
-
-          {semFiltro && freeRail && freeRail.length > 0 && (
+          {/* Rail grátis só sem filtro ativo — com filtro duplicaria o resultado */}
+          {!listingsOnly && freeRail && freeRail.length > 0 && (
             <Rail title="Grátis hoje" seeAllTo="/explore">
               {freeRail.map((it) => (
                 <div key={it.Id} className="w-56 shrink-0 snap-start">
@@ -365,15 +428,30 @@ export function FeedPage() {
               <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-3">
                 {s.label}
               </h2>
-              <div className={GRID_CLASS}>
-                {s.items.map((it) => (
-                  <ListingCard key={it.Id} item={it} />
-                ))}
+              <div className={TIMELINE_GRID}>
+                {s.entries.map((e) =>
+                  e.tipo === "post" ? (
+                    <PostCard
+                      key={e.key}
+                      post={e.item.Post}
+                      communityName={e.item.CommunityName}
+                      communityUrl={`/community/${e.item.Post.CommunityId}#conversas`}
+                      currentUserId={user?.userId}
+                    />
+                  ) : (
+                    <ListingTimelineCard
+                      key={e.key}
+                      item={e.item}
+                      currentUserId={user?.userId}
+                      initialSaved={savedIds.has(e.item.Id)}
+                    />
+                  )
+                )}
               </div>
             </section>
           ))}
 
-          {hasMore && (
+          {hasMoreTotal && (
             <div ref={sentinelRef} className="text-center mt-8">
               <button
                 onClick={loadMore}
@@ -411,22 +489,5 @@ function Rail({
       </div>
       <div className="flex gap-4 overflow-x-auto pb-2 snap-x">{children}</div>
     </section>
-  );
-}
-
-function PostRailCard({ post, community }: RailPost) {
-  return (
-    <Link
-      to={`/community/${community.Id}#conversas`}
-      className="w-72 shrink-0 snap-start bg-charcoal border border-smoke rounded-xl p-4 hover:border-amber/60 transition"
-    >
-      <div className="flex items-center gap-2 text-xs text-silver mb-2">
-        <Avatar name={post.AuthorName} src={post.AutorAvatarUrl} size={22} />
-        <span className="truncate font-medium text-cream">{post.AuthorName}</span>
-        <span className="ml-auto whitespace-nowrap">{timeAgo(post.CreatedAt)}</span>
-      </div>
-      <p className="text-sm text-cream/90 line-clamp-3 whitespace-pre-wrap">{post.Content}</p>
-      <p className="mt-2 text-xs text-amber">💬 {community.Name}</p>
-    </Link>
   );
 }

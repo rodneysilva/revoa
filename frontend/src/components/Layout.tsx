@@ -95,6 +95,13 @@ export function Layout() {
             {user ? (
               <>
                 <Link
+                  to="/saved"
+                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-amber"
+                  title="Posts e anúncios salvos"
+                >
+                  🔖 Salvos
+                </Link>
+                <Link
                   to="/trades"
                   className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
                   title="Minhas trocas"
@@ -232,6 +239,12 @@ export function Layout() {
                     className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
                   >
                     Perfil
+                  </Link>
+                  <Link
+                    to="/saved"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                  >
+                    🔖 Salvos
                   </Link>
                   <Link
                     to="/wallet"
