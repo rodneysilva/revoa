@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Bookmark, Recycle, Search, X } from "lucide-react";
+import { Recycle, Search, X } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard } from "../components/ListingCard";
 import { ListingTimelineCard } from "../components/ListingTimelineCard";
@@ -259,23 +259,6 @@ export function FeedPage() {
               Conversas e anúncios da sua rede em uma linha do tempo
             </p>
           </div>
-          {user && (
-            <Link
-              to="/saved"
-              className="text-sm text-silver hover:text-amber sm:ml-2 sm:mt-1"
-            >
-              <span className="inline-flex items-center gap-1">
-                <Bookmark aria-hidden className="w-4 h-4" />
-                Salvos
-              </span>
-            </Link>
-          )}
-          <Link
-            to="/listings"
-            className="text-sm text-esmeralda hover:underline sm:ml-2 sm:mt-1"
-          >
-            Buscar com filtros →
-          </Link>
           {user?.verified && (
             <Link
               to="/listings/new"
