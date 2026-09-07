@@ -167,6 +167,39 @@ public class CatalogCommentsTests : IntegrationTestBase
         anonymous.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [Fact]
+    public async Task Feed_exposes_comment_count_per_listing()
+    {
+        var seller = await CreateUserAsync();
+        var listingId = await CreateServiceListingAsync(seller);
+        var quietId = await CreateServiceListingAsync(seller);
+        var client = AuthedClient(await CreateUserAsync());
+
+        // Raiz + resposta = 2 comentários visíveis no anúncio.
+        var root = await client.PostAsync($"/api/listings/{listingId}/comments", JsonBody(new
+        {
+            ParentId = (Guid?)null,
+            Content = "Ainda está disponível?",
+        }));
+        root.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rootId = await ReadIdAsync(root);
+
+        var reply = await client.PostAsync($"/api/listings/{listingId}/comments", JsonBody(new
+        {
+            ParentId = rootId,
+            Content = "Reservado até sábado!",
+        }));
+        reply.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        // Feed anônimo carrega o badge 💬 N do card (batch, sem N+1).
+        var feed = await Http.GetFromJsonAsync<JsonArray>("/api/listings/feed");
+        var item = feed!.Single(i => i!["Id"]!.GetValue<Guid>() == listingId)!;
+        item["CommentCount"]!.GetValue<int>().Should().Be(2);
+
+        var quiet = feed!.Single(i => i!["Id"]!.GetValue<Guid>() == quietId)!;
+        quiet["CommentCount"]!.GetValue<int>().Should().Be(0);
+    }
+
     private async Task<Guid> CreateServiceListingAsync(TestUser owner)
     {
         var resp = await AuthedClient(owner).PostAsync("/api/listings", JsonBody(new

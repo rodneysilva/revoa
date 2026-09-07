@@ -9,6 +9,10 @@ public interface ICommentRepository
     // Raízes (parentId null) ou respostas diretas de parentId — só Visivel.
     Task<IReadOnlyList<Comment>> GetByListingAsync(Guid listingId, Guid? parentId, CancellationToken ct);
 
+    // Total de comentários visíveis (raízes + respostas) por anúncio — batch, anti-N+1.
+    Task<IReadOnlyDictionary<Guid, int>> GetCountsAsync(
+        IReadOnlyCollection<Guid> listingIds, CancellationToken ct);
+
     Task AddAsync(Comment comment, CancellationToken ct);
 
     Task EnsureIndexesAsync(CancellationToken ct = default);

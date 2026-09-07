@@ -18,4 +18,5 @@ public sealed record FeedItemDto(
     string? UnitType,
     int? Duration,
     DateTime CreatedAt,
-    string? Description = null);
+    string? Description = null,
+    int CommentCount = 0);

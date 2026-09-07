@@ -81,15 +81,20 @@ export function CommunityPage() {
   }, [filter]);
 
   // Busca client-side sobre a lista carregada (a API de comunidades ainda não
-  // tem `q` — filtro simples por nome/descrição/local).
+  // tem `q` — filtro simples por nome/descrição/local). Descobrir também não
+  // repete o que já está em "Minhas comunidades" (sem redundancy para quem
+  // já participa — o card de vínculo fica no topo).
   const termo = busca.trim().toLowerCase();
-  const visiveis = termo
-    ? items.filter((c) =>
-        `${c.Name} ${c.Description ?? ""} ${c.Neighborhood ?? ""} ${c.City ?? ""}`
-          .toLowerCase()
-          .includes(termo)
-      )
-    : items;
+  const joinedIds = new Set((mine ?? []).map((m) => m.Community.Id));
+  const visiveis = items
+    .filter((c) => !joinedIds.has(c.Id))
+    .filter((c) =>
+      !termo
+        ? true
+        : `${c.Name} ${c.Description ?? ""} ${c.Neighborhood ?? ""} ${c.City ?? ""}`
+            .toLowerCase()
+            .includes(termo)
+    );
 
   return (
     <div className="app-container">
@@ -176,7 +181,9 @@ export function CommunityPage() {
                 ? "Nenhuma comunidade encontrada com essa busca."
                 : items.length === 0
                   ? "Ainda não há comunidades por aqui."
-                  : "Nenhuma comunidade neste eixo."
+                  : joinedIds.size > 0
+                    ? "Você já participa de todas as comunidades deste eixo. 🎉"
+                    : "Nenhuma comunidade neste eixo."
             }
             hint={
               !busca && items.length === 0 && !user?.verified

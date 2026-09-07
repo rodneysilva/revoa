@@ -1,3 +1,4 @@
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Revoa.Catalog.Domain.Aggregates.CommentAggregate;
 using Revoa.Catalog.Domain.Repositories;
@@ -24,6 +25,37 @@ public class CommentsRepository : MongoRepositoryBase<Comment>, ICommentReposito
         return await Collection.Find(query)
             .SortBy(c => c.CreatedAt)
             .ToListAsync(ct);
+    }
+
+    // Mesmo formato de PostsRepository.GetChildrenCountsAsync (aggregation $group).
+    public async Task<IReadOnlyDictionary<Guid, int>> GetCountsAsync(
+        IReadOnlyCollection<Guid> listingIds, CancellationToken ct)
+    {
+        var dict = new Dictionary<Guid, int>();
+        if (listingIds.Count == 0)
+        {
+            return dict;
+        }
+
+        var fb = Builders<Comment>.Filter;
+        var query = fb.In(c => c.ListingId, listingIds)
+                    & fb.Eq(c => c.Status, CommentStatus.Visible);
+
+        var grouped = await Collection.Aggregate()
+            .Match(query)
+            .Group(new BsonDocument
+            {
+                { "_id", "$ListingId" },
+                { "Count", new BsonDocument("$sum", 1) }
+            })
+            .ToListAsync(ct);
+
+        foreach (var doc in grouped)
+        {
+            dict[doc["_id"].AsBsonBinaryData.ToGuid()] = doc["Count"].AsInt32;
+        }
+
+        return dict;
     }
 
     /// <summary>Índices (listing+data, parentId, path). Idempotente.</summary>

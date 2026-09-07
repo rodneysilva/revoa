@@ -13,10 +13,12 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
     private const int CandidateCap = 200;
 
     private readonly IListingRepository _listings;
+    private readonly ICommentRepository _comments;
 
-    public GetFeedQueryHandler(IListingRepository listings)
+    public GetFeedQueryHandler(IListingRepository listings, ICommentRepository comments)
     {
         _listings = listings;
+        _comments = comments;
     }
 
     public async Task<Result<IReadOnlyList<FeedItemDto>>> Handle(GetFeedQuery request, CancellationToken ct)
@@ -70,7 +72,8 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
 
         if (!useRadius)
         {
-            IReadOnlyList<FeedItemDto> direct = candidates.Select(Map).ToList();
+            var direct = candidates.Select(Map).ToList();
+            await EnrichCommentCountsAsync(direct, ct);
             return Result<IReadOnlyList<FeedItemDto>>.Ok(direct);
         }
 
@@ -95,7 +98,23 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
             .Select(x => Map(x.Listing))
             .ToList();
 
+        await EnrichCommentCountsAsync(paged, ct);
         return Result<IReadOnlyList<FeedItemDto>>.Ok(paged);
+    }
+
+    // Badge "💬 N" do card: total de comentários visíveis por anúncio (uma aggregation).
+    private async Task EnrichCommentCountsAsync(List<FeedItemDto> items, CancellationToken ct)
+    {
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var counts = await _comments.GetCountsAsync(items.Select(i => i.Id).ToList(), ct);
+        for (var i = 0; i < items.Count; i++)
+        {
+            items[i] = items[i] with { CommentCount = counts.GetValueOrDefault(items[i].Id) };
+        }
     }
 
     private static FeedItemDto Map(Listing l) => new(

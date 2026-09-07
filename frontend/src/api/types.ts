@@ -36,6 +36,7 @@ export interface FeedItem {
   Duration?: number;
   CreatedAt?: string;
   Description?: string;
+  CommentCount?: number;
 }
 
 // Busca global (header): anúncios + comunidades agrupados num pedido.

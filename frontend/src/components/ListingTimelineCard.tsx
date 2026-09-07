@@ -228,7 +228,9 @@ export function ListingTimelineCard({
                 onClick={openComments}
                 className={`text-xs hover:text-esmeralda transition ${showComments ? "text-esmeralda" : "text-silver"}`}
               >
-                💬 Comentar
+                {item.CommentCount && item.CommentCount > 0
+                  ? `💬 ${item.CommentCount} comentário${item.CommentCount === 1 ? "" : "s"}`
+                  : "💬 Comentar"}
               </button>
             )}
             {saveButton}
