@@ -96,6 +96,10 @@ public sealed class DevSeeder
         var usuarios = await SeedUsersAsync(mocks, ct);
         var carteiras = await SeedAccountsAsync(mocks, ct);
 
+        // 3.b) Garante o usuário REAL do owner (admin): se a conta já existe (registro
+        // normal), preserva o _id e só completa a carteira se faltar — nunca apaga.
+        await SeedAdminAsync(ct);
+
         // 4) Catálogo vinculado aos mocks (SellerId rotaciona entre os 10 mocks).
         var (produtos, servicos, erros) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
 
@@ -172,8 +176,7 @@ public sealed class DevSeeder
         return docs.Count;
     }
 
-    // --- Carteiras (Accounts): gera EOA Nethereum aleatória por usuário (off-chain, perfil DEV).
-    //     Random é OK — a Account é limpa por UserId antes de re-inserir (idempotente).
+    // --- Carteiras (Accounts): gera EOA Nethereum aleatória por usuário (off-chain, perfil DEV).    //     Random é OK — a Account é limpa por UserId antes de re-inserir (idempotente).
     private async Task<int> SeedAccountsAsync(IReadOnlyList<DevSeedData.MockUser> mocks, CancellationToken ct)
     {
         var docs = new List<BsonDocument>(mocks.Count);
@@ -189,6 +192,48 @@ public sealed class DevSeeder
 
         await _db.GetCollection<BsonDocument>("Accounts").InsertManyAsync(docs, cancellationToken: ct);
         return docs.Count;
+    }
+
+    // --- Usuário REAL do owner (admin): email é o allowlist ADMIN_EMAILS, então qualquer
+    //     login já recebe a role Admin. Upsert por e-mail — a conta registrada normalmente
+    //     (com LoginCodes usados etc.) é preservada; só ganha carteira se não tiver.
+    private const string AdminEmail = "rodneydocarmo@gmail.com";
+    private static readonly Guid AdminSeedId = new("aabbccdd-00aa-4000-8000-0000000000aa");
+
+    private async Task SeedAdminAsync(CancellationToken ct)
+    {
+        var users = _db.GetCollection<BsonDocument>("Users");
+        var bf = Builders<BsonDocument>.Filter;
+
+        var existing = await users.Find(bf.Eq("Email", AdminEmail)).FirstOrDefaultAsync(ct);
+        Guid adminId;
+        if (existing is null)
+        {
+            var admin = AppUser.Create("Rodney do Carmo Silva", AdminEmail, "+5511999990000", idadeOk: true);
+            admin.DevActivate();
+            var doc = admin.ToBsonDocument();
+            doc["_id"] = new BsonBinaryData(AdminSeedId, GuidRepresentation.Standard);
+            await users.InsertOneAsync(doc, cancellationToken: ct);
+            adminId = AdminSeedId;
+            _logger.LogInformation("Seed: usuário admin {Email} criado", AdminEmail);
+        }
+        else
+        {
+            adminId = existing["_id"].AsBsonBinaryData.ToGuid();
+        }
+
+        var accounts = _db.GetCollection<BsonDocument>("Accounts");
+        var temCarteira = await accounts.Find(bf.Eq("UserId", adminId)).AnyAsync(ct);
+        if (!temCarteira)
+        {
+            var ecKey = EthECKey.GenerateKey();
+            var privateKey = ecKey.GetPrivateKey();
+            var walletAddress = new Nethereum.Web3.Accounts.Account(privateKey).Address;
+            await accounts.InsertOneAsync(
+                UserAccount.Create(adminId, walletAddress, privateKey).ToBsonDocument(),
+                cancellationToken: ct);
+            _logger.LogInformation("Seed: carteira criada para o admin");
+        }
     }
 
     // --- Catálogo (56 produtos + 57 serviços) vinculado aos mocks: SellerId/Nome/AvatarUrl
