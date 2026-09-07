@@ -23,11 +23,14 @@ public class MediaController : ControllerBase
     }
 
     // Upload de imagem (multipart). Retorna { Url } relativa para o anúncio.
+    // Query folder: allowlist "communities" → communities/{userId}/… (capa);
+    // qualquer outro valor (ou ausente) → listings/{userId}/… (retrocompatível).
     // RequestSizeLimit = arquivo + envelope multipart (senão 413 antes do 400 amigável).
     [HttpPost]
     [Authorize]
     [RequestSizeLimit(MaxBytes + 64 * 1024)]
-    public async Task<IActionResult> Upload(IFormFile file, CancellationToken ct)
+    public async Task<IActionResult> Upload(
+        IFormFile file, [FromQuery] string? folder, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
         {
@@ -52,7 +55,8 @@ public class MediaController : ControllerBase
         }
 
         await using var stream = file.OpenReadStream();
-        var url = await _media.SaveAsync($"listings/{user.UserId}", file.FileName, contentType, stream, ct);
+        var prefix = folder == "communities" ? "communities" : "listings";
+        var url = await _media.SaveAsync($"{prefix}/{user.UserId}", file.FileName, contentType, stream, ct);
 
         return Ok(new { Url = url });
     }

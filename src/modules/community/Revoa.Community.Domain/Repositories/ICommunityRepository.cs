@@ -9,6 +9,10 @@ public interface ICommunityRepository
 {
     Task<CommunityGroup?> GetByIdAsync(Guid id, CancellationToken ct);
 
+    // Comunidades por ids (batch $in — alimenta o feed público de posts).
+    Task<IReadOnlyList<CommunityGroup>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct);
+
     Task<IReadOnlyList<CommunityGroup>> GetPublicAsync(PublicFilter filter, CancellationToken ct);
 
     // Painel admin: TODAS (inclui arquivadas), mais recentes primeiro, cap 500.

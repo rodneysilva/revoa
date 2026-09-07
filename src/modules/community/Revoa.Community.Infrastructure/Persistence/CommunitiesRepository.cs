@@ -11,6 +11,18 @@ public class CommunitiesRepository : MongoRepositoryBase<CommunityGroup>, ICommu
     {
     }
 
+    public async Task<IReadOnlyList<CommunityGroup>> GetByIdsAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken ct)
+    {
+        if (ids.Count == 0)
+        {
+            return Array.Empty<CommunityGroup>();
+        }
+
+        var fb = Builders<CommunityGroup>.Filter;
+        return await Collection.Find(fb.In(c => c.Id, ids)).ToListAsync(ct);
+    }
+
     public async Task<IReadOnlyList<CommunityGroup>> GetAllAsync(int limit, CancellationToken ct)
     {
         return await Collection.Find(_ => true)

@@ -49,6 +49,9 @@ public class CommunityGroup : AggregateRoot
     public string? City { get; private set; }
     public string? State { get; private set; }
 
+    // Capa opcional (upload via /api/media?folder=communities). Null → gradiente no FE.
+    public string? CoverImageUrl { get; private set; }
+
     public Guid CreatorId { get; private set; }
     public string CreatorName { get; private set; } = string.Empty;
     public string? CreatorAvatarUrl { get; private set; }
@@ -71,7 +74,8 @@ public class CommunityGroup : AggregateRoot
         string? state,
         Guid creatorId,
         string creatorName,
-        string? creatorAvatarUrl)
+        string? creatorAvatarUrl,
+        string? coverImageUrl = null)
     {
         ValidateInvariants(name, type, visibility, password, creatorId);
 
@@ -89,6 +93,7 @@ public class CommunityGroup : AggregateRoot
             Neighborhood = neighborhood,
             City = city,
             State = state,
+            CoverImageUrl = string.IsNullOrWhiteSpace(coverImageUrl) ? null : coverImageUrl.Trim(),
             CreatorId = creatorId,
             CreatorName = string.IsNullOrWhiteSpace(creatorName) ? "Usuário" : creatorName,
             CreatorAvatarUrl = creatorAvatarUrl,
@@ -106,6 +111,17 @@ public class CommunityGroup : AggregateRoot
         }
 
         PasswordHash = hash;
+    }
+
+    // Define/remove a capa (URL do /api/media). Null volta ao gradiente do FE.
+    public void SetCoverImageUrl(string? coverImageUrl)
+    {
+        if (coverImageUrl is not null && coverImageUrl.Length > 500)
+        {
+            throw new DomainException("URL da capa deve ter no máximo 500 caracteres.");
+        }
+
+        CoverImageUrl = string.IsNullOrWhiteSpace(coverImageUrl) ? null : coverImageUrl.Trim();
     }
 
     public void Archive()

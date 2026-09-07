@@ -21,6 +21,9 @@ public class CreateCommunityCommandValidator : AbstractValidator<Commands.Create
         RuleFor(x => x.Description)
             .MaximumLength(500).WithMessage("Descrição deve ter no máximo 500 caracteres.");
 
+        RuleFor(x => x.CoverImageUrl)
+            .MaximumLength(500).WithMessage("URL da capa deve ter no máximo 500 caracteres.");
+
         // Private exige senha.
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Comunidades privadas exigem senha.")

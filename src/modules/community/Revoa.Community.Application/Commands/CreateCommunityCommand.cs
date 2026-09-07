@@ -21,7 +21,8 @@ public sealed record CreateCommunityCommand(
     double? Lng,
     string? Neighborhood,
     string? City,
-    string? State) : IRequest<Result<string>>;
+    string? State,
+    string? CoverImageUrl = null) : IRequest<Result<string>>;
 
 public class CreateCommunityCommandHandler : IRequestHandler<CreateCommunityCommand, Result<string>>
 {
@@ -53,7 +54,8 @@ public class CreateCommunityCommandHandler : IRequestHandler<CreateCommunityComm
                 request.State,
                 request.CreatorId,
                 request.CreatorName,
-                request.CreatorAvatarUrl);
+                request.CreatorAvatarUrl,
+                request.CoverImageUrl);
         }
         catch (DomainException ex)
         {

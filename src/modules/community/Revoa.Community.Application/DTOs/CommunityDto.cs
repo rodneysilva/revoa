@@ -18,7 +18,8 @@ public sealed record CommunityDto(
     Guid CreatorId,
     string CreatorName,
     string? CreatorAvatarUrl,
-    int MembersCount);
+    int MembersCount,
+    string? CoverImageUrl = null);
 
 public static class CommunityDtoMapper
 {
@@ -37,5 +38,6 @@ public static class CommunityDtoMapper
         c.CreatorId,
         c.CreatorName,
         c.CreatorAvatarUrl,
-        membrosCount);
+        membrosCount,
+        c.CoverImageUrl);
 }
