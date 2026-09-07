@@ -149,7 +149,7 @@ export function PostCard({
           <p className="mt-1 text-sm text-cream/90 whitespace-pre-wrap break-words line-clamp-6">
             {post.Content}
           </p>
-          <div className="mt-2.5 flex items-center gap-4">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1">
             {likeButton}
             {saveButton}
             <Link

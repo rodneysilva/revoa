@@ -424,11 +424,14 @@ export function CommunityDetailPage() {
       </Link>
 
       {/* ══ HERO — capa real (upload) com fallback gradiente ══
-          Proporcional à capa (seeds 1200×400 = 3:1): cresce com a largura do
-          container (2880px → 960px de altura em 4K) e nunca corta a imagem.
-          Piso de 13rem só para telas estreitas, onde 3:1 ficaria baixo demais
-          para a faixa de título. */}
-      <header className="relative rounded-2xl overflow-hidden border border-smoke aspect-[3/1] min-h-[13rem] flex flex-col">
+          Box 4:1 (25% mais baixo que os 3:1 das capas 1200×400): cresce com a
+          largura do container (2880px → 720px de altura em 4K). object-cover
+          escala a imagem proporcional (nunca distorce) e centraliza o corte
+          vertical (~12,5% de cada borda de uma capa 3:1). w-full é OBRIGATÓRIO:
+          sem ele, quando o piso min-h ativa (telas estreitas) o aspect-ratio
+          deriva a LARGURA da altura (10rem×4 = 640px) e estoura a página.
+          Piso de 10rem mantém a faixa de título cabível onde 4:1 ficaria baixo. */}
+      <header className="relative rounded-2xl overflow-hidden border border-smoke aspect-[4/1] w-full min-h-[10rem] flex flex-col">
         {community.CoverImageUrl ? (
           <img
             src={community.CoverImageUrl}
@@ -553,8 +556,10 @@ export function CommunityDetailPage() {
         </div>
       </header>
 
-      {/* ══ PÁGINA ÚNICA: filtros | feed | features — full width ══ */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_22rem] items-start">
+      {/* ══ PÁGINA ÚNICA: filtros | feed | features — full width ══
+          grid-cols-1 no mobile: sem track definido a coluna implícita `auto`
+          assume o max-content dos chips de filtro e vaza da tela. */}
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_22rem] items-start">
         {/* ── Esquerda: filtros do feed + atalhos (acompanha o scroll) ── */}
         <aside className="space-y-4 lg:sticky lg:top-20 self-start">
           <section className="bg-charcoal rounded-xl border border-smoke p-4">

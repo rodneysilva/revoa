@@ -162,7 +162,7 @@ function PostItem({
             {post.Content}
           </p>
 
-          <div className="mt-2 flex items-center gap-4 text-xs">
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
             {canReply && (
               <button
                 type="button"
