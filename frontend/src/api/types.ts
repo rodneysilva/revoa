@@ -292,12 +292,13 @@ export interface PublicPostItem {
   CommunityCoverUrl?: string;
 }
 
-// GET /api/users/{id} — perfil público. Só nome e "membro desde";
-// e-mail/telefone jamais saem do backend.
+// GET /api/users/{id} — perfil público. Só nome, "membro desde" e selo de
+// verificação (email+telefone); e-mail/telefone jamais saem do backend.
 export interface PublicProfile {
   Id: string;
   Name: string;
   MemberSince?: string;
+  Verified?: boolean;
 }
 
 // GET /api/wallet/balance — saldo RVM do usuário logado. Rvm null = saldo

@@ -5,15 +5,17 @@ using Revoa.Identity.Domain.Repositories;
 
 namespace Revoa.Identity.Application.Queries;
 
-// Perfil público (GET /api/users/{id}): só o que é público — nome e "membro
-// desde". E-mail/telefone/verificações NUNCA saem. Banido/inativo = 404.
+// Perfil público (GET /api/users/{id}): só o que é público — nome, "membro
+// desde" e selo de verificação (email+telefone). E-mail/telefone NUNCA saem.
+// Banido/inativo = 404.
 public sealed record GetPublicProfileQuery(Guid UserId)
     : IRequest<Result<PublicProfileDto>>;
 
 public sealed record PublicProfileDto(
     Guid Id,
     string Name,
-    DateTime? MemberSince);
+    DateTime? MemberSince,
+    bool Verified = false);
 
 public class GetPublicProfileQueryHandler
     : IRequestHandler<GetPublicProfileQuery, Result<PublicProfileDto>>
@@ -36,6 +38,7 @@ public class GetPublicProfileQueryHandler
         // Documentos anteriores ao campo CreatedAt ficam com default → null (não exibir).
         var memberSince = user.CreatedAt == default ? (DateTime?)null : user.CreatedAt;
 
-        return Result<PublicProfileDto>.Ok(new PublicProfileDto(user.Id, user.Name, memberSince));
+        return Result<PublicProfileDto>.Ok(new PublicProfileDto(
+            user.Id, user.Name, memberSince, user.EmailVerified && user.PhoneVerified));
     }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { BadgeCheck, Bell, Bookmark, Menu, Repeat, Wallet, X } from "lucide-react";
+import { Bell, Bookmark, Menu, Repeat, Wallet, X } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { isAdminUser } from "../lib/admin";
@@ -136,12 +136,6 @@ export function Layout() {
                     </span>
                   )}
                 </Link>
-                {user.verified && (
-                  <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-esmeralda bg-esmeralda/10 px-2 py-1 rounded-full">
-                    <BadgeCheck aria-hidden className="w-3.5 h-3.5" />
-                    Verificado
-                  </span>
-                )}
                 <Link
                   to="/profile"
                   className="hidden sm:inline text-sm text-cream hover:text-esmeralda truncate max-w-[12ch]"

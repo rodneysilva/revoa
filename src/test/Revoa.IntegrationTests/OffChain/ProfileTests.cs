@@ -24,6 +24,7 @@ public class ProfileTests : IntegrationTestBase
         var json = await resp.Content.ReadFromJsonAsync<JsonNode>();
         json!["Name"]!.GetValue<string>().Should().Be("Maria Perfeco");
         json["MemberSince"].Should().NotBeNull("Created no registro é hoje");
+        json["Verified"]!.GetValue<bool>().Should().BeTrue("dev-verify confirma e-mail e telefone → selo público");
 
         // Contrato de privacidade: nada de e-mail/telefone no payload público.
         var raw = await resp.Content.ReadAsStringAsync();

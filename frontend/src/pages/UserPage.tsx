@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { BadgeCheck, Search } from "lucide-react";
 import { api } from "../api/client";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
@@ -71,22 +71,31 @@ export function UserPage() {
 
   return (
     <div className="app-container">
-      <div className="app-read-lg">
-        <header className="flex items-center gap-4 mb-2">
-          <Avatar name={profile.Name || "?"} size={64} />
-          <div>
-            <h1 className="text-2xl font-bold text-cream">{profile.Name}</h1>
-            {membroDesde && (
-              <p className="text-sm text-silver">Membro desde {membroDesde}</p>
+      <header className="flex items-center gap-4 mb-6">
+        <Avatar name={profile.Name || "?"} size={64} />
+        <div>
+          <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold text-cream">
+            {profile.Name}
+            {profile.Verified && (
+              <span
+                className="inline-flex items-center gap-1 text-esmeralda text-sm font-semibold"
+                title="E-mail e telefone confirmados"
+              >
+                <BadgeCheck aria-hidden className="w-4 h-4" />
+                Verificado
+              </span>
             )}
-          </div>
-        </header>
+          </h1>
+          {membroDesde && (
+            <p className="text-sm text-silver">Membro desde {membroDesde}</p>
+          )}
+        </div>
+      </header>
 
-        <ProfileListings userId={id} />
-        <ProfileCommunities userId={id} />
-        <ProfileActivity userId={id} />
-        <ProfileReputation userId={id} />
-      </div>
+      <ProfileListings userId={id} />
+      <ProfileCommunities userId={id} />
+      <ProfileActivity userId={id} />
+      <ProfileReputation userId={id} />
     </div>
   );
 }

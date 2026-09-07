@@ -62,7 +62,7 @@ export function ProfileListings({ userId, self }: { userId: string; self?: boole
           }
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
           {items.map((i) => (
             <ListingCard key={i.Id} item={i} />
           ))}
@@ -103,7 +103,7 @@ export function ProfileSaved() {
           }
         />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
           {items.map((i) => (
             <ListingCard key={i.Id} item={i} />
           ))}
@@ -138,7 +138,7 @@ export function ProfileCommunities({ userId }: { userId: string }) {
           hint="Comunidades são onde a troca hiperlocal acontece."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {items.map((c) => (
             <CommunityCard key={c.Id} c={c} />
           ))}
@@ -169,7 +169,7 @@ export function ProfileActivity({ userId }: { userId: string }) {
       {items.length === 0 ? (
         <EmptyState icon={<MessageCircle className="w-8 h-8" />} title="Nenhuma atividade recente" />
       ) : (
-        <ul className="space-y-2">
+        <ul className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
           {items.map(({ Post, Community }) => (
             <li key={Post.Id}>
               <Link
