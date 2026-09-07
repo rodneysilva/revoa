@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, Heart, MessageCircle, MessagesSquare } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { ShareButton } from "./ShareButton";
 import { timeAgo } from "../lib/time";
@@ -74,13 +75,20 @@ export function PostCard({
     <button
       type="button"
       onClick={toggleLike}
-      className={`text-xs hover:text-rosa transition ${liked ? "text-rosa" : "text-silver"}`}
+      className={`inline-flex items-center gap-1 text-xs hover:text-rosa transition ${
+        liked ? "text-rosa" : "text-silver"
+      }`}
     >
-      {liked ? "❤️" : "🤍"} {likeCount > 0 ? likeCount : "Curtir"}
+      <Heart aria-hidden className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+      <span>{likeCount > 0 ? likeCount : "Curtir"}</span>
     </button>
   ) : (
-    <Link to="/login" className="text-xs text-silver hover:text-rosa">
-      🤍 {likeCount > 0 ? likeCount : "Curtir"}
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-1 text-xs text-silver hover:text-rosa"
+    >
+      <Heart aria-hidden className="w-3.5 h-3.5" />
+      <span>{likeCount > 0 ? likeCount : "Curtir"}</span>
     </Link>
   );
 
@@ -88,13 +96,20 @@ export function PostCard({
     <button
       type="button"
       onClick={toggleSave}
-      className={`text-xs hover:text-amber transition ${saved ? "text-amber" : "text-silver"}`}
+      className={`inline-flex items-center gap-1 text-xs hover:text-amber transition ${
+        saved ? "text-amber" : "text-silver"
+      }`}
     >
-      {saved ? "🔖 Salvo" : "🔖 Salvar"}
+      <Bookmark aria-hidden className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`} />
+      <span>{saved ? "Salvo" : "Salvar"}</span>
     </button>
   ) : (
-    <Link to="/login" className="text-xs text-silver hover:text-amber">
-      🔖 Salvar
+    <Link
+      to="/login"
+      className="inline-flex items-center gap-1 text-xs text-silver hover:text-amber"
+    >
+      <Bookmark aria-hidden className="w-3.5 h-3.5" />
+      <span>Salvar</span>
     </Link>
   );
 
@@ -125,7 +140,7 @@ export function PostCard({
                     }}
                   />
                 ) : (
-                  <span aria-hidden>💬</span>
+                  <MessagesSquare aria-hidden className="w-4 h-4" />
                 )}
                 <span className="truncate">{communityName}</span>
               </Link>
@@ -139,9 +154,10 @@ export function PostCard({
             {saveButton}
             <Link
               to={communityHref}
-              className="text-xs text-silver hover:text-esmeralda transition"
+              className="inline-flex items-center gap-1 text-xs text-silver hover:text-esmeralda transition"
             >
-              💬 {(post.ChildrenCount ?? 0) > 0
+              <MessageCircle aria-hidden className="w-3.5 h-3.5" />
+              {(post.ChildrenCount ?? 0) > 0
                 ? `${post.ChildrenCount} resposta${post.ChildrenCount === 1 ? "" : "s"}`
                 : "Conversar"}
             </Link>

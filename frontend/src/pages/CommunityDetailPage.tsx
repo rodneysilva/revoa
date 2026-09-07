@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import {
+  Bookmark,
+  Camera,
+  Clock,
+  Eye,
+  Lock,
+  MapPin,
+  MessageCircle,
+  Plus,
+  ScrollText,
+  ShoppingBag,
+  SquarePen,
+  Users,
+} from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
@@ -10,7 +24,7 @@ import { PostCard } from "../components/PostCard";
 import { PostComposer } from "../components/PostComposer";
 import { PostThread } from "../components/PostThread";
 import {
-  EIXO_EMOJI,
+  EIXO_ICON,
   PAPEL_META,
   VISIBILIDADE_LABEL,
 } from "../lib/community";
@@ -35,17 +49,23 @@ const ANCHOR_MAP: Record<string, string> = {
 };
 
 const FILTRO_LABEL: Record<FiltroConversa, string> = {
-  recentes: "🕘 Recentes",
-  minhas: "✍️ Minhas",
-  anuncios: "🛍️ Anúncios",
-  salvos: "🔖 Salvos",
+  recentes: "Recentes",
+  minhas: "Minhas",
+  anuncios: "Anúncios",
+  salvos: "Salvos",
+};
+const FILTRO_ICON: Record<FiltroConversa, typeof Clock> = {
+  recentes: Clock,
+  minhas: SquarePen,
+  anuncios: ShoppingBag,
+  salvos: Bookmark,
 };
 
 type FiltroConversa = "recentes" | "minhas" | "anuncios" | "salvos";
 
 const REGRAS = [
   "Respeite os membros — sem ofensas, spam ou discurso de ódio.",
-  "Anúncios dos membros aparecem no feed — use o filtro 🛍️ para vê-los.",
+  "Anúncios dos membros aparecem no feed — use o filtro Anúncios para vê-los.",
   "Denuncie conteúdo inadequado; moderadores cuidam do resto.",
 ];
 
@@ -370,6 +390,7 @@ export function CommunityDetailPage() {
       </div>
     );
 
+  const AxisIcon = EIXO_ICON[community.Axis];
   const local = [community.Neighborhood, community.City, community.State]
     .filter(Boolean)
     .join(", ");
@@ -417,7 +438,7 @@ export function CommunityDetailPage() {
         <div className="relative p-4 sm:p-5 text-white">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold drop-shadow">
-              <span aria-hidden>{EIXO_EMOJI[community.Axis]}</span>
+              <AxisIcon aria-hidden className="w-5 h-5" />
               <span className="truncate max-w-[16rem] sm:max-w-none">{community.Name}</span>
             </h1>
             {community.Type === "Default" && (
@@ -425,17 +446,17 @@ export function CommunityDetailPage() {
                 Oficial
               </span>
             )}
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
-              {community.Visibility === "Private"
-                ? `🔒 ${VISIBILIDADE_LABEL[community.Visibility]}`
-                : VISIBILIDADE_LABEL[community.Visibility]}
+            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-sm">
+              {community.Visibility === "Private" && <Lock aria-hidden className="w-3 h-3" />}
+              {VISIBILIDADE_LABEL[community.Visibility]}
             </span>
 
             <a
               href="#membros"
-              className="text-sm text-white/90 hover:text-white ml-auto whitespace-nowrap"
+              className="inline-flex items-center gap-1 text-sm text-white/90 hover:text-white ml-auto whitespace-nowrap"
             >
-              👥 {community.MembersCount}
+              <Users aria-hidden className="w-4 h-4" />
+              {community.MembersCount}
             </a>
 
             {!user ? (
@@ -471,7 +492,10 @@ export function CommunityDetailPage() {
             ) : null}
 
             {local && (
-              <span className="basis-full text-xs text-white/75 drop-shadow">📍 {local}</span>
+              <span className="basis-full inline-flex items-center gap-1 text-xs text-white/75 drop-shadow">
+                <MapPin aria-hidden className="w-3 h-3" />
+                {local}
+              </span>
             )}
           </div>
 
@@ -505,7 +529,14 @@ export function CommunityDetailPage() {
 
           {canManageCover && (
             <label className="absolute bottom-3 right-3 cursor-pointer bg-black/45 backdrop-blur-sm border border-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-black/65 transition">
-              {coverUploading ? "Enviando…" : "📷 Capa"}
+              {coverUploading ? (
+                "Enviando…"
+              ) : (
+                <>
+                  <Camera aria-hidden className="w-3.5 h-3.5" />
+                  Capa
+                </>
+              )}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
@@ -527,20 +558,24 @@ export function CommunityDetailPage() {
               Feed da comunidade
             </h2>
             <div className="flex lg:flex-col gap-1.5 overflow-x-auto">
-              {(Object.keys(FILTRO_LABEL) as FiltroConversa[]).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFiltro(f)}
-                  className={`whitespace-nowrap text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                    filtro === f
-                      ? "bg-esmeralda/15 text-esmeralda font-medium"
-                      : "text-silver hover:text-cream"
-                  }`}
-                >
-                  {FILTRO_LABEL[f]}
-                </button>
-              ))}
+              {(Object.keys(FILTRO_LABEL) as FiltroConversa[]).map((f) => {
+                const FIcon = FILTRO_ICON[f];
+                return (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setFiltro(f)}
+                    className={`inline-flex items-center gap-1.5 whitespace-nowrap text-left px-3 py-1.5 rounded-lg text-sm transition ${
+                      filtro === f
+                        ? "bg-esmeralda/15 text-esmeralda font-medium"
+                        : "text-silver hover:text-cream"
+                    }`}
+                  >
+                    <FIcon aria-hidden className="w-3.5 h-3.5 shrink-0" />
+                    {FILTRO_LABEL[f]}
+                  </button>
+                );
+              })}
             </div>
           </section>
 
@@ -552,9 +587,9 @@ export function CommunityDetailPage() {
               {user?.verified && (
                 <Link
                   to={`/listings/new?community=${community.Id}`}
-                  className="text-silver hover:text-cream px-3 py-1.5"
+                  className="inline-flex items-center gap-1.5 text-silver hover:text-cream px-3 py-1.5"
                 >
-                  ➕ Anunciar algo
+                  <Plus aria-hidden className="w-3.5 h-3.5" /> Anunciar algo
                 </Link>
               )}
             </nav>
@@ -572,8 +607,11 @@ export function CommunityDetailPage() {
 
           {!isMember && (
             <div className="bg-smoke/50 border border-smoke rounded-xl p-4 text-sm text-silver">
-              👁️ Comunidade pública: conversas e anúncios aparecem para todos —
-              só membros publicam, comentam, curtem e salvam.
+              <span className="inline-flex items-start gap-2">
+                <Eye aria-hidden className="w-4 h-4 mt-0.5 shrink-0" />
+                Comunidade pública: conversas e anúncios aparecem para todos —
+                só membros publicam, comentam, curtem e salvam.
+              </span>
             </div>
           )}
 
@@ -586,7 +624,7 @@ export function CommunityDetailPage() {
           ) : timeline.length === 0 ? (
             filtro === "anuncios" ? (
               <EmptyState
-                icon="🛍️"
+                icon={<ShoppingBag className="w-8 h-8" />}
                 title="Nenhum anúncio da comunidade por aqui ainda."
                 action={
                   user?.verified && isMember ? (
@@ -601,7 +639,7 @@ export function CommunityDetailPage() {
               />
             ) : filtro === "salvos" ? (
               <EmptyState
-                icon="🔖"
+                icon={<Bookmark className="w-8 h-8" />}
                 title={
                   user
                     ? "Você ainda não salvou nada desta comunidade."
@@ -610,7 +648,7 @@ export function CommunityDetailPage() {
               />
             ) : (
               <EmptyState
-                icon="💬"
+                icon={<MessageCircle className="w-8 h-8" />}
                 title={
                   filtro === "minhas"
                     ? "Você ainda não publicou aqui."
@@ -682,7 +720,10 @@ export function CommunityDetailPage() {
 
           <section id="membros" className="bg-charcoal rounded-xl border border-smoke p-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
-              👥 Membros ({activeMembers.length})
+              <span className="inline-flex items-center gap-1.5">
+                <Users aria-hidden className="w-3.5 h-3.5" />
+                Membros ({activeMembers.length})
+              </span>
             </h2>
             <div className="max-h-96 overflow-y-auto pr-1 space-y-1.5">
               {activeMembers.map((m) => {
@@ -714,7 +755,10 @@ export function CommunityDetailPage() {
 
           <section className="bg-charcoal rounded-xl border border-smoke p-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
-              📜 Regras
+              <span className="inline-flex items-center gap-1.5">
+                <ScrollText aria-hidden className="w-3.5 h-3.5" />
+                Regras
+              </span>
             </h2>
             <ul className="space-y-1.5 text-sm text-silver">
               {REGRAS.map((r) => (

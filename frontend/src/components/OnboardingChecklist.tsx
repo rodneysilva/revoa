@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Check, X } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
@@ -85,7 +86,7 @@ export function OnboardingChecklist() {
           aria-label="Dispensar primeiros passos"
           className="text-silver hover:text-cream text-sm leading-none"
         >
-          ✕
+          <X aria-hidden className="w-4 h-4" />
         </button>
       </div>
 
@@ -108,7 +109,7 @@ export function OnboardingChecklist() {
               }`}
               aria-hidden
             >
-              ✓
+              <Check className="w-3 h-3" />
             </span>
             <span className={p.done ? "text-silver line-through" : "text-cream"}>
               {p.label}

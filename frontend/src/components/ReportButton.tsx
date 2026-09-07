@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Flag, X } from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { ReportReason, ReportTarget } from "../api/types";
@@ -47,7 +48,7 @@ export function ReportButton({
         aria-label="Denunciar"
         className="text-silver/70 hover:text-rosa"
       >
-        ⚑
+        <Flag aria-hidden className="w-3.5 h-3.5" />
       </button>
     );
   }
@@ -66,7 +67,7 @@ export function ReportButton({
           className="text-silver hover:text-cream text-xs"
           aria-label="Fechar"
         >
-          ✕
+          <X aria-hidden className="w-3.5 h-3.5" />
         </button>
       </div>
       <select

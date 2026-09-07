@@ -1,25 +1,39 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Check,
+  Eye,
+  Hand,
+  Heart,
+  HeartHandshake,
+  PartyPopper,
+  Recycle,
+  Sprout,
+  SquarePen,
+  Star,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
 import { Hero } from "../components/Hero";
 import { ListingCard } from "../components/ListingCard";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { FeedItem, Mode } from "../api/types";
 
+import { MODO_META } from "../lib/config";
+
 interface Guide {
   modo: Mode;
-  emoji: string;
   title: string;
   intro: string;
   chip: string;
   ringActive: string;
-  steps: { icon: string; text: string }[];
+  steps: { icon: LucideIcon; text: string }[];
   faqs: { q: string; a: string }[];
 }
 
 const MODO_CARDS: {
   modo: Mode;
-  emoji: string;
   title: string;
   desc: string;
   accent: string;
@@ -28,7 +42,6 @@ const MODO_CARDS: {
 }[] = [
   {
     modo: "Trade",
-    emoji: "🔄",
     title: "Trocar",
     desc: "Troque produtos e serviços com o RVM, a moeda da comunidade.",
     accent: "text-esmeralda",
@@ -37,7 +50,6 @@ const MODO_CARDS: {
   },
   {
     modo: "Resell",
-    emoji: "💜",
     title: "Repassar",
     desc: "Repassa por um valor baixo em RVM, acessível para mais gente.",
     accent: "text-rosa",
@@ -46,7 +58,6 @@ const MODO_CARDS: {
   },
   {
     modo: "Donate",
-    emoji: "🎁",
     title: "Doar",
     desc: "Dê nova vida ao que não usa — de graça, a quem precisa.",
     accent: "text-terracota",
@@ -55,7 +66,6 @@ const MODO_CARDS: {
   },
   {
     modo: "Volunteer",
-    emoji: "🤝",
     title: "Voluntariar",
     desc: "Ofereça seu tempo e habilidades. A comunidade agradece.",
     accent: "text-lima",
@@ -67,18 +77,17 @@ const MODO_CARDS: {
 const GUIDES: Guide[] = [
   {
     modo: "Trade",
-    emoji: "🔄",
     title: "Trocar",
     intro:
       "Troque produtos e serviços com o RVM, a moeda da comunidade. Você oferece, recebe RVM e usa quando precisa.",
     chip: "bg-esmeralda/15 text-esmeralda",
     ringActive: "ring-esmeralda/60",
     steps: [
-      { icon: "📝", text: "Você anuncia o que oferece (produto ou serviço) com um preço justo em RVM." },
-      { icon: "👀", text: "Quem precisa encontra seu anúncio no feed e oferece os RVM." },
-      { icon: "🤝", text: "Vocês combinam a entrega do produto ou a prestação do serviço." },
-      { icon: "✅", text: "Na confirmação, você recebe seus RVM (menos uma pequena taxa que sustenta a plataforma — sem lucro)." },
-      { icon: "⭐", text: "Vocês se avaliam e a confiança da comunidade cresce." },
+      { icon: SquarePen, text: "Você anuncia o que oferece (produto ou serviço) com um preço justo em RVM." },
+      { icon: Eye, text: "Quem precisa encontra seu anúncio no feed e oferece os RVM." },
+      { icon: HeartHandshake, text: "Vocês combinam a entrega do produto ou a prestação do serviço." },
+      { icon: Check, text: "Na confirmação, você recebe seus RVM (menos uma pequena taxa que sustenta a plataforma — sem lucro)." },
+      { icon: Star, text: "Vocês se avaliam e a confiança da comunidade cresce." },
     ],
     faqs: [
       { q: "O que é RVM?", a: "É o crédito de troca da comunidade: você ganha oferecendo e usa quando precisa. Não é dinheiro e não dá lucro." },
@@ -88,18 +97,17 @@ const GUIDES: Guide[] = [
   },
   {
     modo: "Resell",
-    emoji: "💜",
     title: "Repassar",
     intro:
       "Repassa algo por um valor baixo em RVM, para que mais gente possa acessar. Acessibilidade no centro.",
     chip: "bg-rosa/15 text-rosa",
     ringActive: "ring-rosa/60",
     steps: [
-      { icon: "📝", text: "Você anuncia um produto por um preço baixo em RVM — acessível para mais gente." },
-      { icon: "👀", text: "Quem precisa encontra e oferece os RVM." },
-      { icon: "🤝", text: "Vocês combinam a entrega no bairro." },
-      { icon: "✅", text: "Na confirmação, você recebe — e o item segue circulando." },
-      { icon: "⭐", text: "Vocês se avaliam." },
+      { icon: SquarePen, text: "Você anuncia um produto por um preço baixo em RVM — acessível para mais gente." },
+      { icon: Eye, text: "Quem precisa encontra e oferece os RVM." },
+      { icon: HeartHandshake, text: "Vocês combinam a entrega no bairro." },
+      { icon: Check, text: "Na confirmação, você recebe — e o item segue circulando." },
+      { icon: Star, text: "Vocês se avaliam." },
     ],
     faqs: [
       { q: "O que é repassar?", a: "É repassar algo por um valor baixo em RVM, para ser acessível a mais pessoas." },
@@ -108,18 +116,17 @@ const GUIDES: Guide[] = [
   },
   {
     modo: "Donate",
-    emoji: "🎁",
     title: "Doar",
     intro:
       "Dê nova vida ao que não usa mais — de graça. Você escolhe quem recebe e ganha o reconhecimento da comunidade.",
     chip: "bg-terracota/15 text-terracota",
     ringActive: "ring-terracota/60",
     steps: [
-      { icon: "📝", text: "Você anuncia o que não usa mais, de graça (RM$ 0)." },
-      { icon: "🙋", text: "Quem precisa pede na fila de interesse." },
-      { icon: "❤️", text: "Você escolhe quem vai receber (por proximidade, mensagem e reputação)." },
-      { icon: "🤝", text: "Vocês combinam a entrega." },
-      { icon: "🎉", text: "Pronto: encontrou um novo lar — e você ganha reconhecimento (selo de doador + pontos de ajuda)." },
+      { icon: SquarePen, text: "Você anuncia o que não usa mais, de graça (RM$ 0)." },
+      { icon: Hand, text: "Quem precisa pede na fila de interesse." },
+      { icon: Heart, text: "Você escolhe quem vai receber (por proximidade, mensagem e reputação)." },
+      { icon: HeartHandshake, text: "Vocês combinam a entrega." },
+      { icon: PartyPopper, text: "Pronto: encontrou um novo lar — e você ganha reconhecimento (selo de doador + pontos de ajuda)." },
     ],
     faqs: [
       { q: "Preciso pagar algo?", a: "Não, doar é de graça. Você não paga nem recebe RVM na doação." },
@@ -129,18 +136,17 @@ const GUIDES: Guide[] = [
   },
   {
     modo: "Volunteer",
-    emoji: "🤝",
     title: "Voluntariar",
     intro:
       "Ofereça uma ajuda que você sabe prestar — de graça. A comunidade agradece e você ganha reconhecimento.",
     chip: "bg-lima/15 text-lima",
     ringActive: "ring-lima/60",
     steps: [
-      { icon: "📝", text: "Você anuncia uma ajuda que sabe prestar, de graça (RM$ 0)." },
-      { icon: "🙋", text: "Quem precisa pede." },
-      { icon: "❤️", text: "Você escolhe quem ajudar." },
-      { icon: "🤝", text: "Vocês combinam e você presta a ajuda." },
-      { icon: "🎉", text: "A comunidade agradece — você ganha selo de voluntário + pontos de ajuda." },
+      { icon: SquarePen, text: "Você anuncia uma ajuda que sabe prestar, de graça (RM$ 0)." },
+      { icon: Hand, text: "Quem precisa pede." },
+      { icon: Heart, text: "Você escolhe quem ajudar." },
+      { icon: HeartHandshake, text: "Vocês combinam e você presta a ajuda." },
+      { icon: PartyPopper, text: "A comunidade agradece — você ganha selo de voluntário + pontos de ajuda." },
     ],
     faqs: [
       { q: "Preciso pagar algo?", a: "Não, voluntariar é de graça." },
@@ -150,11 +156,11 @@ const GUIDES: Guide[] = [
   },
 ];
 
-const PILARES = [
-  { icon: "♻️", title: "Tudo é compartilhado e transformável", text: "Serviço, produto e RVM se convertem. Nada fica parado — tudo circula e muda de forma." },
-  { icon: "🌱", title: "Reuso com propósito", text: "O que você não usa mais encontra um novo lar onde é útil, em vez de ir para o lixo." },
-  { icon: "🛠️", title: "Habilidade = poder de troca", text: "Seu serviço gera RVM, que vira outros produtos ou serviços quando você precisa." },
-  { icon: "❤️", title: "Ajuda mútua em primeiro lugar", text: "Doar e voluntariar valem tanto quanto trocar. A economia é o meio — cuidar é o fim." },
+const PILARES: { icon: LucideIcon; title: string; text: string }[] = [
+  { icon: Recycle, title: "Tudo é compartilhado e transformável", text: "Serviço, produto e RVM se convertem. Nada fica parado — tudo circula e muda de forma." },
+  { icon: Sprout, title: "Reuso com propósito", text: "O que você não usa mais encontra um novo lar onde é útil, em vez de ir para o lixo." },
+  { icon: Wrench, title: "Habilidade = poder de troca", text: "Seu serviço gera RVM, que vira outros produtos ou serviços quando você precisa." },
+  { icon: Heart, title: "Ajuda mútua em primeiro lugar", text: "Doar e voluntariar valem tanto quanto trocar. A economia é o meio — cuidar é o fim." },
 ];
 
 export function LandingPage() {
@@ -210,7 +216,7 @@ export function LandingPage() {
               </p>
             </div>
             <Link
-              to="/explore"
+              to="/listings"
               className="sm:ml-auto inline-flex items-center gap-1 text-sm font-semibold text-esmeralda hover:underline whitespace-nowrap"
             >
               Ver tudo →
@@ -231,7 +237,7 @@ export function LandingPage() {
                   key={i}
                   className="flex flex-col bg-charcoal rounded-xl border border-smoke overflow-hidden"
                 >
-                  <div className="aspect-square bg-smoke animate-pulse" />
+                  <div className="aspect-[4/5] bg-smoke animate-pulse" />
                   <div className="p-4 space-y-2">
                     <div className="h-3 w-16 bg-smoke rounded animate-pulse" />
                     <div className="h-4 w-full bg-smoke rounded animate-pulse" />
@@ -278,7 +284,9 @@ export function LandingPage() {
             </p>
           </div>
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {MODO_CARDS.map((c) => (
+            {MODO_CARDS.map((c) => {
+              const MIcon = MODO_META[c.modo].icon;
+              return (
               <button
                 key={c.modo}
                 type="button"
@@ -287,9 +295,9 @@ export function LandingPage() {
                 className={`group text-left bg-charcoal rounded-2xl border border-smoke p-6 transition ${c.hover}`}
               >
                 <div
-                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl text-3xl mb-4 ${c.iconBg}`}
+                  className={`inline-flex items-center justify-center w-14 h-14 rounded-xl mb-4 ${c.iconBg} ${c.accent}`}
                 >
-                  <span aria-hidden>{c.emoji}</span>
+                  <MIcon aria-hidden className="w-7 h-7" />
                 </div>
                 <h3 className={`text-xl font-bold mb-1 ${c.accent}`}>{c.title}</h3>
                 <p className="text-sm text-silver">{c.desc}</p>
@@ -299,7 +307,8 @@ export function LandingPage() {
                   Ver como funciona →
                 </span>
               </button>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -327,9 +336,10 @@ export function LandingPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl" aria-hidden>
-                      {g.emoji}
-                    </span>
+                    {(() => {
+                      const GIcon = MODO_META[g.modo].icon;
+                      return <GIcon aria-hidden className="w-7 h-7" />;
+                    })()}
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold ${g.chip}`}
                     >
@@ -339,7 +349,9 @@ export function LandingPage() {
                   <p className="text-cream/90 mb-6">{g.intro}</p>
 
                   <ol className="space-y-3">
-                    {g.steps.map((s, i) => (
+                    {g.steps.map((st, i) => {
+                      const SIcon = st.icon;
+                      return (
                       <li key={i} className="flex gap-3 items-start">
                         <span
                           className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-smoke text-sm font-bold text-cream"
@@ -348,11 +360,12 @@ export function LandingPage() {
                           {i + 1}
                         </span>
                         <span className="flex items-center gap-2 text-cream/90">
-                          <span aria-hidden>{s.icon}</span>
-                          <span>{s.text}</span>
+                          <SIcon aria-hidden className="w-4 h-4 shrink-0" />
+                          <span>{st.text}</span>
                         </span>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ol>
 
                   <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -389,15 +402,18 @@ export function LandingPage() {
             </p>
           </div>
           <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {PILARES.map((p) => (
+            {PILARES.map((p) => {
+              const PIcon = p.icon;
+              return (
               <div key={p.title} className="bg-charcoal rounded-2xl border border-smoke p-6">
-                <div className="text-3xl mb-3" aria-hidden>
-                  {p.icon}
+                <div className="mb-3 text-esmeralda" aria-hidden>
+                  <PIcon className="w-7 h-7" />
                 </div>
                 <h3 className="font-semibold text-cream mb-1">{p.title}</h3>
                 <p className="text-sm text-silver">{p.text}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>

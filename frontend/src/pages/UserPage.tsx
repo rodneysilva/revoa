@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { Search } from "lucide-react";
 import { api } from "../api/client";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
@@ -37,7 +38,7 @@ export function UserPage() {
       <div className="app-container">
         <div className="app-read">
           <EmptyState
-            icon="🔍"
+            icon={<Search className="w-8 h-8" />}
             title="Perfil não encontrado"
             hint="O link pode estar quebrado ou a conta não existe mais."
             action={

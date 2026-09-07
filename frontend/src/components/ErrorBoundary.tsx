@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { CloudOff } from "lucide-react";
 
 // Captura erros de render para não virar "tela preta". Mostra um fallback com botão de recarregar.
 // Não captura erros em event handlers/async (apenas no ciclo de render dos filhos).
@@ -21,8 +22,8 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center bg-ink text-cream">
-          <div className="text-5xl" aria-hidden>
-            🕊️
+          <div className="text-silver" aria-hidden>
+            <CloudOff className="w-10 h-10" />
           </div>
           <h1 className="text-xl font-bold wordmark">revoa.me</h1>
           <p className="text-silver max-w-md">

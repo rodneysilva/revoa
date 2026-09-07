@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, MessageCircle, ShoppingBag } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { EmptyState } from "../components/EmptyState";
@@ -46,7 +47,9 @@ export function SavedPage() {
     <div className="app-container">
       <div className="flex flex-col sm:flex-row sm:items-end gap-3 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-cream">🔖 Salvos</h1>
+          <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-cream">
+            <Bookmark aria-hidden className="w-6 h-6" /> Salvos
+          </h1>
           <p className="text-sm text-silver">
             Posts e anúncios que você guardou para depois — só você vê esta lista.
           </p>
@@ -73,9 +76,9 @@ export function SavedPage() {
         </div>
       ) : vazio ? (
         <EmptyState
-          icon="🔖"
+          icon={<Bookmark className="w-8 h-8" />}
           title="Nada salvo ainda."
-          hint="Use 🔖 Salvar em posts e anúncios para achá-los aqui depois."
+          hint="Use Salvar em posts e anúncios para achá-los aqui depois."
           action={
             <Link
               to="/feed"
@@ -90,7 +93,9 @@ export function SavedPage() {
           {(posts?.length ?? 0) > 0 && (
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-3">
-                💬 Posts salvos ({posts!.length})
+                <span className="inline-flex items-center gap-1.5">
+                  <MessageCircle aria-hidden className="w-3.5 h-3.5" /> Posts salvos ({posts!.length})
+                </span>
               </h2>
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
                 {posts!.map((p) => (
@@ -109,7 +114,9 @@ export function SavedPage() {
           {(listings?.length ?? 0) > 0 && (
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-3">
-                🛍️ Anúncios salvos ({listings!.length})
+                <span className="inline-flex items-center gap-1.5">
+                  <ShoppingBag aria-hidden className="w-3.5 h-3.5" /> Anúncios salvos ({listings!.length})
+                </span>
               </h2>
               <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {listings!.map((item) => (

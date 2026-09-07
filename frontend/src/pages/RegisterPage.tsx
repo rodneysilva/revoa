@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Check } from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
@@ -266,7 +267,7 @@ export function RegisterPage() {
                 onClick={() => verify("email")}
                 className="mt-2 w-full bg-brand text-ink font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
               >
-                {emailDone ? "✓ E-mail confirmado" : "Confirmar e-mail"}
+                {emailDone ? <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-4 h-4" /> E-mail confirmado</span> : "Confirmar e-mail"}
               </button>
             </div>
           )}
@@ -289,7 +290,7 @@ export function RegisterPage() {
                 onClick={() => verify("phone")}
                 className="mt-2 w-full bg-brand text-ink font-semibold px-4 py-2 rounded-lg disabled:opacity-60"
               >
-                {phoneDone ? "✓ Telefone confirmado" : "Confirmar telefone"}
+                {phoneDone ? <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-4 h-4" /> Telefone confirmado</span> : "Confirmar telefone"}
               </button>
             </div>
           )}

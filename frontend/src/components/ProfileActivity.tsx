@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, House, MessageCircle, Package, Sprout, Star } from "lucide-react";
 import { api } from "../api/client";
 import { CommunityCard } from "./CommunityCard";
 import { EmptyState } from "./EmptyState";
@@ -49,7 +50,7 @@ export function ProfileListings({ userId, self }: { userId: string; self?: boole
     <Section title="Anúncios">
       {items.length === 0 ? (
         <EmptyState
-          icon="📦"
+          icon={<Package className="w-8 h-8" />}
           title={self ? "Você ainda não publicou nada" : "Nenhum anúncio publicado"}
           hint={self ? "Anuncie um item ou serviço — leva menos de um minuto." : undefined}
           action={
@@ -92,7 +93,7 @@ export function ProfileSaved() {
     <Section title="Salvos" hint="Anúncios que você guardou para depois">
       {items.length === 0 ? (
         <EmptyState
-          icon="🔖"
+          icon={<Bookmark className="w-8 h-8" />}
           title="Nenhum anúncio salvo"
           hint="Use o botão Salvar em um anúncio para achá-lo aqui."
           action={
@@ -132,7 +133,7 @@ export function ProfileCommunities({ userId }: { userId: string }) {
     <Section title="Comunidades">
       {items.length === 0 ? (
         <EmptyState
-          icon="🏘️"
+          icon={<House className="w-8 h-8" />}
           title="Ainda não participa de comunidades"
           hint="Comunidades são onde a troca hiperlocal acontece."
         />
@@ -166,7 +167,7 @@ export function ProfileActivity({ userId }: { userId: string }) {
   return (
     <Section title="Atividade" hint="Posts em comunidades abertas">
       {items.length === 0 ? (
-        <EmptyState icon="💬" title="Nenhuma atividade recente" />
+        <EmptyState icon={<MessageCircle className="w-8 h-8" />} title="Nenhuma atividade recente" />
       ) : (
         <ul className="space-y-2">
           {items.map(({ Post, Community }) => (
@@ -195,9 +196,14 @@ export function ProfileActivity({ userId }: { userId: string }) {
 function Stars({ n }: { n: number }) {
   const v = Math.max(0, Math.min(5, n));
   return (
-    <span className="text-amber text-sm tracking-tight" aria-label={`${v} de 5 estrelas`}>
-      {"★".repeat(v)}
-      <span className="text-smoke">{"★".repeat(5 - v)}</span>
+    <span className="inline-flex items-center gap-0.5 text-amber" aria-label={`${v} de 5 estrelas`}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          aria-hidden
+          className={`w-3.5 h-3.5 ${i < v ? "fill-current" : "text-smoke"}`}
+        />
+      ))}
     </span>
   );
 }
@@ -233,7 +239,7 @@ export function ProfileReputation({ userId }: { userId: string }) {
     return (
       <Section title="Reputação">
         <EmptyState
-          icon="🌱"
+          icon={<Sprout className="w-8 h-8" />}
           title="Reputação em construção"
           hint="Surge conforme a pessoa troca, doa e ajuda."
         />

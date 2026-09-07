@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Wallet } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { WalletBalance } from "../api/types";
@@ -33,8 +34,8 @@ export function WalletPage() {
         <div className="app-read">
           <h1 className="text-2xl font-bold text-cream mb-6">Carteira RVM</h1>
           <div className="bg-charcoal rounded-2xl border border-smoke p-8 text-center">
-            <div className="text-5xl mb-3" aria-hidden>
-              👛
+            <div className="mb-3 flex justify-center text-silver" aria-hidden>
+              <Wallet className="w-10 h-10" />
             </div>
             <p className="text-silver text-sm mb-6">
               Entre na sua conta para ver seu saldo de créditos de troca.
@@ -55,8 +56,8 @@ export function WalletPage() {
       <div className="app-read">
         <h1 className="text-2xl font-bold text-cream mb-6">Carteira RVM</h1>
         <div className="bg-charcoal rounded-2xl border border-smoke p-8 text-center">
-          <div className="text-5xl mb-3" aria-hidden>
-            👛
+          <div className="mb-3 flex justify-center text-silver" aria-hidden>
+            <Wallet className="w-8 h-8" />
           </div>
           {erro ? (
             <p className="text-silver text-sm mb-6">

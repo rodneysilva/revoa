@@ -1,12 +1,13 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { HeartHandshake, ImagePlus, X } from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { CommunityCard } from "../components/CommunityCard";
 import { EmptyState } from "../components/EmptyState";
 import { useAuth } from "../auth/AuthContext";
 import {
-  EIXO_EMOJI,
   EIXO_FILTERS,
+  EIXO_ICON,
   EIXO_LABEL,
   EIXOS,
   VISIBILIDADES,
@@ -146,19 +147,23 @@ export function CommunityPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap mb-6">
-          {EIXO_FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition ${
-                filter === f
-                  ? "bg-community text-ink border-transparent"
-                  : "border-smoke text-silver hover:text-cream"
-              }`}
-            >
-              {f === "Todos" ? "Todos" : `${EIXO_EMOJI[f]} ${EIXO_LABEL[f]}`}
-            </button>
-          ))}
+          {EIXO_FILTERS.map((f) => {
+            const FIcon = f === "Todos" ? null : EIXO_ICON[f];
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition ${
+                  filter === f
+                    ? "bg-community text-ink border-transparent"
+                    : "border-smoke text-silver hover:text-cream"
+                }`}
+              >
+                {FIcon && <FIcon aria-hidden className="w-3.5 h-3.5" />}
+                {f === "Todos" ? "Todos" : EIXO_LABEL[f]}
+              </button>
+            );
+          })}
         </div>
 
         {error && (
@@ -175,7 +180,7 @@ export function CommunityPage() {
           </div>
         ) : visiveis.length === 0 ? (
           <EmptyState
-            icon="🫂"
+            icon={<HeartHandshake className="w-8 h-8" />}
             title={
               busca
                 ? "Nenhuma comunidade encontrada com essa busca."
@@ -303,7 +308,7 @@ function CreateCommunityModal({
             className="text-silver hover:text-cream"
             aria-label="Fechar"
           >
-            ✕
+            <X aria-hidden className="w-4 h-4" />
           </button>
         </div>
         <form onSubmit={submit} className="p-4 space-y-4">
@@ -340,8 +345,17 @@ function CreateCommunityModal({
               ) : (
                 <div className="w-28 h-16 rounded-lg bg-community border border-smoke" />
               )}
-              <label className="cursor-pointer text-sm text-esmeralda hover:underline">
-                {uploadingCapa ? "Enviando…" : capa ? "Trocar imagem" : "📷 Escolher imagem"}
+              <label className="inline-flex items-center gap-1.5 cursor-pointer text-sm text-esmeralda hover:underline">
+                {uploadingCapa ? (
+                  "Enviando…"
+                ) : capa ? (
+                  "Trocar imagem"
+                ) : (
+                  <>
+                    <ImagePlus aria-hidden className="w-4 h-4" />
+                    Escolher imagem
+                  </>
+                )}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/gif"
@@ -375,7 +389,7 @@ function CreateCommunityModal({
               >
                 {EIXOS.map((x) => (
                   <option key={x} value={x}>
-                    {EIXO_EMOJI[x]} {EIXO_LABEL[x]}
+                    {EIXO_LABEL[x]}
                   </option>
                 ))}
               </select>

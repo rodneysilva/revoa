@@ -1,11 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { MessagesSquare, Package, Wrench } from "lucide-react";
 import { api } from "../api/client";
-import type { SearchResults } from "../api/types";
+import type { Mode, SearchResults } from "../api/types";
 import { MODO_META } from "../lib/config";
 
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 300;
+
+// Ícone do modo do anúncio (lucide, herdando a cor do texto).
+function ModoIcon({ mode }: { mode: Mode }) {
+  const Icon = MODO_META[mode].icon;
+  return <Icon aria-hidden className="w-3 h-3" />;
+}
 
 // Busca global do header: dropdown agrupado (Anúncios + Comunidades) enquanto
 // digita; Enter leva ao feed completo com ?q=. Fechável por fora-clique/Esc.
@@ -126,7 +133,13 @@ export function GlobalSearch() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span aria-hidden>{l.Kind === "Service" ? "🛠️" : "📦"}</span>
+                          <span aria-hidden className="text-silver">
+                            {l.Kind === "Service" ? (
+                              <Wrench className="w-4 h-4" />
+                            ) : (
+                              <Package className="w-4 h-4" />
+                            )}
+                          </span>
                         )}
                       </span>
                       <span className="min-w-0">
@@ -134,7 +147,7 @@ export function GlobalSearch() {
                           {l.Title}
                         </span>
                         <span className="block text-xs text-silver">
-                          {MODO_META[l.Mode].emoji}{" "}
+                          <ModoIcon mode={l.Mode} />{" "}
                           {l.PriceRvm === 0 ? (
                             "Grátis"
                           ) : (
@@ -157,8 +170,8 @@ export function GlobalSearch() {
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-smoke/60 transition"
                     >
-                      <span className="w-9 h-9 shrink-0 rounded-lg bg-smoke flex items-center justify-center text-lg" aria-hidden>
-                        💬
+                      <span className="w-9 h-9 shrink-0 rounded-lg bg-smoke flex items-center justify-center text-silver" aria-hidden>
+                        <MessagesSquare className="w-4 h-4" />
                       </span>
                       <span className="min-w-0">
                         <span className="block text-sm text-cream truncate">

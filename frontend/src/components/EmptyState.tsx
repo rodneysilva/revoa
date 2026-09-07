@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 
 // Estado vazio padrão (DS transversal): ícone + mensagem + dica + ação opcional.
 // Substitui as cópias dispersas de "nada por aqui" — mesma caixa em todas as telas.
+// `icon` é um ícone lucide (ex.: <ShoppingBag className="w-8 h-8" />).
 export function EmptyState({
   icon,
   title,
   hint,
   action,
 }: {
-  icon?: string;
+  icon?: ReactNode;
   title: string;
   hint?: string;
   action?: ReactNode;
@@ -16,7 +17,7 @@ export function EmptyState({
   return (
     <div className="bg-charcoal rounded-xl border border-smoke p-8 text-center">
       {icon && (
-        <div className="text-3xl mb-2" aria-hidden>
+        <div className="mb-2 flex justify-center text-silver/70" aria-hidden>
           {icon}
         </div>
       )}

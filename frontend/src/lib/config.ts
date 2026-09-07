@@ -1,3 +1,5 @@
+import { Gift, HeartHandshake, Repeat, Sparkles, type LucideIcon } from "lucide-react";
+
 // Configuração central do SPA revoa.me.
 // O Vite faz proxy de /api e /hubs para o backend .NET (http://localhost:8000),
 // então usamos paths relativos — API_BASE fica vazio.
@@ -20,14 +22,14 @@ export const KIND_LABELS = {
   Service: "Serviço",
 } as const;
 
-// Metadados por modo (emoji + classes Tailwind literais p/ o scanner gerar).
+// Metadados por modo (ícone lucide + classes Tailwind literais p/ o scanner gerar).
 // Cores por modo (docs/VISUAL_IDENTITY.md §6):
 // Trocar=esmeralda · Repassar=rosa · Doar=terracota · Voluntariar=lima.
 // `label` = forma verbal (CTAs, filtros); `badge` = forma do badge (§6, tabela
 // de badges) — Repassar vira "Acessível" na UI de anúncio (UF-08).
 export const MODO_META = {
   Trade: {
-    emoji: "🔄",
+    icon: Repeat,
     label: "Trocar",
     badge: "Troca",
     desc: "Troca direta de produto ou serviço entre vizinhos.",
@@ -35,7 +37,7 @@ export const MODO_META = {
     bg: "bg-esmeralda/15",
   },
   Resell: {
-    emoji: "💜",
+    icon: Sparkles,
     label: "Repassar",
     badge: "Acessível",
     desc: "Repassa algo que você intermediou para a comunidade.",
@@ -43,7 +45,7 @@ export const MODO_META = {
     bg: "bg-rosa/15",
   },
   Donate: {
-    emoji: "🎁",
+    icon: Gift,
     label: "Doar",
     badge: "Doação",
     desc: "Dá de graça a quem precisa (produto).",
@@ -51,7 +53,7 @@ export const MODO_META = {
     bg: "bg-terracota/15",
   },
   Volunteer: {
-    emoji: "🤝",
+    icon: HeartHandshake,
     label: "Voluntariar",
     badge: "Voluntário",
     desc: "Ofereça seu tempo e habilidades (serviço).",
@@ -59,6 +61,7 @@ export const MODO_META = {
     bg: "bg-lima/15",
   },
 } as const;
+export type ModoIcon = LucideIcon;
 
 export const ALL_MODOS = ["Trade", "Resell", "Donate", "Volunteer"] as const;
 

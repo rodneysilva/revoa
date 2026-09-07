@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Globe, ImagePlus, Lock, X } from "lucide-react";
+import { ModoGlyph } from "../components/ModoGlyph";
 import { ApiError, api } from "../api/client";
 import { KIND_LABELS, MODO_META, ALL_MODOS, modosForKind } from "../lib/config";
 import { useAuth } from "../auth/AuthContext";
@@ -55,7 +57,7 @@ export function CreateListingPage() {
   const [escopo, setEscopo] = useState("");
   const [escopoPublico, setEscopoPublico] = useState(true);
 
-  // ?community=<id> (atalho "➕ Anunciar algo" da comunidade): pré-seleciona
+  // ?community=<id> (atalho "Anunciar algo" da comunidade): pré-seleciona
   // o escopo quando o usuário participa dela.
   const [searchParams] = useSearchParams();
   useEffect(() => {
@@ -224,8 +226,8 @@ export function CreateListingPage() {
                 }`}
                 title={meta.desc}
               >
-                <span aria-hidden className="block text-lg">
-                  {meta.emoji}
+                <span className="mb-1 flex justify-center">
+                  <ModoGlyph mode={m} className="w-5 h-5" />
                 </span>
                 {meta.label}
               </button>
@@ -274,7 +276,16 @@ export function CreateListingPage() {
             disabled={imagens.length >= MAX_FOTOS || uploading}
             className="mt-1 w-full bg-charcoal text-cream border border-dashed border-smoke rounded-lg px-4 py-3 hover:border-esmeralda transition disabled:opacity-50"
           >
-            {uploading ? "Enviando…" : "📷 Adicionar fotos"}
+            <span className="inline-flex items-center gap-1.5">
+              {uploading ? (
+                "Enviando…"
+              ) : (
+                <>
+                  <ImagePlus aria-hidden className="w-4 h-4" />
+                  Adicionar fotos
+                </>
+              )}
+            </span>
           </button>
           {imagens.length > 0 && (
             <ul className="mt-2 grid grid-cols-3 gap-2">
@@ -291,7 +302,7 @@ export function CreateListingPage() {
                     className="absolute -top-2 -right-2 bg-ink text-cream rounded-full w-6 h-6 text-xs border border-smoke hover:text-rosa"
                     aria-label="Remover foto"
                   >
-                    ✕
+                    <X aria-hidden className="w-3 h-3" />
                   </button>
                 </li>
               ))}
@@ -430,7 +441,10 @@ export function CreateListingPage() {
                       : "bg-charcoal text-silver border-smoke hover:text-cream"
                   }`}
                 >
-                  🌐 Público — comunidade e feed da rede
+                  <span className="inline-flex items-center gap-1.5">
+                    <Globe aria-hidden className="w-4 h-4" />
+                    Público — comunidade e feed da rede
+                  </span>
                 </button>
                 <button
                   type="button"
@@ -441,7 +455,10 @@ export function CreateListingPage() {
                       : "bg-charcoal text-silver border-smoke hover:text-cream"
                   }`}
                 >
-                  🔒 Só membros da comunidade
+                  <span className="inline-flex items-center gap-1.5">
+                    <Lock aria-hidden className="w-4 h-4" />
+                    Só membros da comunidade
+                  </span>
                 </button>
               </div>
             )}

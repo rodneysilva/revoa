@@ -1,26 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import {
+  Coins,
+  Recycle,
+  Repeat,
+  ShoppingBag,
+  SquarePen,
+  Toolbox,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import type { Category, PriceReference } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { brlEstimate } from "../lib/format";
 import { useBrlRate } from "../lib/useBrlRate";
 
-const COMO_FUNCIONA: { icon: string; text: string }[] = [
+const COMO_FUNCIONA: { icon: LucideIcon; text: string }[] = [
   {
-    icon: "📝",
+    icon: SquarePen,
     text: "Você anuncia o que tem para oferecer — um produto ou um serviço.",
   },
   {
-    icon: "🔄",
+    icon: Repeat,
     text: "A cada troca, você usa RVM, o crédito de troca da plataforma.",
   },
   {
-    icon: "💰",
+    icon: Wallet,
     text: "Quando alguém pega o que você ofereceu, você recebe RVM.",
   },
   {
-    icon: "🛒",
+    icon: ShoppingBag,
     text: "Quando você precisa de algo, usa seus RVM com outros membros.",
   },
 ];
@@ -108,7 +118,7 @@ export function TransparencyPage() {
       {/* Cabeçalho */}
       <header className="mb-10 sm:mb-12">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-esmeralda/15 text-esmeralda text-xs font-semibold px-3 py-1 mb-4">
-          🪙 moeda social RVM
+          <Coins aria-hidden className="w-3.5 h-3.5" /> moeda social RVM
         </span>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-cream tracking-tight">
           Transparência
@@ -135,19 +145,20 @@ export function TransparencyPage() {
         />
         <div className="bg-charcoal rounded-2xl border border-smoke p-6 sm:p-8">
           <ol className="space-y-4">
-            {COMO_FUNCIONA.map((step, i) => (
-              <li key={i} className="flex items-start gap-3">
-                <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-esmeralda/15 text-esmeralda text-sm font-bold">
-                  {i + 1}
-                </span>
-                <span className="flex items-center gap-2 text-cream/90">
-                  <span aria-hidden className="text-lg">
-                    {step.icon}
+            {COMO_FUNCIONA.map((step, i) => {
+              const SIcon = step.icon;
+              return (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-full bg-esmeralda/15 text-esmeralda text-sm font-bold">
+                    {i + 1}
                   </span>
-                  {step.text}
-                </span>
-              </li>
-            ))}
+                  <span className="flex items-center gap-2 text-cream/90">
+                    <SIcon aria-hidden className="w-4 h-4 text-esmeralda shrink-0" />
+                    {step.text}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>
@@ -191,8 +202,8 @@ export function TransparencyPage() {
       <section className="mb-12 sm:mb-16">
         <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
           <article className="bg-charcoal rounded-2xl border border-smoke p-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber/15 text-2xl mb-4">
-              🧰
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-amber/15 text-amber mb-4">
+              <Toolbox aria-hidden className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-amber mb-2">Taxa de 2%</h3>
             <p className="text-sm text-silver leading-relaxed">
@@ -202,8 +213,8 @@ export function TransparencyPage() {
           </article>
 
           <article className="bg-charcoal rounded-2xl border border-smoke p-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-terracota/15 text-2xl mb-4">
-              ♻️
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-terracota/15 text-terracota mb-4">
+              <Recycle aria-hidden className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-terracota mb-2">Crédito que circula</h3>
             <p className="text-sm text-silver leading-relaxed">

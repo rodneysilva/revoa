@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { BadgeCheck } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError, api } from "../api/client";
 import { Avatar } from "../components/Avatar";
@@ -64,7 +65,7 @@ export function ProfilePage() {
           label="Status"
           value={
             user.verified ? (
-              <span className="text-esmeralda font-semibold">✓ Verificado</span>
+              <span className="inline-flex items-center gap-1 text-esmeralda font-semibold"><BadgeCheck aria-hidden className="w-4 h-4" /> Verificado</span>
             ) : (
               <span className="text-amber font-semibold">Pendente de verificação</span>
             )

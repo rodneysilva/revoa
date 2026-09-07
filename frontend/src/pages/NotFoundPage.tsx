@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
+import { Compass } from "lucide-react";
 
 export function NotFoundPage() {
   return (
     <div className="app-container">
       <div className="app-read text-center">
       <div className="text-6xl mb-4" aria-hidden>
-        🧭
+        <Compass aria-hidden className="w-10 h-10 text-silver" />
       </div>
       <h1 className="text-3xl font-bold text-cream mb-2">Página não encontrada</h1>
       <p className="text-silver mb-6">

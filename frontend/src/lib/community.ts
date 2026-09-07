@@ -1,3 +1,4 @@
+import { HeartHandshake, Lightbulb, MapPin, type LucideIcon } from "lucide-react";
 import type { CommunityAxis, MembershipRole, CommunityVisibility } from "../api/types";
 
 export const EIXOS: CommunityAxis[] = ["Geo", "Interest", "Cause"];
@@ -7,10 +8,11 @@ export const EIXO_LABEL: Record<CommunityAxis, string> = {
   Interest: "Interesse",
   Cause: "Causa",
 };
-export const EIXO_EMOJI: Record<CommunityAxis, string> = {
-  Geo: "📍",
-  Interest: "💡",
-  Cause: "🤲",
+// Ícone lucide por eixo (padrão de ícones do sistema — stroke, currentColor).
+export const EIXO_ICON: Record<CommunityAxis, LucideIcon> = {
+  Geo: MapPin,
+  Interest: Lightbulb,
+  Cause: HeartHandshake,
 };
 export const VISIBILIDADES: CommunityVisibility[] = ["Open", "Private"];
 export const VISIBILIDADE_LABEL: Record<CommunityVisibility, string> = {

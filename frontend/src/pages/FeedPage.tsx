@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Bookmark, Recycle, Search, X } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard } from "../components/ListingCard";
 import { ListingTimelineCard } from "../components/ListingTimelineCard";
@@ -263,11 +264,14 @@ export function FeedPage() {
               to="/saved"
               className="text-sm text-silver hover:text-amber sm:ml-2 sm:mt-1"
             >
-              🔖 Salvos
+              <span className="inline-flex items-center gap-1">
+                <Bookmark aria-hidden className="w-4 h-4" />
+                Salvos
+              </span>
             </Link>
           )}
           <Link
-            to="/explore"
+            to="/listings"
             className="text-sm text-esmeralda hover:underline sm:ml-2 sm:mt-1"
           >
             Buscar com filtros →
@@ -286,14 +290,14 @@ export function FeedPage() {
         {q && (
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-2 bg-smoke border border-smoke text-cream text-sm px-3 py-1.5 rounded-full">
-              🔎 {q}
+              <Search aria-hidden className="w-3.5 h-3.5" /> {q}
               <button
                 type="button"
                 onClick={() => setSearchParams({}, { replace: true })}
                 aria-label="Limpar busca"
                 className="text-silver hover:text-rosa leading-none"
               >
-                ✕
+                <X aria-hidden className="w-3.5 h-3.5" />
               </button>
             </span>
             {!listingsOnly && (
@@ -319,7 +323,16 @@ export function FeedPage() {
                     : "border-smoke text-silver hover:text-cream"
                 }`}
               >
-                {meta ? `${meta.emoji} ${meta.label}` : "Tudo"}
+                {(() => {
+                  if (!meta) return "Tudo";
+                  const MIcon = meta.icon;
+                  return (
+                    <span className="inline-flex items-center gap-1">
+                      <MIcon aria-hidden className="w-3.5 h-3.5" />
+                      {meta.label}
+                    </span>
+                  );
+                })()}
               </button>
             );
           })}
@@ -382,7 +395,7 @@ export function FeedPage() {
       ) : timeline.length === 0 ? (
         q ? (
           <EmptyState
-            icon="🔎"
+            icon={<Search className="w-8 h-8" />}
             title={`Nada encontrado para “${q}”.`}
             action={
               <button
@@ -396,7 +409,7 @@ export function FeedPage() {
           />
         ) : (
           <EmptyState
-            icon="♻️"
+            icon={<Recycle className="w-8 h-8" />}
             title="Nada por aqui ainda."
             action={
               user?.verified ? (
@@ -414,7 +427,7 @@ export function FeedPage() {
         <>
           {/* Rail grátis só sem filtro ativo — com filtro duplicaria o resultado */}
           {!listingsOnly && freeRail && freeRail.length > 0 && (
-            <Rail title="Grátis hoje" seeAllTo="/explore">
+            <Rail title="Grátis hoje" seeAllTo="/listings">
               {freeRail.map((it) => (
                 <div key={it.Id} className="w-56 shrink-0 snap-start">
                   <ListingCard item={it} />

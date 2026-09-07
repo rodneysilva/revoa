@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { Bookmark, Check, Flag, Gift, Package, Star, Wrench } from "lucide-react";
+import { ModoGlyph } from "../components/ModoGlyph";
 import { ApiError, api } from "../api/client";
 import { Badge } from "../components/Badge";
 import { Avatar } from "../components/Avatar";
@@ -116,7 +118,7 @@ export function ListingDetailPage() {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span aria-hidden>{listing.Kind === "Service" ? "🛠️" : "📦"}</span>
+              <span aria-hidden className="text-silver">{listing.Kind === "Service" ? <Wrench className="w-10 h-10" /> : <Package className="w-10 h-10" />}</span>
             )}
           </div>
           {images.length > 1 && (
@@ -162,7 +164,7 @@ export function ListingDetailPage() {
             </div>
             {gratis ? (
               isDonationMode && (
-                <p className="mt-1 text-sm text-silver/80">🎁 Doação</p>
+                <p className="mt-1 inline-flex items-center gap-1 text-sm text-silver/80"><Gift aria-hidden className="w-3.5 h-3.5" /> Doação</p>
               )
             ) : (
               brl && (
@@ -268,8 +270,9 @@ export function ListingDetailPage() {
             />
             <div>
               <div className="text-cream font-medium">{listing.SellerName}</div>
-              <div className="text-xs text-silver">
-                {MODO_META[listing.Mode].emoji} {MODO_META[listing.Mode].label} · ver perfil →
+              <div className="inline-flex items-center gap-1 text-xs text-silver">
+                <ModoGlyph mode={listing.Mode} className="w-3.5 h-3.5" />
+                {MODO_META[listing.Mode].label} · ver perfil →
               </div>
             </div>
           </Link>
@@ -395,7 +398,13 @@ function SaveButton({ listingId, user }: { listingId: string; user: AuthUser | n
       }`}
       aria-pressed={saved ?? false}
     >
-      {saved ? "🔖 Salvo" : "🔖 Salvar anúncio"}
+      <span className="inline-flex items-center gap-1.5">
+        <Bookmark
+          aria-hidden
+          className={`w-4 h-4 ${saved ? "fill-current" : ""}`}
+        />
+        {saved ? "Salvo" : "Salvar anúncio"}
+      </span>
     </button>
   );
 }
@@ -412,8 +421,13 @@ function VerifyHint({ action }: { action: string }) {
 function Stars({ n }: { n: number }) {
   return (
     <span className="text-amber text-sm tracking-tight" aria-label={`${n} de 5 estrelas`}>
-      {"★".repeat(Math.max(0, Math.min(5, n)))}
-      <span className="text-smoke">{"★".repeat(Math.max(0, 5 - Math.max(0, Math.min(5, n))))}</span>
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          aria-hidden
+          className={`w-3.5 h-3.5 ${i < Math.max(0, Math.min(5, n)) ? "fill-current" : "text-smoke"}`}
+        />
+      ))}
     </span>
   );
 }
@@ -580,7 +594,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
             {queueErr && <p className="text-rosa text-sm mb-2">{queueErr}</p>}
             {queueOk && (
               <p className="text-esmeralda text-sm mb-2">
-                ✓ {queueOk} ·{" "}
+                <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-3.5 h-3.5" /> {queueOk} ·{" "}</span>
                 <Link to="/trades" className="underline">
                   Ver no tracker →
                 </Link>
@@ -612,7 +626,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
                     </p>
                     {req.SelectedTradeId ? (
                       <span className="inline-block mt-2 text-xs text-esmeralda">
-                        ✓ Selecionado
+                        <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-3.5 h-3.5" /> Selecionado</span>
                       </span>
                     ) : (
                       <button
@@ -649,7 +663,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
     if (helpSent) {
       return (
         <div className="bg-esmeralda/10 border border-esmeralda/30 rounded-xl p-4 text-sm text-cream">
-          ✓ Pedido enviado! O doador vai avaliar.
+          <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-4 h-4" /> Pedido enviado! O doador vai avaliar.</span>
         </div>
       );
     }
@@ -723,7 +737,7 @@ function ListingActions({ listing, user }: { listing: Listing; user: AuthUser | 
   if (purchased) {
     return (
       <div className="bg-esmeralda/10 border border-esmeralda/30 rounded-xl p-4 text-sm text-cream">
-        ✓ Troca iniciada!{" "}
+        <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-4 h-4" /> Troca iniciada!</span>{" "}
         <Link to="/trades" className="underline font-medium">
           Ver no tracker →
         </Link>
@@ -775,7 +789,7 @@ function ReportListing({ listingId, user }: { listingId: string; user: AuthUser 
   if (sent) {
     return (
       <p className="mt-4 text-sm text-esmeralda">
-        ✓ Denúncia enviada — obrigado.
+        <span className="inline-flex items-center gap-1"><Check aria-hidden className="w-4 h-4" /> Denúncia enviada — obrigado.</span>
       </p>
     );
   }
@@ -831,7 +845,7 @@ function ReportListing({ listingId, user }: { listingId: string; user: AuthUser 
           onClick={() => setOpen(true)}
           className="text-sm text-silver hover:text-rosa underline underline-offset-4"
         >
-          ⚑ Denunciar anúncio
+          <span className="inline-flex items-center gap-1.5"><Flag aria-hidden className="w-4 h-4" /> Denunciar anúncio</span>
         </button>
       )}
     </div>

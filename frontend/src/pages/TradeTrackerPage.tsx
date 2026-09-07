@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Check, Gift, Star } from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
@@ -79,7 +80,7 @@ function Stepper({ trade }: { trade: Trade }) {
                     : "bg-charcoal text-silver border-smoke"
                 }`}
               >
-                {done ? "✓" : i + 1}
+                {done ? <Check aria-hidden className="w-3 h-3" /> : i + 1}
               </span>
               <span className={done ? "text-cream" : "text-silver"}>{s}</span>
               {i < HAPPY.length - 1 && (
@@ -135,13 +136,17 @@ function ReviewBox({ trade, counterNome }: { trade: Trade; counterNome: string }
   if (done) {
     return (
       <p className="mt-3 text-xs font-semibold text-esmeralda">
-        ⭐ Avaliação enviada — obrigado!
+        <span className="inline-flex items-center gap-1"><Star aria-hidden className="w-3.5 h-3.5 fill-current" /> Avaliação enviada — obrigado!</span>
       </p>
     );
   }
 
   if (already) {
-    return <p className="mt-3 text-xs font-semibold text-silver">Avaliado ✓</p>;
+    return (
+      <p className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-silver">
+        <Check aria-hidden className="w-3.5 h-3.5" /> Avaliado
+      </p>
+    );
   }
 
   const active = hover || rating;
@@ -161,11 +166,11 @@ function ReviewBox({ trade, counterNome }: { trade: Trade; counterNome: string }
             onMouseEnter={() => setHover(n)}
             onMouseLeave={() => setHover(0)}
             aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
-            className={`text-2xl leading-none transition-colors ${
+            className={`transition-colors ${
               n <= active ? "text-amber" : "text-smoke hover:text-silver"
             }`}
           >
-            ★
+            <Star aria-hidden className={`w-6 h-6 ${n <= active ? "fill-current" : ""}`} />
           </button>
         ))}
       </div>
@@ -239,7 +244,7 @@ function TradeCard({
 
       <div className="text-lg mb-2">
         {trade.IsDonation ? (
-          <span className="text-lima">🎁 Doação</span>
+          <span className="inline-flex items-center gap-1 text-lima"><Gift aria-hidden className="w-4 h-4" /> Doação</span>
         ) : (
           <span className="rms text-cream">
             RM$ {trade.TotalRvm.toLocaleString("pt-BR")}

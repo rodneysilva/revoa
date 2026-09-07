@@ -4,17 +4,31 @@ import { timeAgo } from "../lib/time";
 import { markAllRead } from "../lib/unread";
 import type { AppNotification } from "../api/types";
 
+import {
+  ArrowLeftRight,
+  Bell,
+  CircleDollarSign,
+  Gift,
+  HandHeart,
+  HeartHandshake,
+  Lock,
+  MessageCircle,
+  Pin,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+
 // Ícone por tipo de notificação (fallback: sino).
-const TYPE_ICON: Record<string, string> = {
-  EscrowUpdate: "🔒",
-  Offer: "🤝",
-  Transfer: "💱",
-  Post: "📌",
-  Chat: "💬",
-  Donation: "🎁",
-  Price: "💲",
-  Help: "🤲",
-  System: "🛠️",
+const TYPE_ICON: Record<string, LucideIcon> = {
+  EscrowUpdate: Lock,
+  Offer: HeartHandshake,
+  Transfer: ArrowLeftRight,
+  Post: Pin,
+  Chat: MessageCircle,
+  Donation: Gift,
+  Price: CircleDollarSign,
+  Help: HandHeart,
+  System: Wrench,
 };
 
 // Abrir a página já marca tudo como lido (o badge do sino zera na hora via
@@ -84,9 +98,14 @@ export function NotificationsPage() {
                 className="rounded-xl border p-4 bg-smoke/30 border-smoke/50"
               >
                 <div className="flex items-start gap-3 min-w-0">
-                  <span className="text-xl leading-none mt-0.5" aria-hidden>
-                    {TYPE_ICON[n.Type] ?? "🔔"}
-                  </span>
+                  {(() => {
+                    const TIcon = TYPE_ICON[n.Type] ?? Bell;
+                    return (
+                      <span className="text-silver mt-0.5" aria-hidden>
+                        <TIcon className="w-4 h-4" />
+                      </span>
+                    );
+                  })()}
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-cream">{n.Title}</p>
                     <p className="text-sm text-silver/90 break-words">{n.Body}</p>
