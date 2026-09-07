@@ -190,7 +190,7 @@ builder.Services.AddAuthorization(options =>
 
     // Policy "Admin": claim email em Admin:Emails (appsettings). Em dev, Rodney = admin.
     // Em produção, migrar para role/contrato (TODO).
-    var adminEmails = builder.Configuration.GetSection("Admin:Emails").Get<string[]>() ?? Array.Empty<string>();
+    var adminEmails = Revoa.Api.AdminAllowlist.Read(builder.Configuration);
     if (adminEmails.Length > 0)
     {
         options.AddPolicy("Admin", policy => policy.RequireClaim("email", adminEmails));

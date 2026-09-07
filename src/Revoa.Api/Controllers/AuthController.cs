@@ -169,7 +169,7 @@ public class AuthController : ControllerBase
     private string[] RolesFor(string email, UserRole role)
     {
         var roles = new List<string> { role.ToString() };
-        var adminEmails = _config.GetSection("Admin:Emails").Get<string[]>() ?? Array.Empty<string>();
+        var adminEmails = AdminAllowlist.Read(_config);
         if (adminEmails.Contains(email, StringComparer.OrdinalIgnoreCase))
         {
             roles.Add("Admin");
