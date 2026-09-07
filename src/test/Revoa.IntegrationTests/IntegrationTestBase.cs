@@ -170,4 +170,18 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             $"esperado 2xx ao criar comunidade: {await resp.Content.ReadAsStringAsync()}");
         return await ReadIdAsync(resp);
     }
+
+    // Cria post raiz em uma comunidade (autor precisa de vínculo Active) e devolve o PostId.
+    protected async Task<Guid> CreateCommunityPostAsync(TestUser autor, Guid communityId, string conteudo)
+    {
+        var resp = await AuthedClient(autor).PostAsync(
+            $"/api/communities/{communityId}/posts", JsonBody(new
+            {
+                ParentId = (Guid?)null,
+                Content = conteudo,
+            }));
+        resp.IsSuccessStatusCode.Should().BeTrue(
+            $"esperado 2xx ao criar post: {await resp.Content.ReadAsStringAsync()}");
+        return await ReadIdAsync(resp);
+    }
 }
