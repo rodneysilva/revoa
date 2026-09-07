@@ -424,14 +424,13 @@ export function CommunityDetailPage() {
       </Link>
 
       {/* ══ HERO — capa real (upload) com fallback gradiente ══
-          Box 4:1 (25% mais baixo que os 3:1 das capas 1200×400): cresce com a
-          largura do container (2880px → 720px de altura em 4K). object-cover
-          escala a imagem proporcional (nunca distorce) e centraliza o corte
-          vertical (~12,5% de cada borda de uma capa 3:1). w-full é OBRIGATÓRIO:
-          sem ele, quando o piso min-h ativa (telas estreitas) o aspect-ratio
-          deriva a LARGURA da altura (10rem×4 = 640px) e estoura a página.
-          Piso de 10rem mantém a faixa de título cabível onde 4:1 ficaria baixo. */}
-      <header className="relative rounded-2xl overflow-hidden border border-smoke aspect-[4/1] w-full min-h-[10rem] flex flex-col">
+          Box 3:1, a proporção das capas (seeds 1200×400): cresce com a largura
+          do container (2880px → 960px de altura em 4K) e exibe a capa inteira,
+          sem corte. w-full é OBRIGATÓRIO: sem ele, quando o piso min-h ativa
+          (telas estreitas) o aspect-ratio deriva a LARGURA da altura
+          (13rem×3 = 624px) e estoura a página. Piso de 13rem mantém a faixa de
+          título cabível onde 3:1 ficaria baixo demais. */}
+      <header className="relative rounded-2xl overflow-hidden border border-smoke aspect-[3/1] w-full min-h-[13rem] flex flex-col">
         {community.CoverImageUrl ? (
           <img
             src={community.CoverImageUrl}
