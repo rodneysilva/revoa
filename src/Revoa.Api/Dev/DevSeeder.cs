@@ -103,8 +103,8 @@ public sealed class DevSeeder
         // 4) Catálogo vinculado aos mocks (SellerId rotaciona entre os 10 mocks).
         var (produtos, servicos, erros) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
 
-        // 5) Comunidades (5) + memberships + posts.
-        var (comunidades, memberships, posts) = await SeedCommunitiesAsync(mocks, rnd, ct);
+        // 5) Comunidades (5) + memberships + posts + anúncios da comunidade.
+        var (comunidades, memberships, posts) = await SeedCommunitiesAsync(mocks, catBySlug, rnd, ct);
 
         // 6) Reviews (~22) + reputações acumuladas por usuário.
         var (reviews, reputacoes) = await SeedReviewsAndReputationAsync(mocks, rnd, ct);
@@ -317,16 +317,22 @@ public sealed class DevSeeder
         return (produtos, servicos, erros);
     }
 
-    // --- 5 comunidades (Tipo=User, Open) com memberships (Criador/Moderador/Membro) e posts.
-    //     CommunityId determinístico; memberships/posts limpos por CommunityId.
+    // --- 5 comunidades (Tipo=User, Open) com memberships (Criador/Moderador/Membro), posts
+    //     e anúncios DA comunidade (um "só aqui" + um público feito na comunidade).
+    //     CommunityId determinístico; memberships/posts limpos por CommunityId; listings
+    //     pelo prefixo "[Demo]" da descrição.
     private async Task<(int comunidades, int memberships, int posts)> SeedCommunitiesAsync(
-        IReadOnlyList<DevSeedData.MockUser> mocks, Random rnd, CancellationToken ct)
+        IReadOnlyList<DevSeedData.MockUser> mocks,
+        IReadOnlyDictionary<string, Guid> catBySlug,
+        Random rnd,
+        CancellationToken ct)
     {
         var specs = DevSeedData.CommunitySpecs();
         var contents = DevSeedData.PostContents();
         var commDocs = new List<BsonDocument>(specs.Count);
         var memDocs = new List<BsonDocument>();
         var postDocs = new List<BsonDocument>();
+        var memberIndicesByComm = new List<List<int>>(specs.Count);
 
         for (var i = 0; i < specs.Count; i++)
         {
@@ -364,6 +370,7 @@ public sealed class DevSeeder
             {
                 memberIndices.Add(sp.CriadorIndex);
             }
+            memberIndicesByComm.Add(memberIndices);
 
             var assignedModerador = false;
             foreach (var idx in memberIndices)
@@ -406,6 +413,70 @@ public sealed class DevSeeder
         await _db.GetCollection<BsonDocument>("Communities").InsertManyAsync(commDocs, cancellationToken: ct);
         await _db.GetCollection<BsonDocument>("Memberships").InsertManyAsync(memDocs, cancellationToken: ct);
         await _db.GetCollection<BsonDocument>("Posts").InsertManyAsync(postDocs, cancellationToken: ct);
+
+        // Anúncios DA comunidade por comunidade: um escopado (Visibility=
+        // Community — só aparece aqui) e um público feito na comunidade
+        // (Visibility=Both — aparece aqui e no feed da rede). Vendedor é
+        // sempre um membro; categoria é a primeira disponível.
+        var primeiraCategoria = catBySlug.Values.FirstOrDefault();
+        if (primeiraCategoria != Guid.Empty)
+        {
+            var listingDocs = new List<BsonDocument>(specs.Count * 2);
+            for (var i = 0; i < specs.Count; i++)
+            {
+                var sp = specs[i];
+                var commId = DevSeedData.DemoCommunityIds[i];
+                var membroIdx = memberIndicesByComm[i];
+                var vendedor = mocks[membroIdx[^1]];
+
+                var escopado = Listing.Create(
+                    kind: ListingKind.Service,
+                    mode: ListingMode.Trade,
+                    title: $"Mutirão de consertos de {sp.Name}",
+                    description: DevSeedData.DemoPrefix + " Ferramentas e mão de obra da comunidade — só para membros.",
+                    images: new List<string> { $"https://picsum.photos/seed/revoa-comm-{i}-escopo/600/400" },
+                    priceRvm: 3L,
+                    sellerId: vendedor.Id,
+                    sellerName: vendedor.Name,
+                    sellerAvatarUrl: vendedor.AvatarUrl,
+                    location: Location.Create(sp.Lat, sp.Lng, sp.Neighborhood, sp.City, null),
+                    categoryId: primeiraCategoria,
+                    communityId: commId,
+                    visibility: ListingVisibility.Community,
+                    productDetails: null,
+                    serviceDetails: ServiceDetails.Create(ServiceUnitType.PerService, 2, 30));
+
+                var publico = Listing.Create(
+                    kind: ListingKind.Product,
+                    mode: ListingMode.Donate,
+                    title: $"Alimentos arrecadados em {sp.Name}",
+                    description: DevSeedData.DemoPrefix + " Cesta básica montada pela comunidade — aparece no feed da rede também.",
+                    images: new List<string> { $"https://picsum.photos/seed/revoa-comm-{i}-publico/600/400" },
+                    priceRvm: 0L,
+                    sellerId: vendedor.Id,
+                    sellerName: vendedor.Name,
+                    sellerAvatarUrl: vendedor.AvatarUrl,
+                    location: Location.Create(sp.Lat, sp.Lng, sp.Neighborhood, sp.City, null),
+                    categoryId: primeiraCategoria,
+                    communityId: commId,
+                    visibility: ListingVisibility.Both,
+                    productDetails: ProductDetails.Create(ProductCondition.Seminovo, 1),
+                    serviceDetails: null);
+
+                foreach (var l in new[] { escopado, publico })
+                {
+                    var d = l.ToBsonDocument();
+                    d["CreatedAt"] = new BsonDateTime(DevSeedData.RandomRecent(rnd));
+                    listingDocs.Add(d);
+                }
+            }
+
+            if (listingDocs.Count > 0)
+            {
+                await _db.GetCollection<BsonDocument>("Listings").InsertManyAsync(listingDocs, cancellationToken: ct);
+            }
+        }
+
         return (commDocs.Count, memDocs.Count, postDocs.Count);
     }
 
