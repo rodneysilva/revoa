@@ -287,7 +287,7 @@ export function AdminDashboardPage() {
             {pricingBusy ? "Atualizando…" : "Atualizar preços"}
           </button>
           {pricingMsg && <p className="text-silver text-xs mt-2">{pricingMsg}</p>}
-          <Link to="/explore" className="block text-esmeralda text-sm hover:underline mt-2">
+          <Link to="/listings" className="block text-esmeralda text-sm hover:underline mt-2">
             Ver anúncios →
           </Link>
         </Card>

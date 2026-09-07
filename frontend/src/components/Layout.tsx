@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { BadgeCheck, Bell, Bookmark, Menu, Repeat, Wallet, X } from "lucide-react";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { isAdminUser } from "../lib/admin";
@@ -9,7 +10,7 @@ import { refreshUnread, useUnread } from "../lib/unread";
 
 const navItems = [
   { to: "/feed", label: "Feed" },
-  { to: "/explore", label: "Explorar" },
+  { to: "/listings", label: "Anúncios" },
   { to: "/community", label: "Comunidade" },
   { to: "/listings/new", label: "Anunciar" },
 ];
@@ -99,14 +100,16 @@ export function Layout() {
                   className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-amber"
                   title="Posts e anúncios salvos"
                 >
-                  🔖 Salvos
+                  <Bookmark aria-hidden className="w-4 h-4" />
+                  Salvos
                 </Link>
                 <Link
                   to="/trades"
                   className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
                   title="Minhas trocas"
                 >
-                  🔄 Trocas
+                  <Repeat aria-hidden className="w-4 h-4" />
+                  Trocas
                 </Link>
                 <Link
                   to="/wallet"
@@ -120,13 +123,13 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/notifications"
-                  className="hidden sm:inline-flex items-center justify-center relative text-lg leading-none text-silver hover:text-cream"
+                  className="hidden sm:inline-flex items-center justify-center relative text-silver hover:text-cream"
                   title="Notificações"
                   aria-label={
                     unread > 0 ? `Notificações (${unread} não lidas)` : "Notificações"
                   }
                 >
-                  🔔
+                  <Bell aria-hidden className="w-5 h-5" />
                   {unread > 0 && (
                     <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-rosa text-ink text-[10px] font-bold rounded-full border-2 border-ink">
                       {unread > 9 ? "9+" : unread}
@@ -135,7 +138,8 @@ export function Layout() {
                 </Link>
                 {user.verified && (
                   <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-esmeralda bg-esmeralda/10 px-2 py-1 rounded-full">
-                    ✓ Verificado
+                    <BadgeCheck aria-hidden className="w-3.5 h-3.5" />
+                    Verificado
                   </span>
                 )}
                 <Link
@@ -179,7 +183,11 @@ export function Layout() {
               aria-expanded={open}
               onClick={() => setOpen((o) => !o)}
             >
-              {open ? "✕" : "≡"}
+              {open ? (
+                <X aria-hidden className="w-5 h-5" />
+              ) : (
+                <Menu aria-hidden className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -242,21 +250,24 @@ export function Layout() {
                   </Link>
                   <Link
                     to="/saved"
-                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream flex items-center gap-2"
                   >
-                    🔖 Salvos
+                    <Bookmark aria-hidden className="w-4 h-4" />
+                    Salvos
                   </Link>
                   <Link
                     to="/wallet"
-                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream"
+                    className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream flex items-center gap-2"
                   >
-                    💰 Carteira
+                    <Wallet aria-hidden className="w-4 h-4" />
+                    Carteira
                   </Link>
                   <Link
                     to="/notifications"
                     className="px-3 py-2.5 rounded-lg text-sm text-silver hover:text-cream flex items-center gap-2"
                   >
-                    🔔 Notificações
+                    <Bell aria-hidden className="w-4 h-4" />
+                    Notificações
                     {unread > 0 && (
                       <span className="bg-rosa text-ink text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                         {unread > 9 ? "9+" : unread}
@@ -294,8 +305,8 @@ export function Layout() {
             <Link to="/feed" className="hover:text-cream">
               Feed
             </Link>
-            <Link to="/explore" className="hover:text-cream">
-              Explorar
+            <Link to="/listings" className="hover:text-cream">
+              Anúncios
             </Link>
             <Link to="/community" className="hover:text-cream">
               Comunidade

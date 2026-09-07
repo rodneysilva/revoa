@@ -1,5 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  Armchair,
+  Baby,
+  Blocks,
+  BookOpen,
+  CookingPot,
+  Dumbbell,
+  Gift,
+  GraduationCap,
+  Hammer,
+  Laptop,
+  MapPin,
+  PawPrint,
+  Plug,
+  Recycle,
+  Shirt,
+  SlidersHorizontal,
+  Sprout,
+  Stethoscope,
+  Wrench,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
 import { ApiError, api } from "../api/client";
@@ -30,35 +53,35 @@ const inputCls =
 const labelCls = "block text-xs font-medium text-silver mb-1.5";
 
 // Ícone por categoria (Baymard: categorias com thumbnail na exploração).
-// Match por nome/slug — categorias novas caem no fallback ♻️.
-const CATEGORY_EMOJI: [RegExp, string][] = [
-  [/mobili|sofá|sofa|cadeira|mesa|estante|cama/i, "🪑"],
-  [/roupa|vestu|moda|tênis|tenis|sapato/i, "👕"],
-  [/livro|leitura|revista/i, "📚"],
-  [/eletr|celular|notebook|tv|áudio|audio|fone/i, "🔌"],
-  [/ferrament|obra|constru/i, "🔧"],
-  [/brinquedo|jogo/i, "🧸"],
-  [/esporte|bicicleta|bike|fit|academia/i, "⚽"],
-  [/comida|aliment|horta|comida|cozinha/i, "🍲"],
-  [/jardin|planta|flores/i, "🪴"],
-  [/músic|musica|instrument|aula|curso|idioma|ensino/i, "🎓"],
-  [/bebê|bebe|criança|crianca|infantil/i, "🍼"],
-  [/pet|animal|cachorro|gato/i, "🐾"],
-  [/saúde|saude|bem-estar|beleza|cabelo|estética|estetica/i, "💊"],
-  [/reforma|reparo|manuten|elétric|eletric|encanador|pintura/i, "🔨"],
-  [/tecnologia|inform|comput|program|design/i, "💻"],
-  [/doação|doacao|caridade|ajuda/i, "🎁"],
+// Match por nome/slug — categorias novas caem no fallback Recycle.
+const CATEGORY_ICON: [RegExp, LucideIcon][] = [
+  [/mobili|sofá|sofa|cadeira|mesa|estante|cama/i, Armchair],
+  [/roupa|vestu|moda|tênis|tenis|sapato/i, Shirt],
+  [/livro|leitura|revista/i, BookOpen],
+  [/eletr|celular|notebook|tv|áudio|audio|fone/i, Plug],
+  [/ferrament|obra|constru/i, Wrench],
+  [/brinquedo|jogo/i, Blocks],
+  [/esporte|bicicleta|bike|fit|academia/i, Dumbbell],
+  [/comida|aliment|horta|comida|cozinha/i, CookingPot],
+  [/jardin|planta|flores/i, Sprout],
+  [/músic|musica|instrument|aula|curso|idioma|ensino/i, GraduationCap],
+  [/bebê|bebe|criança|crianca|infantil/i, Baby],
+  [/pet|animal|cachorro|gato/i, PawPrint],
+  [/saúde|saude|bem-estar|beleza|cabelo|estética|estetica/i, Stethoscope],
+  [/reforma|reparo|manuten|elétric|eletric|encanador|pintura/i, Hammer],
+  [/tecnologia|inform|comput|program|design/i, Laptop],
+  [/doação|doacao|caridade|ajuda/i, Gift],
 ];
 
-function categoryEmoji(c: Category): string {
+function categoryIcon(c: Category): LucideIcon {
   const s = `${c.Name} ${c.Slug ?? ""}`;
-  for (const [rx, emoji] of CATEGORY_EMOJI) {
-    if (rx.test(s)) return emoji;
+  for (const [rx, Icon] of CATEGORY_ICON) {
+    if (rx.test(s)) return Icon;
   }
-  return "♻️";
+  return Recycle;
 }
 
-export function ExplorePage() {
+export function ListingsPage() {
   const { user } = useAuth();
 
   const [q, setQ] = useState("");
@@ -334,7 +357,10 @@ export function ExplorePage() {
 
       <div className="pt-1 border-t border-smoke">
         <span className="block text-xs font-medium text-silver pt-3 mb-1.5">
-          📍 Proximidade
+          <span className="inline-flex items-center gap-1">
+            <MapPin aria-hidden className="w-3.5 h-3.5" />
+            Proximidade
+          </span>
         </span>
         {!geo ? (
           <button
@@ -383,12 +409,12 @@ export function ExplorePage() {
   return (
     <div className="app-container">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-cream">Explorar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-cream">Anúncios</h1>
         <span className="text-sm text-silver sm:ml-1">
           {loading
             ? "Buscando…"
             : `${items.length} anúncio${items.length === 1 ? "" : "s"}${
-                geo && raio ? ` · 📍 até ${raio} km` : ""
+                geo && raio ? ` · até ${raio} km` : ""
               }`}
         </span>
         {user?.verified && (
@@ -413,13 +439,12 @@ export function ExplorePage() {
                 : "border-smoke bg-charcoal hover:border-esmeralda/60"
             }`}
           >
-            <span className="text-2xl" aria-hidden>
-              ♻️
-            </span>
+            <Recycle aria-hidden className="w-6 h-6" />
             <span className="text-xs font-medium text-cream px-1">Tudo</span>
           </button>
           {categories.map((c) => {
             const active = categoriaId === c.Id;
+            const CIcon = categoryIcon(c);
             return (
               <button
                 key={c.Id}
@@ -431,9 +456,7 @@ export function ExplorePage() {
                     : "border-smoke bg-charcoal hover:border-esmeralda/60"
                 }`}
               >
-                <span className="text-2xl" aria-hidden>
-                  {categoryEmoji(c)}
-                </span>
+                <CIcon aria-hidden className="w-6 h-6" />
                 <span className="text-xs font-medium text-cream leading-tight line-clamp-2 px-1.5 text-center">
                   {c.Name}
                 </span>
@@ -454,7 +477,13 @@ export function ExplorePage() {
             className="lg:hidden w-full mb-4 flex items-center justify-between bg-charcoal rounded-lg border border-smoke px-4 py-2.5 text-sm font-medium text-cream"
           >
             <span>Filtros{activeCount > 0 ? ` (${activeCount})` : ""}</span>
-            <span aria-hidden>{filtersOpen ? "✕" : "☰"}</span>
+            <span aria-hidden>
+              {filtersOpen ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <SlidersHorizontal className="w-4 h-4" />
+              )}
+            </span>
           </button>
           {filtersOpen && <div className="lg:hidden mb-6">{Filters}</div>}
 
@@ -472,7 +501,7 @@ export function ExplorePage() {
             </div>
           ) : items.length === 0 ? (
             <EmptyState
-              icon="♻️"
+              icon={<Recycle className="w-8 h-8" />}
               title="Nenhum anúncio com esses filtros."
               hint="Tente ajustar a busca ou limpar os filtros."
               action={

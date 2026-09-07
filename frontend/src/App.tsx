@@ -1,10 +1,10 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { LandingPage } from "./pages/LandingPage";
 import { FeedPage } from "./pages/FeedPage";
-import { ExplorePage } from "./pages/ExplorePage";
+import { ListingsPage } from "./pages/ListingsPage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -33,7 +33,9 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
           <Route path="/feed" element={<FeedPage />} />
-          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/listings" element={<ListingsPage />} />
+          {/* Slug antigo — redireciona p/ manter bookmarks funcionando. */}
+          <Route path="/explore" element={<Navigate to="/listings" replace />} />
           <Route path="/listings/:id" element={<ListingDetailPage />} />
           <Route path="/users/:id" element={<UserPage />} />
           <Route path="/login" element={<LoginPage />} />
