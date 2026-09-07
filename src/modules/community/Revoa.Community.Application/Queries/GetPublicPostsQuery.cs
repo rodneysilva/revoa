@@ -13,7 +13,7 @@ namespace Revoa.Community.Application.Queries;
 public sealed record GetPublicPostsQuery(int Page = 1, Guid? ViewerId = null)
     : IRequest<Result<IReadOnlyList<PublicPostItemDto>>>;
 
-public sealed record PublicPostItemDto(PostDto Post, string CommunityName);
+public sealed record PublicPostItemDto(PostDto Post, string CommunityName, string? CommunityCoverUrl = null);
 
 public class GetPublicPostsQueryHandler
     : IRequestHandler<GetPublicPostsQuery, Result<IReadOnlyList<PublicPostItemDto>>>
@@ -65,7 +65,9 @@ public class GetPublicPostsQueryHandler
 
         IReadOnlyList<PublicPostItemDto> result = dtos
             .Select(d => new PublicPostItemDto(
-                d, communitiesById[d.CommunityId].Name))
+                d,
+                communitiesById[d.CommunityId].Name,
+                communitiesById[d.CommunityId].CoverImageUrl))
             .ToList();
 
         return Result<IReadOnlyList<PublicPostItemDto>>.Ok(result);

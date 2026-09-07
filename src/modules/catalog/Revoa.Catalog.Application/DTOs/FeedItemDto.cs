@@ -17,4 +17,5 @@ public sealed record FeedItemDto(
     string? Condition,
     string? UnitType,
     int? Duration,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? Description = null);

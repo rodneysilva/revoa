@@ -107,4 +107,28 @@ public class PublicPostsTests : IntegrationTestBase
         anonPost["Post"]!["IsLiked"]!.GetValue<bool>().Should().BeFalse();
         anonPost["Post"]!["LikeCount"]!.GetValue<int>().Should().Be(1);
     }
+
+    [Fact]
+    public async Task Public_feed_includes_community_cover()
+    {
+        var creator = await CreateUserAsync();
+        var comCapa = await CreateCommunityAsync(creator);
+        var semCapa = await CreateCommunityAsync(creator);
+
+        var capa = "https://cdn.revoa.me/communities/capa-e2e.jpg";
+        var cover = await AuthedClient(creator).PostAsync(
+            $"/api/communities/{comCapa}/cover", JsonBody(new { CoverImageUrl = capa }));
+        cover.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var postComCapa = await CreateCommunityPostAsync(creator, comCapa, "Post com capa");
+        await CreateCommunityPostAsync(creator, semCapa, "Post sem capa");
+
+        var arr = await (await Http.GetAsync("/api/posts")).Content.ReadFromJsonAsync<JsonArray>();
+        var com = arr!.Single(p => p!["Post"]!["Id"]!.GetValue<Guid>() == postComCapa)!;
+        var sem = arr!.Single(p => p!["Post"]!["Content"]!.GetValue<string>() == "Post sem capa")!;
+
+        com["CommunityCoverUrl"]!.GetValue<string>().Should()
+            .Be(capa, "o card do feed mostra a capa da comunidade");
+        sem["CommunityCoverUrl"].Should().BeNull("comunidade sem capa não envia URL");
+    }
 }

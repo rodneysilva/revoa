@@ -65,7 +65,8 @@ public class GetSavedListingsQueryHandler
         Condition: l.ProductDetails?.Condition.ToString(),
         UnitType: l.ServiceDetails?.UnitType.ToString(),
         Duration: l.ServiceDetails?.Duration,
-        CreatedAt: l.CreatedAt);
+        CreatedAt: l.CreatedAt,
+        Description: l.Description);
 }
 
 // Ids dos anúncios salvos (bootstrap do estado do botão salvar no FE — uma

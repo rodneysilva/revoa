@@ -113,5 +113,6 @@ public class GetFeedQueryHandler : IRequestHandler<GetFeedQuery, Result<IReadOnl
         Condition: l.ProductDetails?.Condition.ToString(),
         UnitType: l.ServiceDetails?.UnitType.ToString(),
         Duration: l.ServiceDetails?.Duration,
-        CreatedAt: l.CreatedAt);
+        CreatedAt: l.CreatedAt,
+        Description: l.Description);
 }
