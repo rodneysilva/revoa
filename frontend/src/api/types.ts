@@ -35,6 +35,7 @@ export interface FeedItem {
   UnitType?: string;
   Duration?: number;
   CreatedAt?: string;
+  Description?: string;
 }
 
 // Busca global (header): anúncios + comunidades agrupados num pedido.
@@ -284,6 +285,7 @@ export interface SocialFeedItem {
 export interface PublicPostItem {
   Post: Post;
   CommunityName: string;
+  CommunityCoverUrl?: string;
 }
 
 // GET /api/users/{id} — perfil público. Só nome e "membro desde";

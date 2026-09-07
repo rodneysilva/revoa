@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { Badge } from "../components/Badge";
 import { Avatar } from "../components/Avatar";
@@ -13,6 +13,7 @@ import type { Comment, HelpRequest, Listing, PriceReference, ReportReason, Revie
 
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { rate, disclaimer } = useBrlRate();
   const [listing, setListing] = useState<Listing | null>(null);
@@ -96,9 +97,13 @@ export function ListingDetailPage() {
 
   return (
     <div className="app-container">
-      <Link to="/feed" className="text-sm text-silver hover:text-cream mb-4 inline-block">
-        ← Feed
-      </Link>
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="text-sm text-silver hover:text-cream mb-4 inline-block"
+      >
+        ← Voltar
+      </button>
 
       <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
         {/* Galeria */}

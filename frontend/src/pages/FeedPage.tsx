@@ -436,6 +436,7 @@ export function FeedPage() {
                       post={e.item.Post}
                       communityName={e.item.CommunityName}
                       communityUrl={`/community/${e.item.Post.CommunityId}#conversas`}
+                      communityCover={e.item.CommunityCoverUrl}
                       currentUserId={user?.userId}
                     />
                   ) : (

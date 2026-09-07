@@ -13,12 +13,15 @@ export function PostCard({
   post,
   communityName,
   communityUrl,
+  communityCover,
   currentUserId,
   onUnsave,
 }: {
   post: Post;
   communityName?: string;
   communityUrl?: string;
+  // Miniatura da capa ao lado do nome da comunidade (feed da rede).
+  communityCover?: string;
   currentUserId?: string;
   // "Meus salvos": avisa a página quando o post deixa de estar salvo (a lista remove).
   onUnsave?: () => void;
@@ -109,9 +112,22 @@ export function PostCard({
             {communityName && (
               <Link
                 to={communityHref}
-                className="ml-auto text-xs text-amber hover:underline truncate"
+                className="ml-auto inline-flex items-center gap-1.5 text-xs text-amber hover:underline truncate"
               >
-                💬 {communityName}
+                {communityCover ? (
+                  <img
+                    src={communityCover}
+                    alt=""
+                    className="w-5 h-5 rounded object-cover shrink-0"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <span aria-hidden>💬</span>
+                )}
+                <span className="truncate">{communityName}</span>
               </Link>
             )}
           </div>

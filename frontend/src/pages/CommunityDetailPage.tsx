@@ -4,7 +4,7 @@ import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
-import { ListingCard, ListingCardSkeleton } from "../components/ListingCard";
+import { ListingTimelineCard } from "../components/ListingTimelineCard";
 import { LiveChat } from "../components/LiveChat";
 import { PostComposer } from "../components/PostComposer";
 import { PostThread } from "../components/PostThread";
@@ -16,32 +16,34 @@ import {
 import type { Community, FeedItem, Membership, Post } from "../api/types";
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Página única da comunidade (v2): filtros à esquerda, conversas no centro
-   com composer no topo, features à direita (chat ao vivo, membros, regras),
-   anúncios em grade full width abaixo. Hashes antigos das abas
-   (#conversas #aovivo #ofertas #membros) viram âncoras — nada quebra.
+   Página única da comunidade (v2): filtros à esquerda, feed no centro com
+   composer no topo (conversas e anúncios dos membros na MESMA timeline —
+   anúncio é só um filtro), features à direita (chat ao vivo, membros,
+   regras). Hashes antigos (#conversas #aovivo #ofertas #membros) viram
+   âncoras — nada quebra.
    ═══════════════════════════════════════════════════════════════════════ */
 
-// Hash legado "ofertas" ancora na seção nova "anuncios".
+// Hash legado "ofertas"/"anuncios" ancora na timeline central e liga o
+// filtro de anúncios (a seção separada virou filtro do feed).
 const ANCHOR_MAP: Record<string, string> = {
   conversas: "conversas",
   aovivo: "aovivo",
-  ofertas: "anuncios",
-  anuncios: "anuncios",
+  ofertas: "conversas",
+  anuncios: "conversas",
   membros: "membros",
 };
 
 const FILTRO_LABEL: Record<FiltroConversa, string> = {
   recentes: "🕘 Recentes",
-  curtidas: "❤️ Mais curtidas",
   minhas: "✍️ Minhas",
+  anuncios: "🛍️ Anúncios",
 };
 
-type FiltroConversa = "recentes" | "curtidas" | "minhas";
+type FiltroConversa = "recentes" | "minhas" | "anuncios";
 
 const REGRAS = [
   "Respeite os membros — sem ofensas, spam ou discurso de ódio.",
-  "Anúncios vão na seção de anúncios, não nas conversas.",
+  "Anúncios dos membros aparecem no feed — use o filtro 🛍️ para vê-los.",
   "Denuncie conteúdo inadequado; moderadores cuidam do resto.",
 ];
 
@@ -61,14 +63,16 @@ export function CommunityDetailPage() {
   const [joinPassword, setJoinPassword] = useState("");
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [memberListings, setMemberListings] = useState<FeedItem[] | null>(null);
-  const [listingsError, setListingsError] = useState(false);
   const [filtro, setFiltro] = useState<FiltroConversa>("recentes");
   const [coverUploading, setCoverUploading] = useState(false);
 
   // Âncoras legadas (#hash) → scroll suave até a seção correspondente.
+  // #ofertas/#anuncios também liga o filtro de anúncios da timeline.
   useEffect(() => {
-    const target = ANCHOR_MAP[location.hash.replace(/^#/, "")];
+    const raw = location.hash.replace(/^#/, "");
+    const target = ANCHOR_MAP[raw];
     if (!target || loading) return;
+    if (raw === "ofertas" || raw === "anuncios") setFiltro("anuncios");
     const t = requestAnimationFrame(() => {
       document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
@@ -119,25 +123,21 @@ export function CommunityDetailPage() {
     const ids = Array.from(new Set(activeMembers.map((m) => m.UserId).filter(Boolean)));
     if (ids.length === 0) {
       setMemberListings([]);
-      setListingsError(false);
       return;
     }
     let active = true;
     setMemberListings(null);
-    setListingsError(false);
     // Anúncios dos membros VISÍVEIS no contexto desta comunidade: communityId
     // faz o backend incluir também os escopados à comunidade (Visibility=
-    // Community), que o feed sem esse filtro exclui.
+    // Community), que o feed sem esse filtro exclui. Na timeline mesclada a
+    // falha degrada em silêncio (só conversas aparecem).
     api
       .feed({ sellerIds: ids.join(","), communityId: id, page: 1 })
       .then((items) => {
         if (active) setMemberListings(items);
       })
       .catch(() => {
-        if (active) {
-          setListingsError(true);
-          setMemberListings([]);
-        }
+        if (active) setMemberListings([]);
       });
     return () => {
       active = false;
@@ -253,12 +253,33 @@ export function CommunityDetailPage() {
     }
   }
 
-  const visiblePosts = useMemo(() => {
-    if (filtro === "minhas") return posts.filter((p) => p.AutorId === user?.userId);
-    if (filtro === "curtidas")
-      return [...posts].sort((a, b) => (b.LikeCount ?? 0) - (a.LikeCount ?? 0));
-    return posts;
-  }, [posts, filtro, user]);
+  const visiblePosts = useMemo(
+    () => (filtro === "minhas" ? posts.filter((p) => p.AutorId === user?.userId) : posts),
+    [posts, filtro, user]
+  );
+
+  // Timeline mesclada: conversas (cada raiz com sua thread) e anúncios dos
+  // membros intercalados por data. Filtro 🛍️ = só anúncios; ✍️ = só minhas.
+  const timeline = useMemo(() => {
+    const listingEntries = (memberListings ?? []).map((l) => ({
+      tipo: "listing" as const,
+      key: `l-${l.Id}`,
+      at: l.CreatedAt ? new Date(l.CreatedAt).getTime() : 0,
+      item: l,
+    }));
+    if (filtro === "anuncios") return listingEntries;
+    const postEntries = visiblePosts.map((p) => ({
+      tipo: "post" as const,
+      key: `p-${p.Id}`,
+      at: new Date(p.CreatedAt).getTime(),
+      item: p,
+    }));
+    if (filtro === "minhas") return postEntries;
+    return [...postEntries, ...listingEntries].sort((a, b) => b.at - a.at);
+  }, [filtro, visiblePosts, memberListings]);
+
+  const timelineLoading =
+    rootsLoading || (filtro !== "minhas" && memberListings === null);
 
   if (loading) return <div className="app-container text-silver">Carregando comunidade…</div>;
 
@@ -412,24 +433,11 @@ export function CommunityDetailPage() {
 
       {/* ══ PÁGINA ÚNICA: filtros | conversas | features — full width ══ */}
       <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_20rem] items-start">
-        {/* ── Esquerda: Sobre + filtros de conversas + atalhos ── */}
+        {/* ── Esquerda: filtros do feed + atalhos ── */}
         <aside className="space-y-4">
           <section className="bg-charcoal rounded-xl border border-smoke p-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
-              Sobre
-            </h2>
-            <p className="text-sm text-cream/90 whitespace-pre-wrap line-clamp-6">
-              {community.Description || "Sem descrição."}
-            </p>
-            {local && <p className="mt-2 text-xs text-silver">📍 {local}</p>}
-            <p className="mt-1 text-xs text-silver">
-              Criada por <span className="text-cream">{community.CreatorName}</span>
-            </p>
-          </section>
-
-          <section className="bg-charcoal rounded-xl border border-smoke p-4">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
-              Conversas
+              Feed da comunidade
             </h2>
             <div className="flex lg:flex-col gap-1.5 overflow-x-auto">
               {(Object.keys(FILTRO_LABEL) as FiltroConversa[]).map((f) => (
@@ -454,15 +462,17 @@ export function CommunityDetailPage() {
               Atalhos
             </h2>
             <nav className="flex lg:flex-col gap-1.5 text-sm">
-              <a href="#anuncios" className="text-silver hover:text-cream px-3 py-1.5">
-                🛍️ Anúncios dos membros
-              </a>
               <Link to="/saved" className="text-silver hover:text-cream px-3 py-1.5">
                 🔖 Meus salvos
               </Link>
-              <Link to="/feed" className="text-silver hover:text-cream px-3 py-1.5">
-                📰 Feed da rede
-              </Link>
+              {user?.verified && (
+                <Link
+                  to="/listings/new"
+                  className="text-silver hover:text-cream px-3 py-1.5"
+                >
+                  ➕ Anunciar algo
+                </Link>
+              )}
             </nav>
           </section>
         </aside>
@@ -482,34 +492,64 @@ export function CommunityDetailPage() {
             </div>
           )}
 
-          {rootsLoading ? (
+          {timelineLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-24 bg-smoke rounded-lg animate-pulse" />
               ))}
             </div>
-          ) : visiblePosts.length === 0 ? (
-            <EmptyState
-              icon="💬"
-              title={
-                filtro === "minhas"
-                  ? "Você ainda não publicou aqui."
-                  : user?.verified && isMember
-                    ? "Ainda não há conversas. Que tal começar a falar com a comunidade?"
-                    : "Ainda não há conversas por aqui."
-              }
-            />
+          ) : timeline.length === 0 ? (
+            filtro === "anuncios" ? (
+              <EmptyState
+                icon="🛍️"
+                title="Nenhum anúncio dos membros por aqui ainda."
+                action={
+                  user?.verified && isMember ? (
+                    <Link
+                      to="/listings/new"
+                      className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
+                    >
+                      + Anunciar algo
+                    </Link>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <EmptyState
+                icon="💬"
+                title={
+                  filtro === "minhas"
+                    ? "Você ainda não publicou aqui."
+                    : user?.verified && isMember
+                      ? "Ainda não há conversas. Que tal começar a falar com a comunidade?"
+                      : "Ainda não há conversas por aqui."
+                }
+              />
+            )
           ) : (
-            <PostThread
-              posts={visiblePosts}
-              onReply={handleReply}
-              loadChildren={loadChildren}
-              canPost={isMember}
-              currentUserId={user?.userId}
-              loadingId={replyingId ?? undefined}
-              viewerId={user?.userId}
-              shareUrl={shareUrl}
-            />
+            <div className="space-y-4">
+              {timeline.map((e) =>
+                e.tipo === "post" ? (
+                  <PostThread
+                    key={e.key}
+                    posts={[e.item]}
+                    onReply={handleReply}
+                    loadChildren={loadChildren}
+                    canPost={isMember}
+                    currentUserId={user?.userId}
+                    loadingId={replyingId ?? undefined}
+                    viewerId={user?.userId}
+                    shareUrl={shareUrl}
+                  />
+                ) : (
+                  <ListingTimelineCard
+                    key={e.key}
+                    item={e.item}
+                    currentUserId={user?.userId}
+                  />
+                )
+              )}
+            </div>
           )}
         </main>
 
@@ -534,7 +574,11 @@ export function CommunityDetailPage() {
                 const papel = PAPEL_META[m.Role];
                 const voce = user && m.UserId === user.userId;
                 return (
-                  <div key={m.Id} className="flex items-center gap-2.5">
+                  <Link
+                    key={m.Id}
+                    to={`/users/${m.UserId}`}
+                    className="flex items-center gap-2.5 rounded-lg px-1 py-0.5 hover:bg-smoke/60 transition"
+                  >
                     <Avatar name={m.UserName} src={m.UserAvatarUrl} size={28} />
                     <span className="text-sm text-cream truncate flex-1">
                       {m.UserName}
@@ -547,7 +591,7 @@ export function CommunityDetailPage() {
                         {papel.label}
                       </span>
                     )}
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -568,51 +612,6 @@ export function CommunityDetailPage() {
           </section>
         </aside>
       </div>
-
-      {/* ══ ANÚNCIOS — grade full width (2→6 colunas) ══ */}
-      <section id="anuncios" className="mt-8 scroll-mt-20">
-        <div className="flex items-baseline justify-between gap-3 mb-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-silver">
-            🛍️ Anúncios dos membros
-          </h2>
-          <Link to="/feed" className="text-sm text-esmeralda hover:underline">
-            ver tudo no feed →
-          </Link>
-        </div>
-
-        {listingsError ? (
-          <div className="bg-charcoal border border-smoke rounded-xl p-6 text-center text-sm text-silver">
-            Não foi possível carregar os anúncios agora. Tente novamente mais tarde.
-          </div>
-        ) : memberListings === null ? (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <ListingCardSkeleton key={i} />
-            ))}
-          </div>
-        ) : memberListings.length === 0 ? (
-          <EmptyState
-            icon="🛍️"
-            title="Nenhum anúncio dos membros por aqui ainda."
-            action={
-              user?.verified && isMember ? (
-                <Link
-                  to="/listings/new"
-                  className="inline-block bg-brand text-ink font-semibold px-5 py-2.5 rounded-xl"
-                >
-                  + Anunciar algo
-                </Link>
-              ) : undefined
-            }
-          />
-        ) : (
-          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {memberListings.map((item) => (
-              <ListingCard key={item.Id} item={item} />
-            ))}
-          </div>
-        )}
-      </section>
     </div>
   );
 }
