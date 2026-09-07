@@ -168,11 +168,11 @@ export function CommunityDetailPage() {
   }, [user]);
 
   // Filtro 🔖 Salvos: itens salvos DESTA comunidade (posts salvos aqui +
-  // anúncios salvos que estão entre os anúncios da comunidade). Carrega sob
-  // demanda, na primeira vez que o filtro é acionado.
+  // anúncios salvos que estão entre os anúncios da comunidade). Buscado a
+  // CADA ativação do filtro — salvar/dessalvar em outro filtro reflete na
+  // hora, sem refresh.
   useEffect(() => {
     if (filtro !== "salvos" || !user) return;
-    if (savedPostsList !== null && savedListingsList !== null) return;
     let active = true;
     api
       .savedPosts()
@@ -383,6 +383,16 @@ export function CommunityDetailPage() {
         ? "Entre na comunidade para publicar e responder."
         : undefined;
 
+  // Por que não dá para interagir (curtir/comentar/salvar): comunidade
+  // pública mostra tudo, mas a interação é de membro verificado.
+  const interactHint = !user
+    ? "Entre para interagir."
+    : !user.verified
+      ? "Verifique sua conta (e-mail e telefone) para interagir."
+      : !isMember
+        ? "Entre na comunidade para curtir, comentar e salvar."
+        : undefined;
+
   return (
     <div className="app-container">
       <Link
@@ -541,7 +551,7 @@ export function CommunityDetailPage() {
             <nav className="flex lg:flex-col gap-1.5 text-sm">
               {user?.verified && (
                 <Link
-                  to="/listings/new"
+                  to={`/listings/new?community=${community.Id}`}
                   className="text-silver hover:text-cream px-3 py-1.5"
                 >
                   ➕ Anunciar algo
@@ -562,7 +572,8 @@ export function CommunityDetailPage() {
 
           {!isMember && (
             <div className="bg-smoke/50 border border-smoke rounded-xl p-4 text-sm text-silver">
-              💬 As conversas ficam visíveis para todos, mas só membros publicam e respondem.
+              👁️ Comunidade pública: conversas e anúncios aparecem para todos —
+              só membros publicam, comentam, curtem e salvam.
             </div>
           )}
 
@@ -633,7 +644,7 @@ export function CommunityDetailPage() {
                       canPost={isMember}
                       currentUserId={user?.userId}
                       loadingId={replyingId ?? undefined}
-                      viewerId={user?.userId}
+                      viewerId={isMember ? user?.userId : undefined}
                       shareUrl={shareUrl}
                     />
                   )
@@ -643,7 +654,8 @@ export function CommunityDetailPage() {
                     item={e.item}
                     currentUserId={user?.userId}
                     interactive
-                    canInteract={!!user?.verified}
+                    canInteract={!!user?.verified && isMember}
+                    interactHint={interactHint}
                     initialLiked={likedListingIds.has(e.item.Id)}
                     initialSaved={e.salvo || savedListingIds.has(e.item.Id)}
                     onUnsave={

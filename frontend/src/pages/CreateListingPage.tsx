@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError, api } from "../api/client";
 import { KIND_LABELS, MODO_META, ALL_MODOS, modosForKind } from "../lib/config";
 import { useAuth } from "../auth/AuthContext";
@@ -48,10 +48,22 @@ export function CreateListingPage() {
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
-  // Escopo do anúncio: "" = toda a Revoa (Global); senão o Id da comunidade
-  // (Visibility Community — o backend revalida o vínculo Active).
+  // Escopo do anúncio: "" = toda a Revoa (Global); senão o Id da comunidade.
+  // escopoPublico: true = feito na comunidade MAS público (Visibility Both —
+  // aparece na comunidade e no feed da rede); false = só membros (Community).
   const [minhasComunidades, setMinhasComunidades] = useState<MyCommunity[]>([]);
   const [escopo, setEscopo] = useState("");
+  const [escopoPublico, setEscopoPublico] = useState(true);
+
+  // ?community=<id> (atalho "➕ Anunciar algo" da comunidade): pré-seleciona
+  // o escopo quando o usuário participa dela.
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const c = searchParams.get("community");
+    if (c && minhasComunidades.some((m) => m.Community.Id === c)) {
+      setEscopo(c);
+    }
+  }, [minhasComunidades, searchParams]);
 
   useEffect(() => {
     api
@@ -134,7 +146,7 @@ export function CreateListingPage() {
       Description: descricao.trim(),
       Imagens: imagens,
       PriceRvm: precoNum,
-      Visibility: escopo ? "Community" : "Global",
+      Visibility: !escopo ? "Global" : escopoPublico ? "Both" : "Community",
       CommunityId: escopo || undefined,
       CategoryId: categoriaId,
       Neighborhood: bairro.trim() || undefined,
@@ -389,21 +401,51 @@ export function CreateListingPage() {
 
         {/* Escopo — onde o anúncio aparece (só quem participa de comunidades vê) */}
         {minhasComunidades.length > 0 && (
-          <label className={labelCls}>
-            <span className={labelTxtCls}>Onde aparece</span>
-            <select
-              value={escopo}
-              onChange={(e) => setEscopo(e.target.value)}
-              className={inputCls}
-            >
-              <option value="">Toda a Revoa (feed geral e comunidades)</option>
-              {minhasComunidades.map((m) => (
-                <option key={m.Community.Id} value={m.Community.Id}>
-                  Só em {m.Community.Name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div>
+            <label className={labelCls}>
+              <span className={labelTxtCls}>Onde aparece</span>
+              <select
+                value={escopo}
+                onChange={(e) => setEscopo(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Toda a Revoa (feed geral)</option>
+                {minhasComunidades.map((m) => (
+                  <option key={m.Community.Id} value={m.Community.Id}>
+                    Em {m.Community.Name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            {/* Feito na comunidade: público (comunidade + rede) ou só membros */}
+            {escopo && (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEscopoPublico(true)}
+                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition ${
+                    escopoPublico
+                      ? "bg-brand text-ink border-transparent"
+                      : "bg-charcoal text-silver border-smoke hover:text-cream"
+                  }`}
+                >
+                  🌐 Público — comunidade e feed da rede
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEscopoPublico(false)}
+                  className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition ${
+                    !escopoPublico
+                      ? "bg-brand text-ink border-transparent"
+                      : "bg-charcoal text-silver border-smoke hover:text-cream"
+                  }`}
+                >
+                  🔒 Só membros da comunidade
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Localização (opcional) */}

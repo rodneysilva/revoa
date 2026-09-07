@@ -15,8 +15,10 @@ import type { Comment, FeedItem } from "../api/types";
 // esquerda (tamanho por resolução) + título/descrição/preço à direita.
 //
 // `interactive` (timeline da comunidade): o anúncio se comporta como um post —
-// dá para curtir e comentar inline (comentários do próprio anúncio). Nas
-// outras telas (/feed, etc.) o card fica só com salvar/compartilhar/ver.
+// curtir, comentar inline e salvar exigem canInteract (membro verificado);
+// sem vínculo a comunidade aparece normal, só não interage (interactHint
+// explica). Nas outras telas (/feed) o card fica só com
+// salvar/compartilhar/ver, sem gate de membership.
 export function ListingTimelineCard({
   item,
   currentUserId,
@@ -24,6 +26,7 @@ export function ListingTimelineCard({
   initialLiked,
   interactive,
   canInteract,
+  interactHint,
   onUnsave,
 }: {
   item: FeedItem;
@@ -31,9 +34,10 @@ export function ListingTimelineCard({
   initialSaved?: boolean;
   initialLiked?: boolean;
   interactive?: boolean;
-  // Verdadeiro quando o usuário pode curtir/comentar (verificado). Sem isso,
-  // anônimo/não verificado vê link para entrar.
+  // Verdadeiro quando o usuário pode interagir (comunidade: membro verificado).
   canInteract?: boolean;
+  // Por que não pode interagir (ex.: "Entre na comunidade para interagir.").
+  interactHint?: string;
   // "Meus salvos": avisa a página quando o anúncio deixa de estar salvo.
   onUnsave?: () => void;
 }) {
@@ -111,6 +115,9 @@ export function ListingTimelineCard({
     }
   }
 
+  // Na comunidade, salvar também exige vínculo (interação como um post).
+  const canSave = interactive ? !!canInteract : !!currentUserId;
+
   const likeButton = canInteract ? (
     <button
       type="button"
@@ -119,13 +126,17 @@ export function ListingTimelineCard({
     >
       {liked ? "❤️ Curtido" : "🤍 Curtir"}
     </button>
+  ) : interactive ? (
+    <span className="text-xs text-silver" title={interactHint}>
+      🤍 Curtir
+    </span>
   ) : (
     <Link to="/login" className="text-xs text-silver hover:text-rosa">
       🤍 Curtir
     </Link>
   );
 
-  const saveButton = currentUserId ? (
+  const saveButton = canSave ? (
     <button
       type="button"
       onClick={toggleSave}
@@ -133,6 +144,10 @@ export function ListingTimelineCard({
     >
       {saved ? "🔖 Salvo" : "🔖 Salvar"}
     </button>
+  ) : interactive ? (
+    <span className="text-xs text-silver" title={interactHint}>
+      🔖 Salvar
+    </span>
   ) : (
     <Link to="/login" className="text-xs text-silver hover:text-amber">
       🔖 Salvar
@@ -253,10 +268,14 @@ export function ListingTimelineCard({
                 </div>
               ) : (
                 <p className="text-xs text-silver">
-                  <Link to="/login" className="text-esmeralda hover:underline">
-                    Entre
-                  </Link>{" "}
-                  para comentar.
+                  {interactHint ?? (
+                    <>
+                      <Link to="/login" className="text-esmeralda hover:underline">
+                        Entre
+                      </Link>{" "}
+                      para comentar.
+                    </>
+                  )}
                 </p>
               )}
 
