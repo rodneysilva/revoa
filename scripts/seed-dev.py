@@ -121,7 +121,9 @@ def main() -> None:
         r = json.loads(body)
         print(f"[seed-dev] seed: {r.get('Usuarios')} usuarios, {r.get('Listings')} "
               f"listings, {r.get('Comunidades')} comunidades, {r.get('Reviews')} "
-              f"reviews, {r.get('Erros')} erro(s)")
+              f"reviews, {r.get('CurtidasPosts')}+{r.get('CurtidasAnuncios')} curtidas, "
+              f"{r.get('ComentariosAnuncios')} comentarios, {r.get('Salvos')} salvos, "
+              f"{r.get('Erros')} erro(s)")
     finally:
         sh("rm", "-f", SEED_NAME)
         print("[seed-dev] container efêmero removido")

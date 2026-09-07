@@ -4,11 +4,16 @@ using Nethereum.Signer;
 using Revoa.Abstractions;
 using Revoa.Account.Domain.Aggregates.AccountAggregate;
 using Revoa.Catalog.Domain.Aggregates.CategoryAggregate;
+using Revoa.Catalog.Domain.Aggregates.CommentAggregate;
 using Revoa.Catalog.Domain.Aggregates.ListingAggregate;
+using Revoa.Catalog.Domain.Aggregates.ListingLikeAggregate;
+using Revoa.Catalog.Domain.Aggregates.SavedListingAggregate;
 using Revoa.Catalog.Domain.Repositories;
 using Revoa.Community.Domain.Aggregates.CommunityAggregate;
 using Revoa.Community.Domain.Aggregates.MembershipAggregate;
 using Revoa.Community.Domain.Aggregates.PostAggregate;
+using Revoa.Community.Domain.Aggregates.PostLikeAggregate;
+using Revoa.Community.Domain.Aggregates.SavedPostAggregate;
 using Revoa.Identity.Domain.Aggregates.UserAggregate;
 using Revoa.Reputation.Domain.Aggregates.ReputationAggregate;
 using Revoa.Reputation.Domain.Aggregates.ReviewAggregate;
@@ -34,7 +39,11 @@ public sealed record DevSeedResult(
     int Posts,
     int Reviews,
     int Reputacoes,
-    int Erros);
+    int Erros,
+    int CurtidasPosts = 0,
+    int CurtidasAnuncios = 0,
+    int ComentariosAnuncios = 0,
+    int Salvos = 0);
 
 // Popula o ambiente de desenvolvimento com um ecossistema de demonstração VIVO e interconectado:
 // usuários mock reais (com carteira), catálogo vinculado a esses usuários, comunidades com
@@ -101,12 +110,17 @@ public sealed class DevSeeder
         await SeedAdminAsync(ct);
 
         // 4) Catálogo vinculado aos mocks (SellerId rotaciona entre os 10 mocks).
-        var (produtos, servicos, erros) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
+        var (produtos, servicos, erros, listingIds) = await SeedListingsAsync(mocks, catBySlug, rnd, ct);
 
-        // 5) Comunidades (5) + memberships + posts + anúncios da comunidade.
-        var (comunidades, memberships, posts) = await SeedCommunitiesAsync(mocks, catBySlug, rnd, ct);
+        // 5) Comunidades (5, com capa) + memberships + posts (com respostas,
+        //    curtidas e salvos) + anúncios da comunidade.
+        var comm = await SeedCommunitiesAsync(mocks, catBySlug, rnd, listingIds, ct);
 
-        // 6) Reviews (~22) + reputações acumuladas por usuário.
+        // 6) Interações nos anúncios: curtidas, comentários (+ resposta do
+        //    vendedor) e salvos — o feed nasce "vivo", não zerado.
+        var (curtAnuncios, comentarios, salvAnuncios) = await SeedInteractionsAsync(mocks, listingIds, rnd, ct);
+
+        // 7) Reviews (~22) + reputações acumuladas por usuário.
         var (reviews, reputacoes) = await SeedReviewsAndReputationAsync(mocks, rnd, ct);
 
         return new DevSeedResult(
@@ -117,12 +131,16 @@ public sealed class DevSeeder
             Produtos: produtos,
             Servicos: servicos,
             Listings: produtos + servicos,
-            Comunidades: comunidades,
-            Memberships: memberships,
-            Posts: posts,
+            Comunidades: comm.Comunidades,
+            Memberships: comm.Memberships,
+            Posts: comm.Posts,
             Reviews: reviews,
             Reputacoes: reputacoes,
-            Erros: erros);
+            Erros: erros,
+            CurtidasPosts: comm.Curtidas,
+            CurtidasAnuncios: curtAnuncios,
+            ComentariosAnuncios: comentarios,
+            Salvos: comm.Salvos + salvAnuncios);
     }
 
     // --- Limpeza idempotente: remove todos os mocks pelas chaves determinísticas (10 usuários +
@@ -147,6 +165,15 @@ public sealed class DevSeeder
         removed += await DeleteByAsync("Posts", bf.In("CommunityId", commBin));
         removed += await DeleteByAsync("Reviews", bf.In("ReviewerId", userBin));
         removed += await DeleteByAsync("Reputations", bf.In("UserId", userBin));
+
+        // Interações dos mocks: curtidas/salvos têm UserId; comentários do seed
+        // são autorados SÓ por mocks (AutorId) — comentários de pessoas reais em
+        // anúncios demo são preservados.
+        removed += await DeleteByAsync("PostLikes", bf.In("UserId", userBin));
+        removed += await DeleteByAsync("ListingLikes", bf.In("UserId", userBin));
+        removed += await DeleteByAsync("Comments", bf.In("AutorId", userBin));
+        removed += await DeleteByAsync("SavedPosts", bf.In("UserId", userBin));
+        removed += await DeleteByAsync("SavedListings", bf.In("UserId", userBin));
         return removed;
 
         async Task<long> DeleteByAsync(string coll, FilterDefinition<BsonDocument> filter)
@@ -236,9 +263,10 @@ public sealed class DevSeeder
         }
     }
 
-    // --- Catálogo (56 produtos + 57 serviços) vinculado aos mocks: SellerId/Nome/AvatarUrl
+    // --- Catálogo (~100 produtos + 57 serviços) vinculado aos mocks: SellerId/Nome/AvatarUrl
     //     rotacionam entre os 10 usuários. CreatedAt espalhado nos últimos 30 dias (feed variado).
-    private async Task<(int produtos, int servicos, int erros)> SeedListingsAsync(
+    //     Retorna os anúncios criados (Id + vendedor) para a etapa de interações.
+    private async Task<(int produtos, int servicos, int erros, List<(Guid Id, Guid SellerId)> criados)> SeedListingsAsync(
         IReadOnlyList<DevSeedData.MockUser> mocks,
         IReadOnlyDictionary<string, Guid> catBySlug,
         Random rnd,
@@ -247,6 +275,7 @@ public sealed class DevSeeder
         var all = DevSeedData.BuildProducts().Concat(DevSeedData.BuildServices()).ToList();
         var places = DevSeedData.Places();
         var docs = new List<BsonDocument>(all.Count);
+        var criados = new List<(Guid Id, Guid SellerId)>(all.Count);
         var produtos = 0;
         var servicos = 0;
         var erros = 0;
@@ -292,6 +321,7 @@ public sealed class DevSeeder
                 var doc = listing.ToBsonDocument();
                 doc["CreatedAt"] = new BsonDateTime(DevSeedData.RandomRecent(rnd));
                 docs.Add(doc);
+                criados.Add((listing.Id, seller.Id));
 
                 if (seed.Kind == ListingKind.Product)
                 {
@@ -314,24 +344,32 @@ public sealed class DevSeeder
             await _db.GetCollection<BsonDocument>("Listings").InsertManyAsync(docs, cancellationToken: ct);
         }
 
-        return (produtos, servicos, erros);
+        return (produtos, servicos, erros, criados);
     }
 
-    // --- 5 comunidades (Tipo=User, Open) com memberships (Criador/Moderador/Membro), posts
-    //     e anúncios DA comunidade (um "só aqui" + um público feito na comunidade).
+    // --- 5 comunidades (Tipo=User, Open, todas com capa) com memberships
+    //     (Criador/Moderador/Membro), posts COM respostas/curtidas/salvos e
+    //     anúncios DA comunidade (um "só aqui" + um público feito na comunidade).
     //     CommunityId determinístico; memberships/posts limpos por CommunityId; listings
     //     pelo prefixo "[Demo]" da descrição.
-    private async Task<(int comunidades, int memberships, int posts)> SeedCommunitiesAsync(
+    private sealed record CommunitySeed(
+        int Comunidades, int Memberships, int Posts, int Curtidas, int Salvos);
+
+    private async Task<CommunitySeed> SeedCommunitiesAsync(
         IReadOnlyList<DevSeedData.MockUser> mocks,
         IReadOnlyDictionary<string, Guid> catBySlug,
         Random rnd,
+        List<(Guid Id, Guid SellerId)> listingIds,
         CancellationToken ct)
     {
         var specs = DevSeedData.CommunitySpecs();
         var contents = DevSeedData.PostContents();
+        var replies = DevSeedData.ReplyContents();
         var commDocs = new List<BsonDocument>(specs.Count);
         var memDocs = new List<BsonDocument>();
         var postDocs = new List<BsonDocument>();
+        var postLikeDocs = new List<BsonDocument>();
+        var savedPostDocs = new List<BsonDocument>();
         var memberIndicesByComm = new List<List<int>>(specs.Count);
 
         for (var i = 0; i < specs.Count; i++)
@@ -354,7 +392,8 @@ public sealed class DevSeeder
                 state: sp.State,
                 creatorId: creator.Id,
                 creatorName: creator.Name,
-                creatorAvatarUrl: creator.AvatarUrl);
+                creatorAvatarUrl: creator.AvatarUrl,
+                coverImageUrl: DevSeedData.CoverUrlFor(i));
 
             var commDoc = comm.ToBsonDocument();
             commDoc["_id"] = new BsonBinaryData(commId, GuidRepresentation.Standard);
@@ -397,22 +436,56 @@ public sealed class DevSeeder
                 memDocs.Add(memDoc);
             }
 
-            // 3-5 posts por comunidade; autor é sempre um dos membros.
+            // 3-5 posts por comunidade; autor é sempre um dos membros. Cada raiz
+            // ganha curtidas/salvos de outros membros e 0-2 respostas (a resposta
+            // sempre vem DEPOIS da raiz na timeline).
+            var members = memberIndices.Select(idx => mocks[idx]).ToList();
             var postCount = rnd.Next(3, 6);
             for (var p = 0; p < postCount; p++)
             {
-                var author = mocks[memberIndices[rnd.Next(memberIndices.Count)]];
+                var author = members[rnd.Next(members.Count)];
                 var content = contents[rnd.Next(contents.Count)];
                 var post = Post.CreateRoot(commId, author.Id, author.Name, author.AvatarUrl, content);
                 var postDoc = post.ToBsonDocument();
-                postDoc["CreatedAt"] = new BsonDateTime(DevSeedData.RandomRecent(rnd));
+                var rootAt = DevSeedData.RandomRecent(rnd);
+                postDoc["CreatedAt"] = new BsonDateTime(rootAt);
                 postDocs.Add(postDoc);
+
+                var outros = members.Where(u => u.Id != author.Id).ToList();
+                foreach (var u in outros.OrderBy(_ => rnd.NextDouble()).Take(rnd.Next(0, 5)))
+                {
+                    postLikeDocs.Add(PostLike.Create(post.Id, u.Id).ToBsonDocument());
+                }
+                foreach (var u in outros.OrderBy(_ => rnd.NextDouble()).Take(rnd.Next(0, 2)))
+                {
+                    savedPostDocs.Add(SavedPost.Create(u.Id, post.Id, commId).ToBsonDocument());
+                }
+
+                var replyCount = rnd.Next(0, 3);
+                for (var r = 0; r < replyCount; r++)
+                {
+                    var responder = outros[rnd.Next(outros.Count)];
+                    var reply = Post.CreateReply(
+                        post, responder.Id, responder.Name, responder.AvatarUrl,
+                        replies[rnd.Next(replies.Count)]);
+                    var replyDoc = reply.ToBsonDocument();
+                    replyDoc["CreatedAt"] = new BsonDateTime(rootAt.AddMinutes(rnd.Next(5, 600)));
+                    postDocs.Add(replyDoc);
+                }
             }
         }
 
         await _db.GetCollection<BsonDocument>("Communities").InsertManyAsync(commDocs, cancellationToken: ct);
         await _db.GetCollection<BsonDocument>("Memberships").InsertManyAsync(memDocs, cancellationToken: ct);
         await _db.GetCollection<BsonDocument>("Posts").InsertManyAsync(postDocs, cancellationToken: ct);
+        if (postLikeDocs.Count > 0)
+        {
+            await _db.GetCollection<BsonDocument>("PostLikes").InsertManyAsync(postLikeDocs, cancellationToken: ct);
+        }
+        if (savedPostDocs.Count > 0)
+        {
+            await _db.GetCollection<BsonDocument>("SavedPosts").InsertManyAsync(savedPostDocs, cancellationToken: ct);
+        }
 
         // Anúncios DA comunidade por comunidade: um escopado (Visibility=
         // Community — só aparece aqui) e um público feito na comunidade
@@ -468,6 +541,7 @@ public sealed class DevSeeder
                     var d = l.ToBsonDocument();
                     d["CreatedAt"] = new BsonDateTime(DevSeedData.RandomRecent(rnd));
                     listingDocs.Add(d);
+                    listingIds.Add((l.Id, vendedor.Id));
                 }
             }
 
@@ -477,7 +551,87 @@ public sealed class DevSeeder
             }
         }
 
-        return (commDocs.Count, memDocs.Count, postDocs.Count);
+        return new CommunitySeed(commDocs.Count, memDocs.Count, postDocs.Count, postLikeDocs.Count, savedPostDocs.Count);
+    }
+
+    // --- Interações nos anúncios: curtidas (60% dos anúncios, 1-5 mocks),
+    //     comentários (45%, 1-2 perguntas + resposta do vendedor em ~1/3) e
+    //     salvos (25%, 1-2 mocks). Autor nunca é o vendedor; a resposta do
+    //     vendedor vem depois da pergunta.
+    private async Task<(int curtidas, int comentarios, int salvos)> SeedInteractionsAsync(
+        IReadOnlyList<DevSeedData.MockUser> mocks,
+        IReadOnlyList<(Guid Id, Guid SellerId)> listings,
+        Random rnd,
+        CancellationToken ct)
+    {
+        var perguntas = DevSeedData.ListingCommentTexts();
+        var respostas = DevSeedData.ListingReplyTexts();
+        var likeDocs = new List<BsonDocument>();
+        var commentDocs = new List<BsonDocument>();
+        var saveDocs = new List<BsonDocument>();
+
+        foreach (var (listingId, sellerId) in listings)
+        {
+            var vendedor = mocks.First(m => m.Id == sellerId);
+            var outros = mocks.Where(m => m.Id != sellerId).ToList();
+
+            if (rnd.NextDouble() < 0.6)
+            {
+                foreach (var u in outros.OrderBy(_ => rnd.NextDouble()).Take(rnd.Next(1, 6)))
+                {
+                    likeDocs.Add(ListingLike.Create(listingId, u.Id).ToBsonDocument());
+                }
+            }
+
+            if (rnd.NextDouble() < 0.45)
+            {
+                var count = rnd.Next(1, 3);
+                for (var c = 0; c < count; c++)
+                {
+                    var leitor = outros[rnd.Next(outros.Count)];
+                    var root = Comment.CreateRoot(
+                        listingId, leitor.Id, leitor.Name, leitor.AvatarUrl,
+                        perguntas[rnd.Next(perguntas.Count)]);
+                    var rootDoc = root.ToBsonDocument();
+                    var rootAt = DevSeedData.RandomRecent(rnd);
+                    rootDoc["CreatedAt"] = new BsonDateTime(rootAt);
+                    commentDocs.Add(rootDoc);
+
+                    if (rnd.NextDouble() < 0.35)
+                    {
+                        var reply = Comment.CreateReply(
+                            root, vendedor.Id, vendedor.Name, vendedor.AvatarUrl,
+                            respostas[rnd.Next(respostas.Count)]);
+                        var replyDoc = reply.ToBsonDocument();
+                        replyDoc["CreatedAt"] = new BsonDateTime(rootAt.AddMinutes(rnd.Next(2, 240)));
+                        commentDocs.Add(replyDoc);
+                    }
+                }
+            }
+
+            if (rnd.NextDouble() < 0.25)
+            {
+                foreach (var u in outros.OrderBy(_ => rnd.NextDouble()).Take(rnd.Next(1, 3)))
+                {
+                    saveDocs.Add(SavedListing.Create(u.Id, listingId).ToBsonDocument());
+                }
+            }
+        }
+
+        if (likeDocs.Count > 0)
+        {
+            await _db.GetCollection<BsonDocument>("ListingLikes").InsertManyAsync(likeDocs, cancellationToken: ct);
+        }
+        if (commentDocs.Count > 0)
+        {
+            await _db.GetCollection<BsonDocument>("Comments").InsertManyAsync(commentDocs, cancellationToken: ct);
+        }
+        if (saveDocs.Count > 0)
+        {
+            await _db.GetCollection<BsonDocument>("SavedListings").InsertManyAsync(saveDocs, cancellationToken: ct);
+        }
+
+        return (likeDocs.Count, commentDocs.Count, saveDocs.Count);
     }
 
     // --- ~22 reviews (reviewer e reviewee sempre mocks) + reputação acumulada por usuário.

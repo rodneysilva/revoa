@@ -82,6 +82,10 @@ internal static class DevSeedData
     public static string AvatarFor(string name) =>
         $"https://api.dicebear.com/7.x/initials/svg?seed={Uri.EscapeDataString(name)}";
 
+    // Capa da comunidade demo i (determinística como o resto do ecossistema).
+    public static string CoverUrlFor(int i) =>
+        $"https://picsum.photos/seed/revoa-comm-capa-{i}/1200/400";
+
     public static IReadOnlyList<SeedListing> BuildProducts()
     {
         var p = ListingKind.Product;
@@ -91,13 +95,13 @@ internal static class DevSeedData
 
         return new List<SeedListing>
         {
-            new(p, T, "Notebook Dell usado — 8GB SSD240", "Notebook funcional, bateria com boa autonomia. Retirada no neighborhood.", "eletronicos", 35, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Notebook Dell usado — 8GB SSD240", "Notebook funcional, bateria com boa autonomia. Retirada no bairro.", "eletronicos", 35, ProductCondition.Seminovo, null, 0),
             new(p, T, "Celular Moto G usado 64GB", "Funcionando, leves marcas de uso. Tela sem trincos.", "eletronicos", 28, ProductCondition.Usado, null, 0),
-            new(p, T, "Smart TV LED 32 polegadas", "TV em ótimo state, controle incluso. Retirada a combinar.", "eletronicos", 40, ProductCondition.Usado, null, 0),
+            new(p, T, "Smart TV LED 32 polegadas", "TV em ótimo estado, controle incluso. Retirada a combinar.", "eletronicos", 40, ProductCondition.Usado, null, 0),
             new(p, R, "Carregador portátil 10000mAh", "Power bank seminovo, carrega dois aparelhos.", "eletronicos", 4, ProductCondition.Seminovo, null, 0),
             new(p, D, "Fone bluetooth (doação)", "Funciona bem, na caixa. Levo para quem precisar.", "eletronicos", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Cadeira de escritório ergonômica", "Cadeira confortável, rodízios ok. Ótima para home office.", "moveis-decoracao", 22, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Sofá de 3 lugares (doação)", "Sofá usado em bom state, só retirar. Combinamos horário.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Sofá de 3 lugares (doação)", "Sofá usado em bom estado, só retirar. Combinamos horário.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Mesa de jantar de madeira maciça", "Mesa espaçosa para 6 pessoas. Retirada no local.", "moveis-decoracao", 30, ProductCondition.Usado, null, 0),
             new(p, R, "Rack de TV pequeno", "Rack em MDF, comporta até 42 polegadas.", "moveis-decoracao", 6, ProductCondition.Usado, null, 0),
             new(p, D, "Abajur decorativo (doação)", "Abajur funcional, perfeito para o canto da sala.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
@@ -105,25 +109,25 @@ internal static class DevSeedData
             new(p, D, "Vestido floral tam G (doação)", "Vestido bonito, usado poucas vezes. Para quem servir.", "roupas-acessorios", 0, ProductCondition.Seminovo, null, 0),
             new(p, R, "Tênis esportivo nº 39", "Tênis usado, mas com solado íntegro.", "roupas-acessorios", 5, ProductCondition.Usado, null, 0),
             new(p, T, "Mochila universitária reforçada", "Mochila espaçosa, com compartimento para notebook.", "roupas-acessorios", 10, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Roupas infantis 2-3 anos (doação)", "Várias peças em bom state. Para famílias que precisam.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Roupas infantis 2-3 anos (doação)", "Várias peças em bom estado. Para famílias que precisam.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Liquidificador 3 velocidades", "Funciona perfeitamente, copo sem trincos.", "casa-cozinha", 9, ProductCondition.Usado, null, 0),
-            new(p, R, "Jogo de panelas antiaderente (4 peças)", "Panelas em state razoável, ótimas para começar.", "casa-cozinha", 7, ProductCondition.Usado, null, 0),
+            new(p, R, "Jogo de panelas antiaderente (4 peças)", "Panelas em estado razoável, ótimas para começar.", "casa-cozinha", 7, ProductCondition.Usado, null, 0),
             new(p, D, "Liquidificador manual (doação)", "Minipimer funcionando, para quem está montando casa.", "casa-cozinha", 0, ProductCondition.Usado, null, 0),
             new(p, T, "Cafeteira elétrica", "Cafeteira seminova, faz café rápido.", "casa-cozinha", 6, ProductCondition.Seminovo, null, 0),
             new(p, T, "Air Fryer 3,2 litros", "Fritadeira sem óleo, super conservada.", "casa-cozinha", 18, ProductCondition.Seminovo, null, 0),
             new(p, D, "Livros de literatura (lote, doação)", "6 livros clássicos para circular o conhecimento.", "livros-midia", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Apostilas de ENEM usadas (doação)", "Material para quem está se preparando.", "livros-midia", 0, ProductCondition.Usado, null, 0),
-            new(p, R, "HQ Turma da Mônica (coleção)", "Várias edições em bom state, nostalgia garantida.", "livros-midia", 3, ProductCondition.Usado, null, 0),
-            new(p, T, "Livro A Arte da Guerra", "Edição de bolso, capa em ótimo state.", "livros-midia", 4, ProductCondition.Seminovo, null, 0),
+            new(p, R, "HQ Turma da Mônica (coleção)", "Várias edições em bom estado, nostalgia garantida.", "livros-midia", 3, ProductCondition.Usado, null, 0),
+            new(p, T, "Livro A Arte da Guerra", "Edição de bolso, capa em ótimo estado.", "livros-midia", 4, ProductCondition.Seminovo, null, 0),
             new(p, T, "Bicicleta aro 26 revisada", "Bike calibrada e com freios ajustados. Pronta pra rodar.", "esporte-lazer", 32, ProductCondition.Usado, null, 0),
             new(p, T, "Par de halteres 10kg", "Halteres de ferro, ótimos para treino em casa.", "esporte-lazer", 14, ProductCondition.Usado, null, 0),
-            new(p, R, "Prancha de surfe usada", "Prancha em state razoável, ótima para iniciantes.", "esporte-lazer", 8, ProductCondition.Usado, null, 0),
-            new(p, D, "Bola de futebol society (doação)", "Bola em condição de uso, para a pelada do neighborhood.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
+            new(p, R, "Prancha de surfe usada", "Prancha em estado razoável, ótima para iniciantes.", "esporte-lazer", 8, ProductCondition.Usado, null, 0),
+            new(p, D, "Bola de futebol society (doação)", "Bola em condição de uso, para a pelada do bairro.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Jogo de damas de madeira (doação)", "Tabuleiro completo para o lazer em família.", "esporte-lazer", 0, ProductCondition.Usado, null, 0),
             new(p, D, "Carrinho de controle remoto (doação)", "Funciona, vai alegrar uma criança.", "brinquedos-infantil", 0, ProductCondition.Usado, null, 0),
             new(p, R, "Blocos de montar (lote grande)", "Várias peças de encaixar, criatividade sem limite.", "brinquedos-infantil", 5, ProductCondition.Usado, null, 0),
             new(p, D, "Boneca de pano artesanal (doação)", "Feita à mão, novinha. Linda para presentear.", "brinquedos-infantil", 0, ProductCondition.Seminovo, null, 0),
-            new(p, T, "Triciclo infantil", "Triciclo em bom state, ideal de 2 a 5 anos.", "brinquedos-infantil", 12, ProductCondition.Usado, null, 0),
+            new(p, T, "Triciclo infantil", "Triciclo em bom estado, ideal de 2 a 5 anos.", "brinquedos-infantil", 12, ProductCondition.Usado, null, 0),
             new(p, T, "Furadeira de impacto 13mm", "Furadeira potente com brocas, super conservada.", "ferramentas", 20, ProductCondition.Seminovo, null, 0),
             new(p, R, "Caixa de ferramentas com kit", "Kit completo para pequenos reparos domésticos.", "ferramentas", 6, ProductCondition.Usado, null, 0),
             new(p, D, "Martelo e alicate (doação)", "Ferramentas básicas para quem está começando.", "ferramentas", 0, ProductCondition.Usado, null, 0),
@@ -131,7 +135,7 @@ internal static class DevSeedData
             new(p, D, "Muda de costela-de-adão (doação)", "Planta saudável para deixar a casa verde.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
             new(p, T, "Vaso de cerâmica grande", "Vaso decorativo, combina com qualquer ambiente.", "jardim-plantas", 11, ProductCondition.Usado, null, 0),
             new(p, D, "Mudas de manjericão e salsa (doação)", "Hortaliças para começar sua horta em casa.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
-            new(p, R, "Mangueira de jardim 15m", "Mangueira em bom state, sem vazamentos.", "jardim-plantas", 3, ProductCondition.Usado, null, 0),
+            new(p, R, "Mangueira de jardim 15m", "Mangueira em bom estado, sem vazamentos.", "jardim-plantas", 3, ProductCondition.Usado, null, 0),
             new(p, T, "Ração para cães 3kg (fechada)", "Saco lacrado, marca de qualidade. Para o seu pet.", "pet", 16, ProductCondition.Novo, null, 0),
             new(p, D, "Caminha pet tam M (doação)", "Caminha limpa e confortável para o bichinho.", "pet", 0, ProductCondition.Usado, null, 0),
             new(p, R, "Arranhador de gato", "Arranhador seminovo, salva seu sofá.", "pet", 4, ProductCondition.Seminovo, null, 0),
@@ -142,11 +146,80 @@ internal static class DevSeedData
             new(p, R, "Estojo de maquiagem (usado 1x)", "Maquiagem seminova, várias tonalidades.", "beleza-cuidados", 4, ProductCondition.Seminovo, null, 0),
             new(p, T, "Violão popular acústico", "Violão com som macio, cordas novas.", "instrumentos-musicais", 25, ProductCondition.Usado, null, 0),
             new(p, T, "Teclado musical 61 teclas", "Teclado com fonte, ótimo para estudar.", "instrumentos-musicais", 26, ProductCondition.Seminovo, null, 0),
-            new(p, D, "Flauta doce Yamaha (doação)", "Flauta em ótimo state, perfeita para escola.", "instrumentos-musicais", 0, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Flauta doce Yamaha (doação)", "Flauta em ótimo estado, perfeita para escola.", "instrumentos-musicais", 0, ProductCondition.Seminovo, null, 0),
             new(p, R, "Kit palhetas de saxofone", "Palhetas novas na embalagem.", "instrumentos-musicais", 2, ProductCondition.Novo, null, 0),
             new(p, R, "Webcam HD 720p", "Webcam seminova, ótima para reuniões online.", "eletronicos", 3, ProductCondition.Seminovo, null, 0),
             new(p, D, "Sanduicheira (doação)", "Funciona bem, para quem está montando a cozinha.", "casa-cozinha", 0, ProductCondition.Usado, null, 0),
-            new(p, D, "Livros infantis ilustrados (lote, doação)", "Vários livrinhos para despertar a leitura.", "livros-midia", 0, ProductCondition.Usado, null, 0)
+            new(p, D, "Livros infantis ilustrados (lote, doação)", "Vários livrinhos para despertar a leitura.", "livros-midia", 0, ProductCondition.Usado, null, 0),
+
+            // ── Onda 2 (itens mais doados/trocados na economia circular brasileira:
+            //    vestuário no topo, móveis, eletrodomésticos, equipamentos de
+            //    assistência — os mais pedidos em campanhas solidárias) ──
+            new(p, R, "Bolsa de couro legítimo (seminova)", "Bolsa estruturada, couro macio, sem rasgos.", "roupas-acessorios", 20, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Sapato social couro nº 41", "Pouco uso, sola íntegra. Vem na caixa.", "roupas-acessorios", 15, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Casaco de lã tam P (doação)", "Casaco quentinho, perfeito para o inverno de alguém.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
+            new(p, R, "Óculos de grau armação acetato", "Armação conservada, lente para myopia moderada.", "roupas-acessorios", 6, ProductCondition.Usado, null, 0),
+            new(p, T, "Calça jeans feminina 38", "Modelagem reta, comprimento original.", "roupas-acessorios", 7, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Lençol de casal completo (doação)", "Jogo de lençol lavado, sem furos, troquei de cama.", "roupas-acessorios", 0, ProductCondition.Seminovo, null, 0),
+            new(p, R, "Mala de viagem média com rodinhas", "Roda e cabo funcionando, fecha com chave.", "roupas-acessorios", 18, ProductCondition.Usado, null, 0),
+            new(p, T, "Cinto de couro masculino", "Cinto marrom, fivela original, tam 90-100.", "roupas-acessorios", 4, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Uniformes escolares tam M (lote, doação)", "5 peças de escola pública, bem cuidadas.", "roupas-acessorios", 0, ProductCondition.Usado, null, 0),
+            new(p, R, "Relógio de pulso analógico", "Funcionando, pulseira de couro nova.", "roupas-acessorios", 9, ProductCondition.Usado, null, 0),
+            new(p, T, "Guarda-roupa 2 portas de correr", "Corrediças ok, espelho inteiro. Só retirar.", "moveis-decoracao", 45, ProductCondition.Usado, null, 0),
+            new(p, D, "Berço americano desmontável (doação)", "Berço seguro com colchão, sem mordidas.", "moveis-decoracao", 0, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Estante de livros 5 prateleiras", "Madeira tratada, estável. Livros não inclusos.", "moveis-decoracao", 26, ProductCondition.Usado, null, 0),
+            new(p, R, "Cadeira de plástico empilhável (4 un.)", "Cadeiras de festa, fáceis de guardar.", "moveis-decoracao", 8, ProductCondition.Usado, null, 0),
+            new(p, D, "Tapete sala 1,6x2,3m (doação)", "Tapete limpo, pelos baixos, sem desgaste.", "moveis-decoracao", 0, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Penteadeira com espelho", "Penteadeira vintage restaurada, gavetas boas.", "moveis-decoracao", 32, ProductCondition.Usado, null, 0),
+            new(p, R, "Cortina blackout 2,5m (par)", "Cortinas escuras, barra feita, varão não incluso.", "moveis-decoracao", 10, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Colchão de solteiro espuma (doação)", "Colchão higienizado, uso leve por 1 ano.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
+            new(p, T, "Micro-ondas 20L funcional", "Aquece uniforme, painel completo.", "casa-cozinha", 24, ProductCondition.Usado, null, 0),
+            new(p, R, "Ventilador de mesa 40cm", "Três velocidades, hélice nova.", "casa-cozinha", 12, ProductCondition.Usado, null, 0),
+            new(p, D, "Batedeira planetária (doação)", "Batedeira forte, tigela e batedores inclusos.", "casa-cozinha", 0, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Máquina de costura manual rebobinadora", "Costura leve, ideal para ajustes.", "casa-cozinha", 28, ProductCondition.Usado, null, 0),
+            new(p, R, "Jogo de copos e taças (12 peças)", "Vidro grosso, sem trincos.", "casa-cozinha", 5, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Cesta básica completa (doação)", "Arroz, feijão, óleo, açúcar e mais. Família precisa.", "casa-cozinha", 0, ProductCondition.Novo, null, 0),
+            new(p, R, "Ferro de passar a vapor", "Ferro funcional, base lisa, com reservatório.", "casa-cozinha", 7, ProductCondition.Usado, null, 0),
+            new(p, T, "Aspirador de pó vertical", "Aspira bem, filtro lavável incluso.", "casa-cozinha", 21, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Panela de pressão 4,5L (doação)", "Borracha nova, válvula revisada.", "casa-cozinha", 0, ProductCondition.Usado, null, 0),
+            new(p, T, "Video-game antigo + 2 controles", "Aparelho funcionando, nostálgico, com cabos.", "eletronicos", 30, ProductCondition.Usado, null, 0),
+            new(p, R, "Caixa de som bluetooth à prova d'água", "Som forte, bateria segura 6h.", "eletronicos", 16, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Teclado e mouse sem fio (doação)", "Conjunto funcional com receptor USB.", "eletronicos", 0, ProductCondition.Usado, null, 0),
+            new(p, T, "Tablet 8 polegadas com capa", "Bom para leitura e vídeos, sem amassados.", "eletronicos", 34, ProductCondition.Seminovo, null, 0),
+            new(p, R, "Extensão elétrica 5m com filtro", "Filtro de linha novo, tomadas novas.", "eletronicos", 4, ProductCondition.Novo, null, 0),
+            new(p, D, "Impressora jato de tinta (doação)", "Imprime, precisa de cartucho colorido.", "eletronicos", 0, ProductCondition.Usado, null, 0),
+            new(p, T, "Monitor LED 21,5 polegadas", "Full HD, entrada HDMI e VGA.", "eletronicos", 27, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Cadeira de rodas adulta (doação)", "Cadeira revisada, freios ok — quem precisa leva.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Par de muletas de alumínio (doação)", "Muletas reguláveis, punho confortável.", "moveis-decoracao", 0, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Andador infantil com rodinhas (doação)", "Andador estável para bebê dando os primeiros passos.", "brinquedos-infantil", 0, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Cadeira de banho para idoso (doação)", "Cadeira anatômica, alumínio, anti-mofo.", "moveis-decoracao", 0, ProductCondition.Usado, null, 0),
+            new(p, D, "Fraldas geriátricas pack M (doação)", "Pacote quase completo, avó não precisa mais.", "beleza-cuidados", 0, ProductCondition.Novo, null, 0),
+            new(p, R, "Carrinho de bebê reversível", "Carrinho fechadinho, rodas boas, capota inclusa.", "brinquedos-infantil", 35, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Cadeirinha de carro infantil 9-36kg", "Cinto íntegro, lava-pratos, sem acidente.", "brinquedos-infantil", 29, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Mamadeiras e chupetas (lote, doação)", "Pecinhas esterilizadas, marcas boas.", "brinquedos-infantil", 0, ProductCondition.Novo, null, 0),
+            new(p, R, "Patins infantil ajustável", "Patins que crescem com a criança, nº 30-34.", "esporte-lazer", 14, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Skate completo 8.0", "Shape firme, rodas novas, rolamentos limpos.", "esporte-lazer", 20, ProductCondition.Usado, null, 0),
+            new(p, D, "Bola de basquete oficial (doação)", "Bola com grip, calibrada recentemente.", "esporte-lazer", 0, ProductCondition.Seminovo, null, 0),
+            new(p, R, "Barraca de acampamento 4 pessoas", "Barraca sem furos, estacas inclusas.", "esporte-lazer", 25, ProductCondition.Usado, null, 0),
+            new(p, T, "Kit de pesca completo", "Vara, molinete e caixa de anzóis.", "esporte-lazer", 17, ProductCondition.Usado, null, 0),
+            new(p, D, "Enciclopédia escolar (coleção, doação)", "12 volumes ilustrados para trabalhos e curiosidade.", "livros-midia", 0, ProductCondition.Usado, null, 0),
+            new(p, R, "Livro Sapiens — capa comum", "Leitura única, grifos leves a lápis.", "livros-midia", 5, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Violino de estudo 4/4", "Violino afinado, arco e case rígido inclusos.", "instrumentos-musicais", 38, ProductCondition.Usado, null, 0),
+            new(p, R, "Amplificador de guitarra 15W", "Valvulado limpo, funciona na tomada comum.", "instrumentos-musicais", 22, ProductCondition.Usado, null, 0),
+            new(p, D, "Pandeiro e chocalho (par, doação)", "Percussão para escolinha de música.", "instrumentos-musicais", 0, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Serra circular manual 7¼\"", "Serra afiada, escudo de proteção íntegro.", "ferramentas", 33, ProductCondition.Usado, null, 0),
+            new(p, R, "Kit chaves de fenda e philips (12 pçs)", "Chapas boas, cabo emborrachado.", "ferramentas", 8, ProductCondition.Seminovo, null, 0),
+            new(p, D, "Tinta látex branca 18L pela metade (doação)", "Sobrou de obra, lata fechada direitinho.", "ferramentas", 0, ProductCondition.Novo, null, 0),
+            new(p, T, "Compressor de ar pequeno", "Enche pneu de carro e bola, silencioso.", "ferramentas", 40, ProductCondition.Usado, null, 0),
+            new(p, D, "Mudas de frutas — pé de jabuticaba (doação)", "Muda forte de 40cm, frutifica em vasos grandes.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
+            new(p, R, "Kit vasos empilháveis (6 un.)", "Vasos de plástico resistente, vários tamanhos.", "jardim-plantas", 6, ProductCondition.Novo, null, 0),
+            new(p, D, "Adubo orgânico 10kg (doação)", "Húmus de minhoca peneirado, jardim agradece.", "jardim-plantas", 0, ProductCondition.Novo, null, 0),
+            new(p, T, "Aquário completo 60L com bomba", "Filtro, termostato e decorações inclusos.", "pet", 26, ProductCondition.Usado, null, 0),
+            new(p, D, "Coleira e peitoral P (doação)", "Peitoral acolchoado, ajustável, sem roer.", "pet", 0, ProductCondition.Seminovo, null, 0),
+            new(p, R, "Transportador de pet médio", "Caixa de transporte ventilada, trava ok.", "pet", 15, ProductCondition.Usado, null, 0),
+            new(p, D, "Aparador de pelos profissional (doação)", "Máquina de tosa limpa, lâmina afiada.", "beleza-cuidados", 0, ProductCondition.Seminovo, null, 0),
+            new(p, R, "Babyliss de cerâmica", "Modela sem quebrar o fio, quase novo.", "beleza-cuidados", 8, ProductCondition.Seminovo, null, 0),
+            new(p, T, "Mochila de trekking 40L", "Costura reforçada, capa de chuva embutida.", "esporte-lazer", 23, ProductCondition.Usado, null, 0)
         };
     }
 
@@ -179,7 +252,7 @@ internal static class DevSeedData
             new(s, V, "Backup de fotos do celular (voluntariado)", "Salvo suas fotos na nuvem para não perder memórias.", "tecnologia-suporte", 0, null, ServiceUnitType.PerService, 0),
             new(s, T, "Manutenção de roteador Wi-Fi", "Configuração e otimização da sua rede.", "tecnologia-suporte", 8, null, ServiceUnitType.PerService, 0),
             new(s, V, "Configuração de celular para idosos (voluntariado)", "Deixo o celular fácil de usar para os mais velhos.", "tecnologia-suporte", 0, null, ServiceUnitType.Hours, 60),
-            new(s, T, "Frete de móvel dentro da city", "Transporto seu móvel com cuidado, na mesma city.", "transporte-fretes", 25, null, ServiceUnitType.PerService, 0),
+            new(s, T, "Frete de móvel dentro da cidade", "Transporto seu móvel com cuidado, na mesma cidade.", "transporte-fretes", 25, null, ServiceUnitType.PerService, 0),
             new(s, V, "Carona para o aeroporto (voluntariado)", "Levo na hora do voo, sem custo, ajuda mútua.", "transporte-fretes", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Transporte de compras para idoso (voluntariado)", "Levo as compras até em casa para quem precisa.", "transporte-fretes", 0, null, ServiceUnitType.PerService, 0),
             new(s, T, "Mudança pequena (carro + ajuda)", "Mudança de poucos móveis, com meu apoio.", "transporte-fretes", 30, null, ServiceUnitType.PerService, 0),
@@ -190,7 +263,7 @@ internal static class DevSeedData
             new(s, V, "Acompanhante em consulta (apoio, voluntariado)", "Acompanho você numa consulta, apoio emocional.", "saude-bem-estar", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Caminhada guiada em grupo (voluntariado)", "Caminhada saudável e conversa boa.", "saude-bem-estar", 0, null, ServiceUnitType.Hours, 60),
             new(s, T, "Decoração de festa infantil", "Decoro festas com balões e temas.", "eventos-festas", 28, null, ServiceUnitType.PerService, 0),
-            new(s, V, "DJ para festa comunitária (voluntariado)", "Coloco música numa festa do neighborhood.", "eventos-festas", 0, null, ServiceUnitType.Hours, 240),
+            new(s, V, "DJ para festa comunitária (voluntariado)", "Coloco música numa festa do bairro.", "eventos-festas", 0, null, ServiceUnitType.Hours, 240),
             new(s, T, "Garçom e bartender para evento", "Atendo seu evento com drinks e serviço.", "eventos-festas", 20, null, ServiceUnitType.Hours, 240),
             new(s, V, "Fotografia de aniversário (voluntariado)", "Registro seu aniversário com boas fotos.", "eventos-festas", 0, null, ServiceUnitType.Hours, 180),
             new(s, V, "Animação infantil — palhaço (voluntariado)", "Animo a festinha das crianças, de coração.", "eventos-festas", 0, null, ServiceUnitType.Hours, 120),
@@ -209,8 +282,8 @@ internal static class DevSeedData
             new(s, V, "Auxílio em currículo e LinkedIn (voluntariado)", "Ajudando você a se posicionar bem.", "administracao-contabilidade", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Acompanhamento de idoso (compras, voluntariado)", "Acompanho e ajudo idosos nas tarefas do dia.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 120),
             new(s, V, "Visita e conversa a pessoa acamada (voluntariado)", "Visito e faço companhia a quem está de cama.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
-            new(s, V, "Passeio com cachorro no neighborhood (voluntariado)", "Passeio com seu pet quando você não puder.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
-            new(s, V, "Mutirão de limpeza de praça (voluntariado)", "Junta gente pra limpar a praça do neighborhood.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 180),
+            new(s, V, "Passeio com cachorro no bairro (voluntariado)", "Passeio com seu pet quando você não puder.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 60),
+            new(s, V, "Mutirão de limpeza de praça (voluntariado)", "Junta gente pra limpar a praça do bairro.", "ajuda-voluntariado", 0, null, ServiceUnitType.Hours, 180),
             new(s, V, "Distribuição de cestas básicas (voluntariado)", "Ajudo a levar cestas para famílias.", "ajuda-voluntariado", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Tradução solidária de documentos (voluntariado)", "Traduzo documentos curtos para quem precisa.", "ajuda-voluntariado", 0, null, ServiceUnitType.PerService, 0),
             new(s, V, "Alongamento guiado para grupo de idosos (voluntariado)", "Alongamento leve para manter a mobilidade.", "saude-bem-estar", 0, null, ServiceUnitType.Hours, 60),
@@ -258,7 +331,7 @@ internal static class DevSeedData
     {
         return new List<CommunitySpec>
         {
-            new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da city.",
+            new("Trocas no Centro", "Grupo para trocar e doar coisas no centro da cidade.",
                 CommunityAxis.Geo, "São Paulo", "SP", "Pinheiros", -23.5641, -46.6361, 0),
             new("Doações Vila Mariana", "Solidariedade de quem mora na Vila Mariana e arredores.",
                 CommunityAxis.Geo, "São Paulo", "SP", "Vila Mariana", -23.5868, -46.6353, 4),
@@ -275,7 +348,7 @@ internal static class DevSeedData
     {
         return new List<string>
         {
-            "Alguém sabe onde descarto eletrônicos velhos aqui no neighborhood?",
+            "Alguém sabe onde descarto eletrônicos velhos aqui no bairro?",
             "Tenho roupas infantis G3-G4 para doar, alguém indica quem precisa?",
             "Ofereço aula de Excel aos sábados de manhã, é só chamar!",
             "Achei um gatinho na rua, alguém pode abrigar? Não dá pra ficar com ele.",
@@ -284,7 +357,69 @@ internal static class DevSeedData
             "Sobrou bastante comida da festa, alguém conhece uma instituição?",
             "Reparo de eletrodoméstico de graça pra quem tá apertado, me chamem.",
             "Troco livros de receita por HQs da Turma da Mônica!",
-            "Procuro costureira para ajustes rápidos, pago em RVM ou troco por algo."
+            "Procuro costureira para ajustes rápidos, pago em RVM ou troco por algo.",
+            "Minha vizinha idosa precisa de ajuda pra instalar cortina, alguém ai?",
+            "Alguém tem guardanapo de festa pra emprestar domingo? Devolho lavado.",
+            "Vou doar sangue quinta de manhã, alguém quer ir junto?",
+            "Perdi minha gata cinza perto da praça, se virem me avisem 🙏",
+            "Comprei terra e sementes a mais, quem quiser levar pra horta é só falar.",
+            "Preciso emprestar furadeira por 1 hora hoje, pago a gentileza com bolo!",
+            "Feira de trocas no sábado na quadra, tragam o que não usam mais!",
+            "Alguém indica eletricista de confiança? Meu chuveiro piscou e apagou."
+        };
+    }
+
+    // Respostas curtas para threads de posts (interações do seed).
+    public static IReadOnlyList<string> ReplyContents()
+    {
+        return new List<string>
+        {
+            "Topo! Te chamo no privado.",
+            "Eu conheço alguém que precisa, manda mensagem.",
+            "Posso ajudar sim, qual o melhor horário?",
+            "Que iniciativa legal, parabéns! 👏",
+            "Já reservei um tempo no sábado pra isso.",
+            "Tenho um aqui também, podemos somar.",
+            "Obrigada por avisar, vou passar pra frente.",
+            "Eu fui ano passado, super recomendo.",
+            "Consigo ir, digo no grupo o horário exato.",
+            "Aqui no bairro tem um ponto de coleta, te mando o endereço."
+        };
+    }
+
+    // Comentários (perguntas/interesse) para anúncios demo — primeiro comentário
+    // costuma gerar resposta do vendedor.
+    public static IReadOnlyList<string> ListingCommentTexts()
+    {
+        return new List<string>
+        {
+            "Ainda está disponível?",
+            "Qual o estado real dele? Tem alguma marca de uso?",
+            "Aceita troca em outro item?",
+            "Olá! Pode reservar pra mim até sábado?",
+            "Serve para uso diário ou é mais pra quem está começando?",
+            "Você entrega ou é só retirada?",
+            "Quanto fica o frete pro meu bairro?",
+            "Tenho interesse! Posso ver pessoalmente hoje?",
+            "Pagamento em RVM direto pelo app?",
+            "Boa! Já salvei aqui pra decidir com a família.",
+            "É o da foto mesmo? Já levei gato por lebre 😅",
+            "Vou indicar pra minha irmã, ela estava precisando!"
+        };
+    }
+
+    // Respostas do vendedor nos comentários do anúncio.
+    public static IReadOnlyList<string> ListingReplyTexts()
+    {
+        return new List<string>
+        {
+            "Sim, ainda está! Chama no chat que combinos.",
+            "Está ótimo, tenho mais fotos — te mando por mensagem.",
+            "Retirada aqui em casa, mas combinar entrega também dá.",
+            "Pode vir ver sim, estou à tarde.",
+            "Pago pelo app em RVM, bem tranquilo.",
+            "É o da foto, pode confiar 😉",
+            "Reservado pra você até sábado então!"
         };
     }
 
@@ -297,7 +432,7 @@ internal static class DevSeedData
             "Pessoa muito atenciosa, troca super tranquila.",
             "Combinamos tudo certinho, recomendo demais.",
             "Demorou um pouquinho pra responder, mas fechou tudo ok.",
-            "Produto em state melhor do que eu esperava!",
+            "Produto em estado melhor do que eu esperava!",
             "Super prestativo, ajudou com a entrega.",
             "Ótima experiência, voltarei a negociar."
         };
