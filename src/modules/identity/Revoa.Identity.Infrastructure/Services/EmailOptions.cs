@@ -8,6 +8,9 @@ public class EmailOptions
     public int Port { get; set; } = 25;
     public string From { get; set; } = "no-reply@revoa.me";
 
+    // Nome de exibição do remetente (header From: "revoa.me <no-reply@revoa.me>").
+    public string FromName { get; set; } = "revoa.me";
+
     // Relay SMTP autenticado (ex.: smtp.gmail.com:587 com App Password). Vazio = Postfix
     // interno sem auth (rede interna). Necessário p/ ENTREGA real: saída direta de IP
     // residencial não chega aos grandes MX (sem PTR/reputação, porta 25 filtrada).

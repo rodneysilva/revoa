@@ -25,6 +25,8 @@ public class BrevoApiEmailSender : IEmailSender
         _options = options.Value;
         _http = http;
         _logger = logger;
+        // Autenticação da API v3 é o header api-key (não Basic/Bearer).
+        _http.DefaultRequestHeaders.TryAddWithoutValidation("api-key", _options.ApiKey);
     }
 
     public Task SendVerificationEmailAsync(string toEmail, string token, CancellationToken ct)
@@ -58,7 +60,7 @@ public class BrevoApiEmailSender : IEmailSender
     {
         var payload = new
         {
-            sender = new { email = _options.From },
+            sender = new { email = _options.From, name = _options.FromName },
             to = new[] { new { email = toEmail } },
             subject,
             textContent = text,

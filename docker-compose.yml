@@ -240,7 +240,6 @@ services:
       - Email__Username=${EMAIL_RELAY_USERNAME:-}
       - Email__Password=${EMAIL_RELAY_PASSWORD:-}
       - Email__ApiKey=${BREVO_API_KEY:-} # setada = API REST do Brevo (chave v3 não autentica SMTP)
-      - Email__LogVerificationTokenInDev=true
       - Zenvia__Token=${ZENVIA_TOKEN:-}
       - Jwt__Key=${JWT_KEY:-}
       - Jwt__Audience=revoa
