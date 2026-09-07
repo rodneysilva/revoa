@@ -99,7 +99,9 @@ export function GlobalSearch() {
 
       {showResults && (
         <div className="absolute left-0 top-full mt-2 w-80 lg:w-96 bg-charcoal border border-smoke rounded-xl shadow-xl overflow-hidden z-50">
-          {loading ? (
+          {/* loading || !results: o efeito que seta loading roda DEPOIS do paint —
+              sem a guarda de results, o frame pós-2ª-tecla caía aqui com null. */}
+          {loading || !results ? (
             <p className="px-4 py-3 text-sm text-silver">Buscando…</p>
           ) : nada ? (
             <p className="px-4 py-3 text-sm text-silver">
