@@ -188,6 +188,7 @@ export const api = {
         kind: p.kind,
         categoryId: p.categoryId,
         communityId: p.communityId,
+        onlyCommunity: p.onlyCommunity ? "true" : undefined,
         page: p.page,
         mode: p.mode,
         priceMin: p.priceMin,
@@ -207,6 +208,12 @@ export const api = {
     ),
   savedListings: (): Promise<FeedItem[]> => apiGet<FeedItem[]>("/api/listings/saved"),
   savedListingIds: (): Promise<string[]> => apiGet<string[]>("/api/listings/saved/ids"),
+  // Curtir anúncio (toggle idempotente — o card na comunidade é como um post).
+  likeListing: (id: string): Promise<boolean> =>
+    apiPost<{ Liked: boolean }>(`/api/listings/${encodeURIComponent(id)}/like`).then(
+      (r) => r.Liked
+    ),
+  likedListingIds: (): Promise<string[]> => apiGet<string[]>("/api/listings/liked/ids"),
   listing: (id: string): Promise<Listing> =>
     apiGet<Listing>(`/api/listings/${encodeURIComponent(id)}`),
   listingComments: (listingId: string, parentId?: string): Promise<Comment[]> =>

@@ -2,29 +2,48 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { Badge } from "./Badge";
+import { PostThread } from "./PostThread";
 import { ShareButton } from "./ShareButton";
 import { brlEstimate } from "../lib/format";
 import { timeAgo } from "../lib/time";
 import { useBrlRate } from "../lib/useBrlRate";
 import { api } from "../api/client";
-import type { FeedItem } from "../api/types";
+import type { Comment, FeedItem } from "../api/types";
 
-// Anúncio na timeline unificada: a MESMA estrutura do PostCard (avatar + nome
-// + tempo, conteúdo, action bar na moldura bg-charcoal border-smoke) com o
-// conteúdo próprio do anúncio — foto em destaque, título, descrição e preço.
+// Anúncio na timeline: a MESMA estrutura do PostCard (avatar + nome + tempo,
+// action bar na moldura bg-charcoal border-smoke). Conteúdo: foto fixa à
+// esquerda (tamanho por resolução) + título/descrição/preço à direita.
+//
+// `interactive` (timeline da comunidade): o anúncio se comporta como um post —
+// dá para curtir e comentar inline (comentários do próprio anúncio). Nas
+// outras telas (/feed, etc.) o card fica só com salvar/compartilhar/ver.
 export function ListingTimelineCard({
   item,
   currentUserId,
   initialSaved,
+  initialLiked,
+  interactive,
+  canInteract,
   onUnsave,
 }: {
   item: FeedItem;
   currentUserId?: string;
   initialSaved?: boolean;
+  initialLiked?: boolean;
+  interactive?: boolean;
+  // Verdadeiro quando o usuário pode curtir/comentar (verificado). Sem isso,
+  // anônimo/não verificado vê link para entrar.
+  canInteract?: boolean;
   // "Meus salvos": avisa a página quando o anúncio deixa de estar salvo.
   onUnsave?: () => void;
 }) {
   const [saved, setSaved] = useState(initialSaved ?? false);
+  const [liked, setLiked] = useState(initialLiked ?? false);
+  const [busy, setBusy] = useState<"like" | "save" | null>(null);
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Comment[] | null>(null);
+  const [commentBox, setCommentBox] = useState("");
+  const [sending, setSending] = useState(false);
   const { rate } = useBrlRate();
 
   const gratis = item.PriceRvm === 0;
@@ -36,7 +55,8 @@ export function ListingTimelineCard({
   const detailUrl = `/listings/${item.Id}`;
 
   async function toggleSave() {
-    if (!currentUserId) return;
+    if (!currentUserId || busy) return;
+    setBusy("save");
     const next = !saved;
     setSaved(next);
     try {
@@ -45,8 +65,79 @@ export function ListingTimelineCard({
       if (!on) onUnsave?.();
     } catch {
       setSaved(!next);
+    } finally {
+      setBusy(null);
     }
   }
+
+  async function toggleLike() {
+    if (!canInteract || busy) return;
+    setBusy("like");
+    const next = !liked;
+    setLiked(next);
+    try {
+      const on = await api.likeListing(item.Id);
+      if (on !== next) setLiked(on);
+    } catch {
+      setLiked(!next);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function openComments() {
+    const next = !showComments;
+    setShowComments(next);
+    if (next && comments === null) {
+      try {
+        setComments(await api.listingComments(item.Id));
+      } catch {
+        setComments([]);
+      }
+    }
+  }
+
+  async function submitComment() {
+    if (!commentBox.trim() || sending) return;
+    setSending(true);
+    try {
+      await api.createComment(item.Id, null, commentBox.trim());
+      setCommentBox("");
+      setComments(await api.listingComments(item.Id));
+    } catch {
+      /* mantém o texto para retentar */
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const likeButton = canInteract ? (
+    <button
+      type="button"
+      onClick={toggleLike}
+      className={`text-xs hover:text-rosa transition ${liked ? "text-rosa" : "text-silver"}`}
+    >
+      {liked ? "❤️ Curtido" : "🤍 Curtir"}
+    </button>
+  ) : (
+    <Link to="/login" className="text-xs text-silver hover:text-rosa">
+      🤍 Curtir
+    </Link>
+  );
+
+  const saveButton = currentUserId ? (
+    <button
+      type="button"
+      onClick={toggleSave}
+      className={`text-xs hover:text-amber transition ${saved ? "text-amber" : "text-silver"}`}
+    >
+      {saved ? "🔖 Salvo" : "🔖 Salvar"}
+    </button>
+  ) : (
+    <Link to="/login" className="text-xs text-silver hover:text-amber">
+      🔖 Salvar
+    </Link>
+  );
 
   return (
     <article className="rounded-xl bg-charcoal border border-smoke p-4 transition">
@@ -65,63 +156,67 @@ export function ListingTimelineCard({
             </span>
           </div>
 
-          {/* Foto em destaque (se houver) */}
-          {item.PrimeiraImagem && (
+          {/* Conteúdo: foto fixa à esquerda (por resolução) + texto à direita */}
+          <div className="mt-2 flex gap-3">
             <Link
               to={detailUrl}
-              className="block mt-2 rounded-lg overflow-hidden border border-smoke bg-smoke"
+              className="shrink-0 w-24 h-24 sm:w-28 sm:h-28 xl:w-32 xl:h-32 rounded-lg overflow-hidden bg-smoke flex items-center justify-center text-3xl border border-smoke"
             >
-              <img
-                src={item.PrimeiraImagem}
-                alt={item.Title}
-                className="w-full aspect-[4/3] object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+              {item.PrimeiraImagem ? (
+                <img
+                  src={item.PrimeiraImagem}
+                  alt={item.Title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              ) : (
+                <span aria-hidden>{item.Kind === "Service" ? "🛠️" : "📦"}</span>
+              )}
             </Link>
-          )}
 
-          <Link to={detailUrl} className="block mt-2 group">
-            <h3 className="font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
-              {item.Kind === "Service" ? "🛠️ " : "📦 "}
-              {item.Title}
-            </h3>
-          </Link>
+            <div className="flex-1 min-w-0">
+              <Link to={detailUrl} className="block group">
+                <h3 className="font-semibold text-cream line-clamp-1 group-hover:text-esmeralda">
+                  {item.Kind === "Service" ? "🛠️ " : "📦 "}
+                  {item.Title}
+                </h3>
+              </Link>
 
-          {item.Description && (
-            <p className="mt-1 text-sm text-cream/90 whitespace-pre-wrap break-words line-clamp-2">
-              {item.Description}
-            </p>
-          )}
+              {item.Description && (
+                <p className="mt-1 text-sm text-cream/90 whitespace-pre-wrap break-words line-clamp-2">
+                  {item.Description}
+                </p>
+              )}
 
-          <div className="mt-1.5">
-            {gratis ? (
-              <span className="rms text-lima">Grátis · RM$ 0</span>
-            ) : (
-              <span className="rms text-cream">
-                RM$ {item.PriceRvm.toLocaleString("pt-BR")}
-                {brl && <span className="text-xs text-silver ml-1.5">≈ {brl}</span>}
-              </span>
-            )}
+              <div className="mt-2">
+                {gratis ? (
+                  <span className="rms text-lima">Grátis · RM$ 0</span>
+                ) : (
+                  <span className="rms text-cream">
+                    RM$ {item.PriceRvm.toLocaleString("pt-BR")}
+                    {brl && <span className="text-xs text-silver ml-1.5">≈ {brl}</span>}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Action bar — mesma linha do PostCard */}
-          <div className="mt-2.5 flex items-center gap-4">
-            {currentUserId ? (
+          <div className="mt-2.5 flex items-center gap-4 flex-wrap">
+            {interactive && likeButton}
+            {interactive && (
               <button
                 type="button"
-                onClick={toggleSave}
-                className={`text-xs hover:text-amber transition ${saved ? "text-amber" : "text-silver"}`}
+                onClick={openComments}
+                className={`text-xs hover:text-esmeralda transition ${showComments ? "text-esmeralda" : "text-silver"}`}
               >
-                {saved ? "🔖 Salvo" : "🔖 Salvar"}
+                💬 Comentar
               </button>
-            ) : (
-              <Link to="/login" className="text-xs text-silver hover:text-amber">
-                🔖 Salvar
-              </Link>
             )}
+            {saveButton}
             <ShareButton
               url={`${window.location.origin}${detailUrl}`}
               label=""
@@ -134,6 +229,61 @@ export function ListingTimelineCard({
               Ver anúncio →
             </Link>
           </div>
+
+          {/* Comentários inline (só na timeline da comunidade) */}
+          {interactive && showComments && (
+            <div className="mt-3 border-t border-smoke pt-3 space-y-2">
+              {canInteract ? (
+                <div>
+                  <textarea
+                    value={commentBox}
+                    onChange={(e) => setCommentBox(e.target.value)}
+                    rows={2}
+                    placeholder="Pergunte ou comente sobre este anúncio…"
+                    className="w-full bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitComment}
+                    disabled={sending || !commentBox.trim()}
+                    className="mt-1.5 bg-brand text-ink text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
+                  >
+                    {sending ? "Enviando…" : "Comentar"}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-silver">
+                  <Link to="/login" className="text-esmeralda hover:underline">
+                    Entre
+                  </Link>{" "}
+                  para comentar.
+                </p>
+              )}
+
+              {comments === null ? (
+                <p className="text-xs text-silver">Carregando comentários…</p>
+              ) : comments.length === 0 ? (
+                <p className="text-xs text-silver">Nenhum comentário ainda.</p>
+              ) : (
+                <PostThread
+                  posts={comments}
+                  onReply={async (parentId, conteudo) => {
+                    await api.createComment(item.Id, parentId, conteudo);
+                  }}
+                  loadChildren={async (parentId) => {
+                    try {
+                      return await api.listingComments(item.Id, parentId);
+                    } catch {
+                      return [];
+                    }
+                  }}
+                  canPost={!!canInteract}
+                  currentUserId={currentUserId}
+                  reportTarget="Comment"
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </article>

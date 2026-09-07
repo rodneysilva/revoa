@@ -188,6 +188,9 @@ export interface FeedParams {
   kind?: Kind;
   categoryId?: string;
   communityId?: string;
+  // true = APENAS anúncios escopados à communityId (itens DA comunidade),
+  // sem os públicos dos membros (feed da comunidade).
+  onlyCommunity?: boolean;
   page?: number;
   mode?: Mode;
   priceMin?: number;

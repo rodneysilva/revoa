@@ -6,6 +6,7 @@ import { Avatar } from "../components/Avatar";
 import { EmptyState } from "../components/EmptyState";
 import { ListingTimelineCard } from "../components/ListingTimelineCard";
 import { LiveChat } from "../components/LiveChat";
+import { PostCard } from "../components/PostCard";
 import { PostComposer } from "../components/PostComposer";
 import { PostThread } from "../components/PostThread";
 import {
@@ -37,9 +38,10 @@ const FILTRO_LABEL: Record<FiltroConversa, string> = {
   recentes: "🕘 Recentes",
   minhas: "✍️ Minhas",
   anuncios: "🛍️ Anúncios",
+  salvos: "🔖 Salvos",
 };
 
-type FiltroConversa = "recentes" | "minhas" | "anuncios";
+type FiltroConversa = "recentes" | "minhas" | "anuncios" | "salvos";
 
 const REGRAS = [
   "Respeite os membros — sem ofensas, spam ou discurso de ódio.",
@@ -64,6 +66,12 @@ export function CommunityDetailPage() {
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [memberListings, setMemberListings] = useState<FeedItem[] | null>(null);
   const [filtro, setFiltro] = useState<FiltroConversa>("recentes");
+  // Itens salvos pelo usuário (carregados só quando o filtro 🔖 é acionado).
+  const [savedPostsList, setSavedPostsList] = useState<Post[] | null>(null);
+  const [savedListingsList, setSavedListingsList] = useState<FeedItem[] | null>(null);
+  // Bootstrap dos estados dos cards: curtidos/salvos de anúncio (uma chamada).
+  const [likedListingIds, setLikedListingIds] = useState<Set<string>>(new Set());
+  const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
   const [coverUploading, setCoverUploading] = useState(false);
 
   // Âncoras legadas (#hash) → scroll suave até a seção correspondente.
@@ -120,19 +128,13 @@ export function CommunityDetailPage() {
   const isPrivate = community?.Visibility === "Private";
 
   useEffect(() => {
-    const ids = Array.from(new Set(activeMembers.map((m) => m.UserId).filter(Boolean)));
-    if (ids.length === 0) {
-      setMemberListings([]);
-      return;
-    }
     let active = true;
     setMemberListings(null);
-    // Anúncios dos membros VISÍVEIS no contexto desta comunidade: communityId
-    // faz o backend incluir também os escopados à comunidade (Visibility=
-    // Community), que o feed sem esse filtro exclui. Na timeline mesclada a
-    // falha degrada em silêncio (só conversas aparecem).
+    // Anúncios DA comunidade: onlyCommunity traz só os escopados a ela — os
+    // públicos dos membros ficam no feed da rede, não aqui. A falha degrada
+    // em silêncio (só conversas aparecem).
     api
-      .feed({ sellerIds: ids.join(","), communityId: id, page: 1 })
+      .feed({ communityId: id, onlyCommunity: true, page: 1 })
       .then((items) => {
         if (active) setMemberListings(items);
       })
@@ -144,6 +146,59 @@ export function CommunityDetailPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [members]);
+
+  // Bootstrap dos marcadores de anúncio (curtado/salvo) — uma chamada por
+  // tipo, sem N+1 por card. Anônimo não carrega nada.
+  useEffect(() => {
+    if (!user) {
+      setLikedListingIds(new Set());
+      setSavedListingIds(new Set());
+      return;
+    }
+    let active = true;
+    api.likedListingIds().then((ids) => {
+      if (active) setLikedListingIds(new Set(ids));
+    }).catch(() => {});
+    api.savedListingIds().then((ids) => {
+      if (active) setSavedListingIds(new Set(ids));
+    }).catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  // Filtro 🔖 Salvos: itens salvos DESTA comunidade (posts salvos aqui +
+  // anúncios salvos que estão entre os anúncios da comunidade). Carrega sob
+  // demanda, na primeira vez que o filtro é acionado.
+  useEffect(() => {
+    if (filtro !== "salvos" || !user) return;
+    if (savedPostsList !== null && savedListingsList !== null) return;
+    let active = true;
+    api
+      .savedPosts()
+      .then((all) => {
+        if (active)
+          setSavedPostsList(all.filter((p) => p.CommunityId === id));
+      })
+      .catch(() => {
+        if (active) setSavedPostsList([]);
+      });
+    api
+      .savedListings()
+      .then((all) => {
+        if (active) {
+          const daComunidade = new Set((memberListings ?? []).map((l) => l.Id));
+          setSavedListingsList(all.filter((l) => daComunidade.has(l.Id)));
+        }
+      })
+      .catch(() => {
+        if (active) setSavedListingsList([]);
+      });
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtro, user, id, memberListings]);
 
   async function join() {
     if (!id) return;
@@ -258,28 +313,50 @@ export function CommunityDetailPage() {
     [posts, filtro, user]
   );
 
-  // Timeline mesclada: conversas (cada raiz com sua thread) e anúncios dos
-  // membros intercalados por data. Filtro 🛍️ = só anúncios; ✍️ = só minhas.
+  // Timeline mesclada da comunidade: conversas e anúncios DELA intercalados
+  // por data. 🛍️ = só anúncios; ✍️ = só minhas; 🔖 = só o que salvei daqui.
   const timeline = useMemo(() => {
     const listingEntries = (memberListings ?? []).map((l) => ({
       tipo: "listing" as const,
       key: `l-${l.Id}`,
       at: l.CreatedAt ? new Date(l.CreatedAt).getTime() : 0,
       item: l,
+      salvo: false as const,
     }));
     if (filtro === "anuncios") return listingEntries;
+    if (filtro === "salvos") {
+      return [
+        ...(savedPostsList ?? []).map((p) => ({
+          tipo: "post" as const,
+          key: `sp-${p.Id}`,
+          at: new Date(p.CreatedAt).getTime(),
+          item: p,
+          salvo: true as const,
+        })),
+        ...(savedListingsList ?? []).map((l) => ({
+          tipo: "listing" as const,
+          key: `sl-${l.Id}`,
+          at: l.CreatedAt ? new Date(l.CreatedAt).getTime() : 0,
+          item: l,
+          salvo: true as const,
+        })),
+      ].sort((a, b) => b.at - a.at);
+    }
     const postEntries = visiblePosts.map((p) => ({
       tipo: "post" as const,
       key: `p-${p.Id}`,
       at: new Date(p.CreatedAt).getTime(),
       item: p,
+      salvo: false as const,
     }));
     if (filtro === "minhas") return postEntries;
     return [...postEntries, ...listingEntries].sort((a, b) => b.at - a.at);
-  }, [filtro, visiblePosts, memberListings]);
+  }, [filtro, visiblePosts, memberListings, savedPostsList, savedListingsList]);
 
   const timelineLoading =
-    rootsLoading || (filtro !== "minhas" && memberListings === null);
+    rootsLoading ||
+    (filtro !== "minhas" && filtro !== "salvos" && memberListings === null) ||
+    (filtro === "salvos" && (savedPostsList === null || savedListingsList === null));
 
   if (loading) return <div className="app-container text-silver">Carregando comunidade…</div>;
 
@@ -431,10 +508,10 @@ export function CommunityDetailPage() {
         </div>
       </header>
 
-      {/* ══ PÁGINA ÚNICA: filtros | conversas | features — full width ══ */}
-      <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_20rem] items-start">
-        {/* ── Esquerda: filtros do feed + atalhos ── */}
-        <aside className="space-y-4">
+      {/* ══ PÁGINA ÚNICA: filtros | feed | features — full width ══ */}
+      <div className="mt-4 grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)_22rem] items-start">
+        {/* ── Esquerda: filtros do feed + atalhos (acompanha o scroll) ── */}
+        <aside className="space-y-4 lg:sticky lg:top-20 self-start">
           <section className="bg-charcoal rounded-xl border border-smoke p-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">
               Feed da comunidade
@@ -462,9 +539,6 @@ export function CommunityDetailPage() {
               Atalhos
             </h2>
             <nav className="flex lg:flex-col gap-1.5 text-sm">
-              <Link to="/saved" className="text-silver hover:text-cream px-3 py-1.5">
-                🔖 Meus salvos
-              </Link>
               {user?.verified && (
                 <Link
                   to="/listings/new"
@@ -502,7 +576,7 @@ export function CommunityDetailPage() {
             filtro === "anuncios" ? (
               <EmptyState
                 icon="🛍️"
-                title="Nenhum anúncio dos membros por aqui ainda."
+                title="Nenhum anúncio da comunidade por aqui ainda."
                 action={
                   user?.verified && isMember ? (
                     <Link
@@ -512,6 +586,15 @@ export function CommunityDetailPage() {
                       + Anunciar algo
                     </Link>
                   ) : undefined
+                }
+              />
+            ) : filtro === "salvos" ? (
+              <EmptyState
+                icon="🔖"
+                title={
+                  user
+                    ? "Você ainda não salvou nada desta comunidade."
+                    : "Entre para salvar conversas e anúncios."
                 }
               />
             ) : (
@@ -530,22 +613,47 @@ export function CommunityDetailPage() {
             <div className="space-y-4">
               {timeline.map((e) =>
                 e.tipo === "post" ? (
-                  <PostThread
-                    key={e.key}
-                    posts={[e.item]}
-                    onReply={handleReply}
-                    loadChildren={loadChildren}
-                    canPost={isMember}
-                    currentUserId={user?.userId}
-                    loadingId={replyingId ?? undefined}
-                    viewerId={user?.userId}
-                    shareUrl={shareUrl}
-                  />
+                  e.salvo ? (
+                    <PostCard
+                      key={e.key}
+                      post={e.item}
+                      currentUserId={user?.userId}
+                      onUnsave={() =>
+                        setSavedPostsList((prev) =>
+                          (prev ?? []).filter((p) => p.Id !== e.item.Id)
+                        )
+                      }
+                    />
+                  ) : (
+                    <PostThread
+                      key={e.key}
+                      posts={[e.item]}
+                      onReply={handleReply}
+                      loadChildren={loadChildren}
+                      canPost={isMember}
+                      currentUserId={user?.userId}
+                      loadingId={replyingId ?? undefined}
+                      viewerId={user?.userId}
+                      shareUrl={shareUrl}
+                    />
+                  )
                 ) : (
                   <ListingTimelineCard
                     key={e.key}
                     item={e.item}
                     currentUserId={user?.userId}
+                    interactive
+                    canInteract={!!user?.verified}
+                    initialLiked={likedListingIds.has(e.item.Id)}
+                    initialSaved={e.salvo || savedListingIds.has(e.item.Id)}
+                    onUnsave={
+                      e.salvo
+                        ? () =>
+                            setSavedListingsList((prev) =>
+                              (prev ?? []).filter((l) => l.Id !== e.item.Id)
+                            )
+                        : undefined
+                    }
                   />
                 )
               )}
@@ -553,17 +661,12 @@ export function CommunityDetailPage() {
           )}
         </main>
 
-        {/* ── Direita: chat ao vivo + membros + regras ── */}
-        <aside className="space-y-4">
-          <section id="aovivo" className="bg-charcoal rounded-xl border border-smoke p-4">
-            <div className="flex items-baseline justify-between gap-2 mb-2">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-silver">
-                ⚡ Ao vivo
-              </h2>
-              <span className="text-[10px] text-silver/70">expira em 90 dias</span>
-            </div>
+        {/* ── Direita: chat + membros + regras (acompanha o scroll) ── */}
+        <aside className="space-y-4 lg:sticky lg:top-20 self-start">
+          {/* Chat — um box só (o LiveChat já desenha a moldura e a legenda) */}
+          <div id="aovivo" className="scroll-mt-24">
             <LiveChat communityId={community.Id} isMember={isMember} />
-          </section>
+          </div>
 
           <section id="membros" className="bg-charcoal rounded-xl border border-smoke p-4">
             <h2 className="text-xs font-bold uppercase tracking-wider text-silver mb-2">

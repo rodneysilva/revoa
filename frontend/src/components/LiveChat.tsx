@@ -108,7 +108,7 @@ export function LiveChat({
     state === "online" ? "bg-esmeralda" : state === "error" ? "bg-rosa" : "bg-amber";
   const stateLabel =
     state === "online"
-      ? "Ao vivo"
+      ? "Conectado"
       : state === "error"
       ? "Desconectado"
       : state === "reconnecting"
@@ -118,6 +118,7 @@ export function LiveChat({
   return (
     <div className="flex flex-col h-[26rem] bg-charcoal border border-smoke rounded-xl overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-smoke">
+        <span className="text-sm font-bold text-cream">Chat</span>
         {isMember && (
           <>
             <span
@@ -125,11 +126,13 @@ export function LiveChat({
                 state !== "online" && state !== "error" ? "animate-pulse" : ""
               }`}
             />
-            <span className="text-sm text-silver">{stateLabel}</span>
+            <span className="text-xs text-silver">{stateLabel}</span>
           </>
         )}
-        <span className={`text-sm text-cream font-semibold ${isMember ? "ml-auto text-xs text-silver font-normal" : ""}`}>
-          {isMember ? `${messages.length} mensagens` : "Conversa da comunidade"}
+        <span className="ml-auto text-xs text-silver whitespace-nowrap">
+          {messages.length > 0
+            ? `${messages.length} ${messages.length === 1 ? "mensagem" : "mensagens"}`
+            : "expira em 90 dias"}
         </span>
       </div>
 
@@ -181,7 +184,7 @@ export function LiveChat({
             onChange={(e) => setText(e.target.value)}
             placeholder="Mensagem…"
             disabled={state !== "online"}
-            className="flex-1 bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm disabled:opacity-60"
+            className="flex-1 min-w-0 bg-smoke text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm disabled:opacity-60"
           />
           <button
             type="submit"
