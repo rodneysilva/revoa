@@ -1,20 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Wallet } from "lucide-react";
-import { api } from "../api/client";
+import { Gift, Wallet } from "lucide-react";
+import { ApiError, api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { WalletBalance } from "../api/types";
 
 // Carteira do usuário logado (GET /api/wallet/balance — leitura on-chain que
-// degrada em silêncio quando a chain está offline).
+// degrada em silêncio quando a chain está offline) + resgate de cupom (UF-29):
+// o RVM mintado cai direto aqui, o campo de cupom mora na carteira.
 export function WalletPage() {
   const { user } = useAuth();
   const [data, setData] = useState<WalletBalance | null>(null);
   const [erro, setErro] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     let active = true;
+    setErro(false);
     api
       .walletBalance()
       .then((b) => {
@@ -26,7 +29,7 @@ export function WalletPage() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, reload]);
 
   if (!user) {
     return (
@@ -91,7 +94,72 @@ export function WalletPage() {
             Ver o feed
           </Link>
         </div>
+
+        {user.verified && (
+          <RedeemCoupon onRedeemed={() => setReload((n) => n + 1)} />
+        )}
       </div>
     </div>
+  );
+}
+
+// Resgatar cupom (UF-29) — exige conta verificada (gate Verified no backend).
+// Após o resgate o saldo acima é relido (o mint cai na mesma carteira).
+function RedeemCoupon({ onRedeemed }: { onRedeemed: () => void }) {
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit(ev: React.FormEvent) {
+    ev.preventDefault();
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    setBusy(true);
+    setMsg(null);
+    setErr(null);
+    try {
+      await api.redeemCoupon(trimmed);
+      setMsg("Cupom resgatado! O RVM foi creditado na sua carteira.");
+      setCode("");
+      onRedeemed();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Falha ao resgatar cupom.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="bg-charcoal rounded-2xl border border-smoke p-4 mt-6"
+    >
+      <h2 className="flex items-center gap-1.5 text-cream font-semibold mb-2">
+        <Gift aria-hidden className="w-4 h-4" />
+        Resgatar cupom
+      </h2>
+      <p className="text-xs text-silver mb-3">
+        Tem um código de cupom? O RVM é creditado direto na sua carteira.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="CÓDIGO DO CUPOM"
+          className="flex-1 min-w-0 bg-ink text-cream rounded-lg border border-smoke focus:border-esmeralda px-3 py-2 outline-none text-sm uppercase tracking-wider"
+        />
+        <button
+          type="submit"
+          disabled={busy || !code.trim()}
+          className="bg-brand text-ink font-semibold px-5 py-2 rounded-xl text-sm disabled:opacity-60"
+        >
+          {busy ? "…" : "Resgatar"}
+        </button>
+      </div>
+      {msg && <p className="text-esmeralda text-sm mt-2">{msg}</p>}
+      {err && <p className="text-rosa text-sm mt-2">{err}</p>}
+    </form>
   );
 }

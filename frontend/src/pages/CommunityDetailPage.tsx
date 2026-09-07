@@ -423,8 +423,12 @@ export function CommunityDetailPage() {
         ← Comunidades
       </Link>
 
-      {/* ══ HERO compacto — capa real (upload) com fallback gradiente ══ */}
-      <header className="relative rounded-2xl overflow-hidden border border-smoke min-h-[15rem] sm:min-h-[17rem] flex flex-col">
+      {/* ══ HERO — capa real (upload) com fallback gradiente ══
+          Proporcional à capa (seeds 1200×400 = 3:1): cresce com a largura do
+          container (2880px → 960px de altura em 4K) e nunca corta a imagem.
+          Piso de 13rem só para telas estreitas, onde 3:1 ficaria baixo demais
+          para a faixa de título. */}
+      <header className="relative rounded-2xl overflow-hidden border border-smoke aspect-[3/1] min-h-[13rem] flex flex-col">
         {community.CoverImageUrl ? (
           <img
             src={community.CoverImageUrl}
