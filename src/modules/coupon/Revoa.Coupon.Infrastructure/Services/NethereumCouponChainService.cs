@@ -109,6 +109,8 @@ public class NethereumCouponChainService : ICouponChainService
     public async Task<string> RedeemAsync(UserWallet userWallet, string code, CancellationToken ct = default)
     {
         var (account, web3) = BuildWeb3(userWallet.PrivateKey);
+        await EnsureGasAsync(account.Address, ct);
+
         var contract = web3.Eth.GetContract(Abi, _options.Contracts.CouponRedeemer);
 
         var fn = contract.GetFunction("redeem");
@@ -118,6 +120,31 @@ public class NethereumCouponChainService : ICouponChainService
 
         _logger.LogInformation("redeem OK tx={Tx}", receipt.TransactionHash);
         return receipt.TransactionHash;
+    }
+
+    // DEV: carteiras sem ETH falham no estimate com "insufficient funds" (Classify → Unknown
+    // → "Falha ao resgatar cupom." sem pista). Repõe gás da faucet quando habilitado; no-op
+    // em produção (Paymaster/AA). Espelha NethereumRvmService.FundGasIfEnabledAsync.
+    private async Task EnsureGasAsync(string address, CancellationToken ct)
+    {
+        if (!_options.FundWalletGasOnCreate)
+        {
+            return;
+        }
+
+        var (_, faucetWeb3) = BuildFaucetWeb3();
+        var balance = await faucetWeb3.Eth.GetBalance.SendRequestAsync(address);
+        var minWei = UnitConversion.Convert.ToWei(0.01m);
+        if (balance.Value >= minWei)
+        {
+            return;
+        }
+
+        var transfer = faucetWeb3.Eth.GetEtherTransferService();
+        var txHash = await transfer.TransferEtherAsync(address, _options.FundWalletGasEther);
+        _logger.LogInformation(
+            "Faucet gas (redeem): {Ether} ETH para {Address} tx={Tx}",
+            _options.FundWalletGasEther, address, txHash);
     }
 
     private (Account account, Web3 web3) BuildWeb3(string privateKey)
@@ -132,8 +159,7 @@ public class NethereumCouponChainService : ICouponChainService
     // Padrão uniforme: estimate → send → checa status 0. Estimate lança se a tx for reverter; o erro é
     // classificado pelo seletor (CouponChainException) p/ o command mapear msg amigável.
     private async Task<TransactionReceipt> SendAndClassifyAsync(
-        Function fn, string from, CancellationToken ct, params object[] args)
-    {
+        Function fn, string from, CancellationToken ct, params object[] args)    {
         try
         {
             var gas = await fn.EstimateGasAsync(from, null, null, args);
@@ -152,6 +178,9 @@ public class NethereumCouponChainService : ICouponChainService
         }
         catch (Exception ex)
         {
+            // Registra a falha crua (estimate/send) — o command devolve só a msg amigável,
+            // sem isso o "Falha ao resgatar cupom." não deixa pista nos logs.
+            _logger.LogWarning(ex, "tx on-chain falhou ({From})", from);
             throw Classify(ex);
         }
     }

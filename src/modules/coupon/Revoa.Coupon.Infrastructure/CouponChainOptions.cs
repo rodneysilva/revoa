@@ -13,6 +13,13 @@ public class CouponChainOptions
 
     public string FaucetPrivateKey { get; set; } = string.Empty;
 
+    // Mesma flag/env do módulo Token (Chain__FundWalletGas*): em dev, a faucet repõe
+    // gás de carteiras sem ETH antes de o usuário assinar o redeem (legados do seed
+    // nunca passaram pelo faucet). Em produção fica false (gas vem do Paymaster/AA).
+    public bool FundWalletGasOnCreate { get; set; } = false;
+
+    public decimal FundWalletGasEther { get; set; } = 1m;
+
     public CouponChainContracts Contracts { get; set; } = new();
 }
 
