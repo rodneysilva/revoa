@@ -8,6 +8,14 @@ import { GlobalSearch } from "./GlobalSearch";
 import { ThemeToggle } from "./ThemeToggle";
 import { refreshUnread, useUnread } from "../lib/unread";
 
+// Cortes empíricos do header (classes literais — o scanner do Tailwind não
+// enxerga variantes compostas por template string). Medido com viewport real:
+// <1024 só cabem wordmark + busca + hambúrguer (o cluster direito estoura até
+// ~875px); 1024-1359 cabe o cluster, mas a nav de 4-5 links (+Admin do
+// allowlist) só cabe a partir de ~1300px — por isso dois degraus:
+//   lg (1024)  → cluster direito sai do menu e ganha a barra
+//   1360px     → nav desktop substitui o hambúrguer
+
 const navItems = [
   { to: "/feed", label: "Feed" },
   { to: "/listings", label: "Anúncios" },
@@ -70,7 +78,7 @@ export function Layout() {
             revoa.me
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden min-[1360px]:flex items-center gap-1">
             {navItems.map((n) => (
               <NavLink
                 key={n.to}
@@ -97,7 +105,7 @@ export function Layout() {
               <>
                 <Link
                   to="/saved"
-                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-amber"
+                  className="hidden lg:inline-flex items-center gap-1 text-sm text-silver hover:text-amber"
                   title="Posts e anúncios salvos"
                 >
                   <Bookmark aria-hidden className="w-4 h-4" />
@@ -105,7 +113,7 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/trades"
-                  className="hidden sm:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
+                  className="hidden lg:inline-flex items-center gap-1 text-sm text-silver hover:text-cream"
                   title="Minhas trocas"
                 >
                   <Repeat aria-hidden className="w-4 h-4" />
@@ -113,7 +121,7 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/wallet"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-sm text-lima hover:text-cream"
+                  className="hidden lg:inline-flex items-center gap-1.5 text-sm text-lima hover:text-cream"
                   title="Carteira — créditos de troca (RM$)"
                 >
                   <span className="rms">RM$</span>
@@ -123,7 +131,7 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/notifications"
-                  className="hidden sm:inline-flex items-center justify-center relative text-silver hover:text-cream"
+                  className="hidden lg:inline-flex items-center justify-center relative text-silver hover:text-cream"
                   title="Notificações"
                   aria-label={
                     unread > 0 ? `Notificações (${unread} não lidas)` : "Notificações"
@@ -138,14 +146,14 @@ export function Layout() {
                 </Link>
                 <Link
                   to="/profile"
-                  className="hidden sm:inline text-sm text-cream hover:text-esmeralda truncate max-w-[12ch]"
+                  className="hidden lg:inline text-sm text-cream hover:text-esmeralda truncate max-w-[12ch]"
                 >
                   {user.nome || "Perfil"}
                 </Link>
                 <button
                   type="button"
                   onClick={logout}
-                  className="hidden sm:inline text-sm text-silver hover:text-rosa"
+                  className="hidden lg:inline text-sm text-silver hover:text-rosa"
                   title="Encerrar sessão"
                 >
                   Sair
@@ -155,7 +163,7 @@ export function Layout() {
               <>
                 <Link
                   to="/login"
-                  className="hidden sm:inline text-sm text-silver hover:text-cream"
+                  className="hidden lg:inline text-sm text-silver hover:text-cream"
                 >
                   Entrar
                 </Link>
@@ -172,7 +180,7 @@ export function Layout() {
 
             <button
               type="button"
-              className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-cream hover:bg-smoke"
+              className="min-[1360px]:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg text-cream hover:bg-smoke"
               aria-label={open ? "Fechar menu" : "Abrir menu"}
               aria-expanded={open}
               onClick={() => setOpen((o) => !o)}
@@ -187,7 +195,7 @@ export function Layout() {
         </div>
 
         {open && (
-          <div className="md:hidden border-t border-smoke bg-ink/95 backdrop-blur">
+          <div className="min-[1360px]:hidden border-t border-smoke bg-ink/95 backdrop-blur">
             <div className="app-bar-inner py-3 flex flex-col gap-1">
               {navItems.map((n) => (
                 <NavLink
