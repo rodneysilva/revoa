@@ -3,6 +3,8 @@ using Revoa.Catalog.Domain.Aggregates.CommentAggregate;
 namespace Revoa.Catalog.Application.DTOs;
 
 // Mesmo shape do PostDto p/ alimentar o componente <PostThread> no frontend (reuso, sem UI duplicada).
+// ChildrenCount (default 0, enriquecido em batch) permite ao FE só desenhar
+// "Ver respostas" quando o comentário TEM respostas.
 public sealed record CommentDto(
     Guid Id,
     Guid ListingId,
@@ -14,7 +16,8 @@ public sealed record CommentDto(
     string Path,
     int Depth,
     string Status,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    int ChildrenCount = 0);
 
 public static class CommentDtoMapper
 {

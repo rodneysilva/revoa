@@ -102,6 +102,48 @@ public class CatalogCommentsTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task Listing_comments_expose_children_count_per_root()
+    {
+        var seller = await CreateUserAsync();
+        var listingId = await CreateServiceListingAsync(seller);
+        var client = AuthedClient(await CreateUserAsync());
+
+        // Raiz com 2 respostas + raiz sem respostas.
+        var busyRoot = await client.PostAsync($"/api/listings/{listingId}/comments", JsonBody(new
+        {
+            ParentId = (Guid?)null,
+            Content = "Raiz com respostas",
+        }));
+        busyRoot.StatusCode.Should().Be(HttpStatusCode.OK);
+        var busyRootId = await ReadIdAsync(busyRoot);
+        foreach (var content in new[] { "Resposta 1", "Resposta 2" })
+        {
+            var reply = await client.PostAsync($"/api/listings/{listingId}/comments", JsonBody(new
+            {
+                ParentId = busyRootId,
+                Content = content,
+            }));
+            reply.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        var quietRoot = await client.PostAsync($"/api/listings/{listingId}/comments", JsonBody(new
+        {
+            ParentId = (Guid?)null,
+            Content = "Raiz sem respostas",
+        }));
+        quietRoot.StatusCode.Should().Be(HttpStatusCode.OK);
+        var quietRootId = await ReadIdAsync(quietRoot);
+
+        // Listagem anônima: ChildrenCount alimenta o "Ver respostas" do FE
+        // (batch, sem N+1) — sem respostas, o botão não existe.
+        var comments = await Http.GetFromJsonAsync<JsonArray>($"/api/listings/{listingId}/comments");
+        comments!.Single(c => c!["Id"]!.GetValue<Guid>() == busyRootId)!["ChildrenCount"]!
+            .GetValue<int>().Should().Be(2);
+        comments!.Single(c => c!["Id"]!.GetValue<Guid>() == quietRootId)!["ChildrenCount"]!
+            .GetValue<int>().Should().Be(0);
+    }
+
+    [Fact]
     public async Task Comment_flow_root_and_reply_with_pascal_case_shape()
     {
         var seller = await CreateUserAsync();

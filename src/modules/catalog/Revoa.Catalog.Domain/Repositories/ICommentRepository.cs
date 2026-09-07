@@ -13,6 +13,10 @@ public interface ICommentRepository
     Task<IReadOnlyDictionary<Guid, int>> GetCountsAsync(
         IReadOnlyCollection<Guid> listingIds, CancellationToken ct);
 
+    // Total de respostas visíveis diretas por comentário — batch, anti-N+1.
+    Task<IReadOnlyDictionary<Guid, int>> GetChildrenCountsAsync(
+        IReadOnlyCollection<Guid> commentIds, CancellationToken ct);
+
     Task AddAsync(Comment comment, CancellationToken ct);
 
     Task EnsureIndexesAsync(CancellationToken ct = default);

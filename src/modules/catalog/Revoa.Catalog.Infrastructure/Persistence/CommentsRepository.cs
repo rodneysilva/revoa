@@ -58,6 +58,37 @@ public class CommentsRepository : MongoRepositoryBase<Comment>, ICommentReposito
         return dict;
     }
 
+    // Espelho do PostsRepository.GetChildrenCountsAsync (aggregation $group por ParentId).
+    public async Task<IReadOnlyDictionary<Guid, int>> GetChildrenCountsAsync(
+        IReadOnlyCollection<Guid> parentIds, CancellationToken ct)
+    {
+        var dict = new Dictionary<Guid, int>();
+        if (parentIds.Count == 0)
+        {
+            return dict;
+        }
+
+        var fb = Builders<Comment>.Filter;
+        var query = fb.In(c => c.ParentId, parentIds.Select(id => (Guid?)id))
+                    & fb.Eq(c => c.Status, CommentStatus.Visible);
+
+        var grouped = await Collection.Aggregate()
+            .Match(query)
+            .Group(new BsonDocument
+            {
+                { "_id", "$ParentId" },
+                { "Count", new BsonDocument("$sum", 1) }
+            })
+            .ToListAsync(ct);
+
+        foreach (var doc in grouped)
+        {
+            dict[doc["_id"].AsGuid] = doc["Count"].AsInt32;
+        }
+
+        return dict;
+    }
+
     /// <summary>Índices (listing+data, parentId, path). Idempotente.</summary>
     public async Task EnsureIndexesAsync(CancellationToken ct = default)
     {

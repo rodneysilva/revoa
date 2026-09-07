@@ -23,6 +23,20 @@ public class GetListingCommentsQueryHandler
         GetListingCommentsQuery request, CancellationToken ct)
     {
         var items = await _comments.GetByListingAsync(request.ListingId, request.ParentId, ct);
-        return Result<IReadOnlyList<CommentDto>>.Ok(items.Select(CommentDtoMapper.From).ToList());
+        var dtos = items.Select(CommentDtoMapper.From).ToList();
+        if (dtos.Count == 0)
+        {
+            return Result<IReadOnlyList<CommentDto>>.Ok(dtos);
+        }
+
+        // Batch anti-N+1: o FE só oferece "Ver respostas" onde existem respostas.
+        var counts = await _comments.GetChildrenCountsAsync(
+            dtos.Select(d => d.Id).ToList(), ct);
+        for (var i = 0; i < dtos.Count; i++)
+        {
+            dtos[i] = dtos[i] with { ChildrenCount = counts.GetValueOrDefault(dtos[i].Id) };
+        }
+
+        return Result<IReadOnlyList<CommentDto>>.Ok(dtos);
     }
 }

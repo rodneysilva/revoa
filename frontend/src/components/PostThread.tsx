@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { Avatar } from "./Avatar";
 import { ReportButton } from "./ReportButton";
 import { ShareButton } from "./ShareButton";
@@ -69,12 +70,13 @@ function PostItem({
   const canReply = canPost && post.Depth < MAX_DEPTH;
   const submitting = loadingId === post.Id;
   const childCount = post.ChildrenCount ?? 0;
-  const knownZero = post.ChildrenCount === 0;
+  // "Ver respostas" só existe quando há respostas (contador do batch ou
+  // respostas já carregadas); `open` mantém o botão p/ poder recolher.
   const showRepliesToggle =
-    !knownZero || open || (children != null && children.length > 0);
+    childCount > 0 || open || (children != null && children.length > 0);
   const repliesLabel =
     childCount > 0
-      ? `💬 ${childCount} resposta${childCount === 1 ? "" : "s"}`
+      ? `${childCount} resposta${childCount === 1 ? "" : "s"}`
       : "Ver respostas";
 
   async function toggleLike() {
@@ -174,8 +176,9 @@ function PostItem({
               <button
                 type="button"
                 onClick={toggleChildren}
-                className="text-silver hover:text-cream"
+                className="inline-flex items-center gap-1 text-silver hover:text-cream"
               >
+                <MessageCircle aria-hidden className="w-3.5 h-3.5" />
                 {open ? "Ocultar respostas" : repliesLabel}
               </button>
             )}
@@ -185,20 +188,25 @@ function PostItem({
                 <button
                   type="button"
                   onClick={toggleLike}
-                  className={`hover:text-rosa transition ${
+                  className={`inline-flex items-center gap-1 hover:text-rosa transition ${
                     liked ? "text-rosa" : "text-silver"
                   }`}
                 >
-                  {liked ? "❤️" : "🤍"} {likeCount > 0 ? likeCount : "Curtir"}
+                  <Heart aria-hidden className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+                  {likeCount > 0 ? likeCount : "Curtir"}
                 </button>
                 <button
                   type="button"
                   onClick={toggleSave}
-                  className={`hover:text-amber transition ${
+                  className={`inline-flex items-center gap-1 hover:text-amber transition ${
                     saved ? "text-amber" : "text-silver"
                   }`}
                 >
-                  {saved ? "🔖 Salvo" : "🔖 Salvar"}
+                  <Bookmark
+                    aria-hidden
+                    className={`w-3.5 h-3.5 ${saved ? "fill-current" : ""}`}
+                  />
+                  {saved ? "Salvo" : "Salvar"}
                 </button>
                 <ShareButton
                   url={shareUrl}
@@ -208,8 +216,12 @@ function PostItem({
               </>
             ) : (
               likeCount > 0 && (
-                <Link to="/login" className="text-silver hover:text-rosa">
-                  ❤️ {likeCount}
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1 text-silver hover:text-rosa"
+                >
+                  <Heart aria-hidden className="w-3.5 h-3.5" />
+                  {likeCount}
                 </Link>
               )
             )}
