@@ -13,7 +13,7 @@ export function CommunityCard({ c, role }: { c: Community; role?: MembershipRole
       to={`/community/${c.Id}`}
       className="group block bg-charcoal rounded-2xl border border-smoke overflow-hidden hover:border-amber/60 hover:shadow-lg transition"
     >
-      <div className="bg-community relative h-36 sm:h-40 flex items-center px-4 overflow-hidden">
+      <div className="bg-community relative h-[13.5rem] sm:h-[15rem] flex items-center px-4 overflow-hidden">
         {c.CoverImageUrl && (
           <img
             src={c.CoverImageUrl}

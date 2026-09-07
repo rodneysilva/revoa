@@ -424,7 +424,7 @@ export function CommunityDetailPage() {
       </Link>
 
       {/* ══ HERO compacto — capa real (upload) com fallback gradiente ══ */}
-      <header className="relative rounded-2xl overflow-hidden border border-smoke">
+      <header className="relative rounded-2xl overflow-hidden border border-smoke min-h-[15rem] sm:min-h-[17rem] flex flex-col">
         {community.CoverImageUrl ? (
           <img
             src={community.CoverImageUrl}
@@ -435,7 +435,7 @@ export function CommunityDetailPage() {
           <div className="bg-community absolute inset-0" aria-hidden />
         )}
         <div className="absolute inset-0 bg-black/35" aria-hidden />
-        <div className="relative p-4 sm:p-5 text-white">
+        <div className="relative p-4 sm:p-5 mt-auto text-white">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <h1 className="flex items-center gap-2 text-xl sm:text-2xl font-bold drop-shadow">
               <AxisIcon aria-hidden className="w-5 h-5" />
