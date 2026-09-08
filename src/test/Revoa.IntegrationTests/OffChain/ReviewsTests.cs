@@ -105,4 +105,23 @@ public class ReviewsTests : IntegrationTestBase
         rep!["ReviewsCount"]!.GetValue<int>().Should().Be(1);
         rep["AvgRating"]!.GetValue<double>().Should().Be(5);
     }
+
+    [Fact]
+    public async Task Reputation_returns_200_with_zeroed_score_for_user_without_history()
+    {
+        // Ausência de reputação é estado válido (conta nova): 200 com zeros,
+        // não 404 — o perfil próprio/público lê sem poluir o console de erros.
+        var user = await CreateUserAsync();
+
+        var resp = await Http.GetAsync($"/api/users/{user.UserId}/reputation");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var rep = await resp.Content.ReadFromJsonAsync<JsonNode>();
+        rep!["UserId"]!.GetValue<Guid>().Should().Be(user.UserId);
+        rep["Points"]!.GetValue<long>().Should().Be(0);
+        rep["Level"]!.GetValue<string>().Should().Be("Iniciante");
+        rep["ReviewsCount"]!.GetValue<int>().Should().Be(0);
+        rep["DonationsCount"]!.GetValue<int>().Should().Be(0);
+        rep["AvgRating"]!.GetValue<double>().Should().Be(0);
+    }
 }

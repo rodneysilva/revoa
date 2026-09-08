@@ -72,12 +72,13 @@ export function ProfilePage() {
     );
 
   // Resumo: média/count vêm da reputação quando existe; senão, das avaliações.
+  // A API devolve 200 com zeros para quem nunca trocou — resumo só com histórico.
   const avg =
     reviews.length > 0
       ? reviews.reduce((s, r) => s + r.Rating, 0) / reviews.length
       : reputation?.AvgRating ?? 0;
   const count = reputation?.ReviewsCount ?? reviews.length;
-  const hasSummary = loaded && (count > 0 || reviews.length > 0 || reputation != null);
+  const hasSummary = loaded && (count > 0 || reviews.length > 0 || (reputation?.Points ?? 0) > 0);
 
   function setTab(t: Tab) {
     setSp(t === "anuncios" ? {} : { tab: t }, { replace: true });

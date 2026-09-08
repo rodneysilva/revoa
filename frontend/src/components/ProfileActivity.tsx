@@ -276,7 +276,14 @@ export function ProfileReputation({ userId }: { userId: string }) {
 
   if (loading) return null;
 
-  const hasRep = reputation != null;
+  // A API agora devolve 200 com zeros para quem nunca trocou (não mais 404) —
+  // reputação "existente" é a que tem algum histórico atrás.
+  const hasRep =
+    reputation != null &&
+    (reputation.Points > 0 ||
+      reputation.ReviewsCount > 0 ||
+      reputation.DonationsCount > 0 ||
+      reputation.VolunteerCount > 0);
   if (!hasRep && reviews.length === 0) {
     return (
       <Section title="Reputação">

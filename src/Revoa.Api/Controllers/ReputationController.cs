@@ -21,11 +21,11 @@ public class ReputationController : ControllerBase
         _mediator = mediator;
     }
 
-    // Retorna o score de reputação do usuário ou 404 se ainda não tem.
+    // Score de reputação do usuário — sempre 200: sem histórico ainda devolve
+    // o score zerado ("Iniciante"), pois ausência de reputação é estado válido.
     [HttpGet]
     public async Task<ActionResult<ReputationDto>> Get(Guid userId, CancellationToken ct = default)
     {
-        var dto = await _mediator.Send(new GetReputationQuery(userId), ct);
-        return dto is null ? NotFound(new ApiError("Reputação não encontrada para este usuário.")) : Ok(dto);
+        return Ok(await _mediator.Send(new GetReputationQuery(userId), ct));
     }
 }
