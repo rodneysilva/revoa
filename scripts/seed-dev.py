@@ -81,14 +81,16 @@ def main() -> None:
     sh("exec", "revoa-mongo-dev", "mongosh", "--quiet", "--eval",
        "try { rs.initiate() } catch (e) { if (e.codeName !== 'AlreadyInitialized') throw e }")
 
-    # App efêmero em Development SÓ no banco dev. As overrides de conexão são
-    # obrigatórias: o serviço `app` default aponta para a instância de produção.
+    # App efêmero em Development SÓ no banco dev, sobre a imagem APP-DEV (a que
+    # serve revoa.me — o seed exercita exatamente o código deployado). As overrides
+    # de conexão são obrigatórias: o default dos serviços aponta para o Mongo de
+    # produção.
     sh("rm", "-f", SEED_NAME)
-    sh("compose", "run", "--rm", "-d", "--name", SEED_NAME,
+    sh("compose", "--profile", "dev", "run", "--rm", "-d", "--name", SEED_NAME,
        "-e", "ASPNETCORE_ENVIRONMENT=Development",
        "-e", f"Mongo__ConnectionString={DEV_MONGO}",
        "-e", f"Mongo__Database={DEV_DB}",
-       "app")
+       "app-dev")
 
     try:
         # Aguarda o host responder (build já feito; ~10-20s de startup).

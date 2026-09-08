@@ -14,6 +14,7 @@ using Revoa.Community.Domain.Aggregates.MembershipAggregate;
 using Revoa.Community.Domain.Aggregates.PostAggregate;
 using Revoa.Community.Domain.Aggregates.PostLikeAggregate;
 using Revoa.Community.Domain.Aggregates.SavedPostAggregate;
+using Revoa.Exchange.Domain.Aggregates.TradeAggregate;
 using Revoa.Identity.Domain.Aggregates.UserAggregate;
 using Revoa.Reputation.Domain.Aggregates.ReputationAggregate;
 using Revoa.Reputation.Domain.Aggregates.ReviewAggregate;
@@ -43,7 +44,8 @@ public sealed record DevSeedResult(
     int CurtidasPosts = 0,
     int CurtidasAnuncios = 0,
     int ComentariosAnuncios = 0,
-    int Salvos = 0);
+    int Salvos = 0,
+    int Trocas = 0);
 
 // Popula o ambiente de desenvolvimento com um ecossistema de demonstração VIVO e interconectado:
 // usuários mock reais (com carteira), catálogo vinculado a esses usuários, comunidades com
@@ -123,6 +125,10 @@ public sealed class DevSeeder
         // 7) Reviews (~22) + reputações acumuladas por usuário.
         var (reviews, reputacoes) = await SeedReviewsAndReputationAsync(mocks, rnd, ct);
 
+        // 8) Trocas em vários estados (o coração do produto não nasce zerado):
+        //    concluídas, em andamento, doação e disputa, sobre anúncios do seed.
+        var trocas = await SeedTradesAsync(mocks, listingIds, rnd, ct);
+
         return new DevSeedResult(
             Categorias: categoriasCriadas,
             Removidos: removidos,
@@ -140,7 +146,8 @@ public sealed class DevSeeder
             CurtidasPosts: comm.Curtidas,
             CurtidasAnuncios: curtAnuncios,
             ComentariosAnuncios: comentarios,
-            Salvos: comm.Salvos + salvAnuncios);
+            Salvos: comm.Salvos + salvAnuncios,
+            Trocas: trocas);
     }
 
     // --- Limpeza idempotente: remove todos os mocks pelas chaves determinísticas (10 usuários +
@@ -174,6 +181,7 @@ public sealed class DevSeeder
         removed += await DeleteByAsync("Comments", bf.In("AutorId", userBin));
         removed += await DeleteByAsync("SavedPosts", bf.In("UserId", userBin));
         removed += await DeleteByAsync("SavedListings", bf.In("UserId", userBin));
+        removed += await DeleteByAsync("Trades", bf.Or(bf.In("SellerId", userBin), bf.In("BuyerId", userBin)));
         return removed;
 
         async Task<long> DeleteByAsync(string coll, FilterDefinition<BsonDocument> filter)
@@ -705,5 +713,64 @@ public sealed class DevSeeder
         await _db.GetCollection<BsonDocument>("Reviews").InsertManyAsync(docs, cancellationToken: ct);
         await _db.GetCollection<BsonDocument>("Reputations").InsertManyAsync(repDocs, cancellationToken: ct);
         return (docs.Count, repDocs.Count);
+    }
+
+    // --- 5 trocas de demonstração sobre anúncios do seed, cobrindo os estados que a
+    //     página /trades trata: 2 liberadas (produto e serviço c/ voucher redeemado),
+    //     1 financiada (em andamento), 1 doação liberada (total 0) e 1 disputada.
+    //     Carteiras/tx são placeholders — a leitura não toca a chain. Buyer nunca é o
+    //     vendedor; FundedAt/ReleasedAt espalhados nos últimos 20 dias.
+    private async Task<int> SeedTradesAsync(
+        IReadOnlyList<DevSeedData.MockUser> mocks,
+        List<(Guid Id, Guid SellerId)> listings,
+        Random rnd,
+        CancellationToken ct)
+    {
+        if (listings.Count < 5)
+        {
+            return 0;
+        }
+
+        var docs = new List<BsonDocument>(5);
+        for (var n = 0; n < 5; n++)
+        {
+            var (listingId, sellerId) = listings[(n * 17) % listings.Count];
+            var seller = mocks.First(m => m.Id == sellerId);
+            var buyer = mocks.Where(m => m.Id != sellerId).OrderBy(_ => rnd.NextDouble()).First();
+
+            var kind = n == 0 || n == 4 ? TradeKind.Service : TradeKind.Product;
+            var mode = n == 3 ? TradeMode.Donate : TradeMode.Trade;
+            var total = mode == TradeMode.Donate ? 0L : new[] { 5L, 10L, 8L, 0L, 12L }[n];
+
+            var trade = Trade.Create(
+                listingId,
+                mode,
+                kind,
+                sellerId, "0xSeedSellerWallet", seller.Name, seller.AvatarUrl,
+                buyer.Id, "0xSeedBuyerWallet", buyer.Name, buyer.AvatarUrl,
+                total, "0xSeedAssetContract", n + 1, n + 1,
+                DevSeedData.RandomRecent(rnd), "0xSeedTx" + n);
+
+            if (n == 0 || n == 1 || n == 3)
+            {
+                // Liberadas (concluídas) — serviço confirma o voucher antes da liberação.
+                if (kind == TradeKind.Service)
+                {
+                    trade.MarkRedeemed("0xSeedRedeemTx" + n);
+                }
+                trade.MarkLiberada("0xSeedReleaseTx" + n);
+            }
+            else if (n == 4)
+            {
+                trade.MarkDisputada(buyer.Email);
+            }
+            // n == 2 permanece Financiada (troca em andamento).
+
+            var doc = trade.ToBsonDocument();
+            docs.Add(doc);
+        }
+
+        await _db.GetCollection<BsonDocument>("Trades").InsertManyAsync(docs, cancellationToken: ct);
+        return docs.Count;
     }
 }
