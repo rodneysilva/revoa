@@ -67,6 +67,18 @@ public class DemurrageController : ControllerBase
             ? BadRequest(new ApiError(result.Error))
             : Ok(result.Value);
     }
+
+    // Situação do reajuste IPCA: acumulado do trimestre (BCB série 433), taxa atual (runtime)
+    // e a taxa que o scheduler aplicaria no próximo fechamento trimestral (jan/abr/jul/out).
+    [HttpGet("ipca")]
+    [Authorize(Policy = "Admin")]
+    public async Task<ActionResult<IpcaStatusDto>> Ipca(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetIpcaQuery(), ct);
+        return result.IsFailure
+            ? BadRequest(new ApiError(result.Error))
+            : Ok(result.Value);
+    }
 }
 
 // Body do POST /run. executedBy é opcional (default = admin autenticado).

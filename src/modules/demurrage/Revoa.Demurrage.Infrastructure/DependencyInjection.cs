@@ -6,6 +6,7 @@ using Revoa.Application;
 using Revoa.Infrastructure.Persistence;
 using Revoa.Demurrage.Application.Commands;
 using Revoa.Demurrage.Application.Options;
+using Revoa.Demurrage.Application.Services;
 using Revoa.Demurrage.Domain.Repositories;
 using Revoa.Demurrage.Infrastructure.Persistence;
 
@@ -36,6 +37,11 @@ public static class DependencyInjection
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<IDemurrageRunRepository>());
 
         services.AddRevoaCQRS(typeof(RunDemurrageCommandHandler).Assembly);
+
+        // IPCA (BCB série 433) via typed client + scheduler mensal: run automático no dia 1º
+        // 03:00 UTC; nos trimestres aplica antes o reajuste IPCA na taxa runtime. Sem Quartz.
+        services.AddHttpClient<IIpcaReader, BcbIpcaReader>();
+        services.AddHostedService<DemurrageSchedulerService>();
 
         return services;
     }

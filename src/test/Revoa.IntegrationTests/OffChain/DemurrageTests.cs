@@ -92,4 +92,24 @@ public class DemurrageTests : IntegrationTestBase
         var arr = await byAdmin.Content.ReadFromJsonAsync<JsonArray>();
         arr.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task Ipca_status_requires_admin_and_tolerates_bcb_outage()
+    {
+        var anonymous = await Http.GetAsync("/api/demurrage/ipca");
+        anonymous.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+
+        var user = await CreateUserAsync();
+        var byUser = await AuthedClient(user).GetAsync("/api/demurrage/ipca");
+        byUser.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        // Admin vê 200 SEMPRE: IPCA indisponível (BCB fora) vira Accumulated/Adjusted null —
+        // o reajuste adia, a taxa segue. A chamada externa é tolerada, não exigida.
+        var admin = await CreateAdminAsync();
+        var byAdmin = await AuthedClient(admin).GetAsync("/api/demurrage/ipca");
+        byAdmin.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await byAdmin.Content.ReadFromJsonAsync<JsonNode>();
+        json!["CurrentRateBps"]!.GetValue<int>().Should().BeGreaterThan(0);
+        json["NextRunUtc"]!.GetValue<DateTime>().Should().BeAfter(DateTime.UtcNow);
+    }
 }

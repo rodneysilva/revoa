@@ -5,7 +5,10 @@ namespace Revoa.Demurrage.Application.Options;
 // FloorRvm: piso de isenção em RVM (saldos ≤ piso não são taxados).
 // Enabled: liga/desliga o módulo (preview/run retornam erro se false).
 //
-// TODO (Fase 4): reajuste IPCA-trimestral automático da taxa + scheduler Quartz (execução mensal).
+// Execução mensal + reajuste IPCA-trimestral (Fase 4): DemurrageSchedulerService (Infrastructure)
+// roda o run no dia 1º 03:00 UTC e, em jan/abr/jul/out, reajusta a taxa RUNTIME
+// (Demurrage.MonthlyRateBps no IParameterStore — visível/revertível no painel admin;
+// GET /api/demurrage/ipca mostra o acumulado e a taxa ajustada).
 public class DemurrageOptions
 {
     public const string SectionName = "Demurrage";
