@@ -103,7 +103,7 @@ public class CreateListingCommandHandler : IRequestHandler<CreateListingCommand,
         if (listing.Kind == ListingKind.Product)
         {
             var tokenUri = $"https://assets.revoa.me/metadata/{listing.Id}";
-            var onChainListingId = ToOnChainListingId(listing.Id);
+            var onChainListingId = OnChainListingIds.FromGuid(listing.Id);
 
             try
             {
@@ -124,12 +124,6 @@ public class CreateListingCommandHandler : IRequestHandler<CreateListingCommand,
         return Result<string>.Ok(listing.Id.ToString());
     }
 
-    // O contrato espera um uint256 como listingId (referência numérica on-chain). Derivamos dos
-    // primeiros 8 bytes do Guid (estável por anúncio). O tokenId autoritativo vem do retorno do mint.
-    private static long ToOnChainListingId(Guid id)
-    {
-        var bytes = id.ToByteArray();
-        var v = BitConverter.ToInt64(bytes, 0);
-        return Math.Abs(v);
-    }
+    // O id on-chain (uint256) do anúncio vem de OnChainListingIds (derivado estável do Guid);
+    // o tokenId autoritativo é o retorno do mint.
 }

@@ -63,6 +63,10 @@ public static class DependencyInjection
         // CQRS — MediatR (assembly da Application) + pipeline de validação + validators.
         services.AddRevoaCQRS(typeof(CreateListingCommandHandler).Assembly);
 
+        // Reconciliação de mint (BackgroundService): completa o mint-to-escrow de produtos
+        // que ficaram sem NFT quando a chain falhou durante a criação do anúncio.
+        services.AddHostedService<MintReconcilerService>();
+
         return services;
     }
 }

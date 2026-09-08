@@ -134,6 +134,21 @@ public class ListingsRepository : MongoRepositoryBase<Listing>, IListingReposito
             .ToListAsync(ct);
     }
 
+    public async Task<IReadOnlyList<Listing>> GetUnmintedProductsAsync(int limit, CancellationToken ct)
+    {
+        var fb = Builders<Listing>.Filter;
+        var query = fb.And(
+            fb.Eq(l => l.Status, ListingStatus.Active),
+            fb.Eq(l => l.Kind, ListingKind.Product),
+            // Eq(null) casa tanto campo ausente quanto BsonNull — cobre os dois formatos.
+            fb.Eq(l => l.NftTokenId, (long?)null));
+
+        return await Collection.Find(query)
+            .SortBy(l => l.CreatedAt)
+            .Limit(limit)
+            .ToListAsync(ct);
+    }
+
     /// <summary>
     /// Padrão de regex amigável ao pt-BR: cada vogal vira classe com variantes acentuadas
     /// ("violao" casa "violão", "coracao" casa "coração") e o termo digitado com acento
