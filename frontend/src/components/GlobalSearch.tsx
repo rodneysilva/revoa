@@ -16,7 +16,9 @@ function ModoIcon({ mode }: { mode: Mode }) {
 
 // Busca global do header: dropdown agrupado (Anúncios + Comunidades) enquanto
 // digita; Enter leva ao feed completo com ?q=. Fechável por fora-clique/Esc.
-export function GlobalSearch() {
+// `mobile` = instância do menu hambúrguer (input full width, dropdown estático
+// empurrando o menu — sem absolute, que vazaria do painel em telas estreitas).
+export function GlobalSearch({ mobile = false }: { mobile?: boolean }) {
   const [termo, setTermo] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -87,7 +89,7 @@ export function GlobalSearch() {
     results.Communities.length === 0;
 
   return (
-    <div ref={boxRef} className="relative hidden md:block">
+    <div ref={boxRef} className={mobile ? "relative md:hidden" : "relative hidden md:block"}>
       <form onSubmit={submit}>
         <span className="sr-only">Buscar na revoa</span>
         <input
@@ -100,12 +102,22 @@ export function GlobalSearch() {
           onFocus={() => setOpen(true)}
           placeholder="Buscar anúncios e comunidades…"
           aria-label="Buscar anúncios e comunidades"
-          className="w-52 lg:w-64 bg-smoke/60 text-cream rounded-lg border border-smoke focus:border-esmeralda focus:w-64 lg:focus:w-72 px-3.5 py-2 outline-none text-sm placeholder:text-silver/70 transition-all"
+          className={
+            mobile
+              ? "w-full bg-smoke/60 text-cream rounded-lg border border-smoke focus:border-esmeralda px-3.5 py-2.5 outline-none text-sm placeholder:text-silver/70"
+              : "w-52 lg:w-64 bg-smoke/60 text-cream rounded-lg border border-smoke focus:border-esmeralda focus:w-64 lg:focus:w-72 px-3.5 py-2 outline-none text-sm placeholder:text-silver/70 transition-all"
+          }
         />
       </form>
 
       {showResults && (
-        <div className="absolute left-0 top-full mt-2 w-80 lg:w-96 bg-charcoal border border-smoke rounded-xl shadow-xl overflow-hidden z-50">
+        <div
+          className={
+            mobile
+              ? "relative w-full mt-2 bg-charcoal border border-smoke rounded-xl shadow-xl overflow-hidden"
+              : "absolute left-0 top-full mt-2 w-80 lg:w-96 bg-charcoal border border-smoke rounded-xl shadow-xl overflow-hidden z-50"
+          }
+        >
           {/* loading || !results: o efeito que seta loading roda DEPOIS do paint —
               sem a guarda de results, o frame pós-2ª-tecla caía aqui com null. */}
           {loading || !results ? (

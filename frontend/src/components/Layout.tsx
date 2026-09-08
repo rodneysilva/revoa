@@ -197,6 +197,10 @@ export function Layout() {
         {open && (
           <div className="min-[1360px]:hidden border-t border-smoke bg-ink/95 backdrop-blur">
             <div className="app-bar-inner py-3 flex flex-col gap-1">
+              {/* Busca no menu — o input do header só existe a partir de md */}
+              <div className="md:hidden px-1 pb-1">
+                <GlobalSearch mobile />
+              </div>
               {navItems.map((n) => (
                 <NavLink
                   key={n.to}
