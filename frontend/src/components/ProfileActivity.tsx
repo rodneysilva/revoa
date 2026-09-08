@@ -207,8 +207,8 @@ export function ProfileActivity({ userId, embedded }: { userId: string; embedded
     <ul
       className={
         embedded
-          ? "grid gap-2 md:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4"
-          : "grid gap-2 md:grid-cols-2 2xl:grid-cols-3"
+          ? "grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3 4xl:grid-cols-4"
+          : "grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3"
       }
     >
       {items.map(({ Post, Community }) => (

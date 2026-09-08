@@ -466,7 +466,7 @@ export function ListingsPage() {
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="hidden lg:block">
           <div className="sticky top-20">{Filters}</div>
         </aside>

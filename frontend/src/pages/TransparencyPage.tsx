@@ -169,7 +169,7 @@ export function TransparencyPage() {
           kicker="De onde vem o valor"
           title="Quem define o preço é a comunidade"
         />
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           <article className="bg-charcoal rounded-2xl border border-smoke p-6 lg:col-span-2">
             <p className="text-cream/90 leading-relaxed">
               O valor é definido pela própria comunidade —{" "}

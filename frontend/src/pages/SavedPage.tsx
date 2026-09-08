@@ -97,7 +97,7 @@ export function SavedPage() {
                   <MessageCircle aria-hidden className="w-3.5 h-3.5" /> Posts salvos ({posts!.length})
                 </span>
               </h2>
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
                 {posts!.map((p) => (
                   <PostCard
                     key={p.Id}

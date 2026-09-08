@@ -26,7 +26,7 @@ const KIND_LABEL: Record<KindFilter, string> = {
 };
 
 const TIMELINE_GRID =
-  "grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start";
+  "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start";
 
 // Ritmo temporal do feed: quebras visíveis entre novo e antigo (diretriz de
 // infinite scroll — marcar onde começa o "mais velho" orienta o scroll).
