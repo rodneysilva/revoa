@@ -90,3 +90,4 @@ ollama-models/
 
 # Snapshots efêmeros do plugin Playwright MCP
 .playwright-mcp/
+backups/
