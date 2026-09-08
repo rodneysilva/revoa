@@ -85,8 +85,8 @@ public class ReleaseTradeCommandHandler : IRequestHandler<ReleaseTradeCommand, R
 
         await _tradeRepo.UpdateAsync(trade, ct);
 
-        // TODO (Fase 3): handler de DonationCompletedEvent em Reputation/Token aplica reputação +
-        // bônus RVM admin-configurável + pontos de ajuda. MVP: publicação sem handler (stub).
+        // Doação concluída: Reputation aplica a recompensa (pontos + ajuda) e publica
+        // RewardUserEvent (mint do bônus RVM no módulo Token); Notifications avisa o doador.
         if (trade.IsDonation)
         {
             await _eventBus.PublishAsync(
