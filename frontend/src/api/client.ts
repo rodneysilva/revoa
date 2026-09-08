@@ -177,6 +177,8 @@ export const apiPost = <T>(path: string, body?: unknown): Promise<T> =>
   request<T>("POST", path, body);
 export const apiPut = <T>(path: string, body?: unknown): Promise<T> =>
   request<T>("PUT", path, body);
+export const apiDelete = <T>(path: string, body?: unknown): Promise<T> =>
+  request<T>("DELETE", path, body);
 
 export const api = {
   feed: (p: FeedParams): Promise<FeedItem[]> =>
@@ -443,6 +445,20 @@ export const api = {
     apiGet<number>(`/api/notifications/unread-count`),
   markNotificationRead: (id: string): Promise<void> =>
     apiPost<void>(`/api/notifications/${encodeURIComponent(id)}/read`),
+
+  // Web Push (UF-21): chave pública VAPID (null = push desativado no ambiente) e
+  // inscrição por dispositivo (o browser entrega Endpoint/P256dh/Auth no subscribe).
+  pushKey: (): Promise<{ PublicKey: string | null }> =>
+    apiGet<{ PublicKey: string | null }>("/api/notifications/push/key"),
+  pushSubscribe: (body: {
+    Endpoint: string;
+    P256dh: string;
+    Auth: string;
+  }): Promise<void> => apiPost<void>("/api/notifications/push/subscribe", body),
+  pushUnsubscribe: (endpoint: string): Promise<void> =>
+    apiDelete<void>(
+      `/api/notifications/push/subscribe?endpoint=${encodeURIComponent(endpoint)}`
+    ),
 
   // Cupom on-chain (UF-29)
   coupons: (page = 1): Promise<Coupon[]> =>

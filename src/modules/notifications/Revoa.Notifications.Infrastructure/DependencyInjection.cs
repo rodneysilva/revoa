@@ -40,8 +40,9 @@ public static class DependencyInjection
         services.Configure<VapidOptions>(configuration.GetSection(VapidOptions.SectionName));
 
         // Portas: INotifier (p/ outros módulos, anti-corruption) + IWebPushSender (p/ Notifier).
+        // WebPush usa typed client (IHttpClientFactory) — POSTs ao push service do navegador.
         services.AddScoped<INotifier, Notifier>();
-        services.AddScoped<IWebPushSender, WebPushService>();
+        services.AddHttpClient<IWebPushSender, WebPushService>();
 
         // Índices criados no startup via IMongoIndexEnsurer (loop no Program.cs).
         services.AddScoped<IMongoIndexEnsurer>(sp => (IMongoIndexEnsurer)sp.GetRequiredService<INotificationRepository>());

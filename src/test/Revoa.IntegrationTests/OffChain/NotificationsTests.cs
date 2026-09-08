@@ -165,4 +165,18 @@ public class NotificationsTests : IntegrationTestBase
         var errors = json["Errors"]!.AsArray();
         errors.Should().Contain(e => e!["Field"]!.GetValue<string>() == "Endpoint");
     }
+
+    [Fact]
+    public async Task Push_key_is_public_and_reports_availability()
+    {
+        // O browser precisa da PublicKey VAPID antes do subscribe — anônima de propósito
+        // (chave pública não é segredo). Sem chaves no ambiente, PublicKey vem null: o
+        // front usa isso para nem exibir o botão de ativar.
+        var resp = await Http.GetAsync("/api/notifications/push/key");
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await resp.Content.ReadFromJsonAsync<JsonNode>();
+        json.Should().NotBeNull();
+        json!.AsObject().Should().ContainKey("PublicKey");
+    }
 }

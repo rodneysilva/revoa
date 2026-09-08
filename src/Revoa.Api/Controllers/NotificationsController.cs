@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Revoa.Abstractions;
 using Revoa.Notifications.Application.Commands;
 using Revoa.Notifications.Application.DTOs;
 using Revoa.Notifications.Application.Queries;
+using Revoa.Notifications.Infrastructure;
 
 namespace Revoa.Api.Controllers;
 
@@ -15,10 +17,23 @@ namespace Revoa.Api.Controllers;
 public class NotificationsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly VapidOptions _vapid;
 
-    public NotificationsController(IMediator mediator)
+    public NotificationsController(IMediator mediator, IOptions<VapidOptions> vapid)
     {
         _mediator = mediator;
+        _vapid = vapid.Value;
+    }
+
+    // Chave pública VAPID do aplicativo (o browser precisa dela no pushManager.subscribe).
+    // Anônima de propósito: chave pública não é segredo — e o front só oferece o botão de
+    // "Ativar notificações" quando ela existe. PublicKey null = push desativado no ambiente.
+    [HttpGet("push/key")]
+    [AllowAnonymous]
+    public ActionResult<PushKeyResponse> PushKey()
+    {
+        var key = _vapid.PublicKey;
+        return Ok(new PushKeyResponse(string.IsNullOrWhiteSpace(key) ? null : key));
     }
 
     // Lista notificações do usuário (50/página).
@@ -108,3 +123,4 @@ public class NotificationsController : ControllerBase
 
 public sealed record SubscribePushRequest(string Endpoint, string P256dh, string Auth);
 public sealed record UnsubscribePushRequest(string Endpoint);
+public sealed record PushKeyResponse(string? PublicKey);

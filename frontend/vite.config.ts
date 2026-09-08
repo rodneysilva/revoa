@@ -17,6 +17,9 @@ export default defineConfig({
         // Ativa o SW novo imediatamente (o controllerchange no main.tsx recarrega).
         skipWaiting: true,
         clientsClaim: true,
+        // Listeners de Web Push (push/notificationclick) vivem fora do bundle gerado —
+        // public/push-handler.js é copiado ao dist e importado pelo SW no runtime.
+        importScripts: ["/push-handler.js"],
       },
       manifest: {
         name: "revoa.me",

@@ -75,6 +75,9 @@ services:
       - Zenvia__Token=${ZENVIA_TOKEN:-} # WhatsApp/SMS OTP (anti-farming via secrets)
       - Jwt__Key=${JWT_KEY:-}           # chave de assinatura JWT (fail-fast em Production se vazio)
       - Jwt__Audience=revoa
+      - WebPush__Vapid__Subject=${WEBPUSH_VAPID_SUBJECT:-}        # vazio = Web Push desativado
+      - WebPush__Vapid__PublicKey=${WEBPUSH_VAPID_PUBLIC_KEY:-}   # pública: vai ao browser (subscribe)
+      - WebPush__Vapid__PrivateKey=${WEBPUSH_VAPID_PRIVATE_KEY:-} # privada: assina o JWT VAPID
     depends_on:
       mongo: { condition: service_healthy }
       minio: { condition: service_healthy }
@@ -243,6 +246,9 @@ services:
       - Zenvia__Token=${ZENVIA_TOKEN:-}
       - Jwt__Key=${JWT_KEY:-}
       - Jwt__Audience=revoa
+      - WebPush__Vapid__Subject=${WEBPUSH_VAPID_SUBJECT:-}
+      - WebPush__Vapid__PublicKey=${WEBPUSH_VAPID_PUBLIC_KEY:-}
+      - WebPush__Vapid__PrivateKey=${WEBPUSH_VAPID_PRIVATE_KEY:-}
     depends_on:
       mongo-dev: { condition: service_healthy }
       minio: { condition: service_healthy }
