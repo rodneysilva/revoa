@@ -29,12 +29,30 @@ function navClass(active: boolean): string {
   }`;
 }
 
+// SPA herda o scroll da rota anterior — sem isso toda página "abre descendo".
+// Navegação comum volta ao topo; com âncora (#conversas, #aovivo…) quem rola é
+// a página-alvo (scrollIntoView até a seção), então aqui não mexemos.
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0 });
+  }, [pathname, hash]);
+  return null;
+}
+
 export function Layout() {
   const { user, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const admin = isAdminUser(user);
   const unread = useUnread();
+
+  // Menu mobile fecha após navegar (link do menu ou busca) — e no clique de
+  // qualquer <a> da lista, mesmo quando o destino é a rota atual (sem remount).
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
 
   // Badge de não-lidas no sino — re-busca a cada rota (a página de Notificações
   // zera via store ao abrir). Degrada em silêncio, como o saldo.
@@ -195,7 +213,12 @@ export function Layout() {
         </div>
 
         {open && (
-          <div className="min-[1360px]:hidden border-t border-smoke bg-ink/95 backdrop-blur">
+          <div
+            className="min-[1360px]:hidden border-t border-smoke bg-ink/95 backdrop-blur"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest("a")) setOpen(false);
+            }}
+          >
             <div className="app-bar-inner py-3 flex flex-col gap-1">
               {/* Busca no menu — o input do header só existe a partir de md */}
               <div className="md:hidden px-1 pb-1">
@@ -301,6 +324,7 @@ export function Layout() {
       </header>
 
       <main className="flex-1 w-full">
+        <ScrollToTop />
         <Outlet />
       </main>
 
